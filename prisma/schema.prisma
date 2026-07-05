@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  plan           String    @default("free")
+  stripeCustomerId String?  @unique
+  accounts       Account[]
+  sessions       Session[]
+  watchlists     Watchlist[]
+  portfolioHoldings PortfolioHolding[]
+  priceAlerts    PriceAlert[]
+  newsAlerts     NewsAlert[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model WatchlistGroup {
+  id        Int             @id @default(autoincrement())
+  name      String          @unique
+  createdAt DateTime        @default(now())
+  items     WatchlistItem[]
+}
+
+model WatchlistItem {
+  id        Int            @id @default(autoincrement())
+  groupId   Int
+  ticker    String
+  notes     String         @default("")
+  addedAt   DateTime       @default(now())
+  group     WatchlistGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, ticker])
+}
+
+model PortfolioHolding {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  ticker    String
+  name      String
+  quantity  Float
+  buyPrice  Float
+  buyDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model PriceAlert {
+  id          Int      @id @default(autoincrement())
+  userId      String?
+  ticker      String
+  condition   String
+  targetPrice Float
+  triggered   Boolean  @default(false)
+  active      Boolean  @default(true)
+  notified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  triggeredAt DateTime?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model NewsAlert {
+  id            Int      @id @default(autoincrement())
+  userId        String?
+  keyword       String
+  lastTriggered DateTime?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model EarthquakeAlert {
+  id        Int      @id @default(autoincrement())
+  minMag    Float    @default(5.0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model CachedData {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+}
+
+model HeadlineSentiment {
+  id         Int      @id @default(autoincrement())
+  hash       String   @unique
+  headline   String
+  sentiment  String
+  confidence Float    @default(0.0)
+  reason     String   @default("")
+  createdAt  DateTime @default(now())
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  ticker    String
+  name      String
+  assetType String   @default("STOCK")
+  addedAt   DateTime @default(now())
+  note      String   @default("")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, ticker])
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  ticker    String
+  type      String
+  quantity  Float
+  price     Float
+  date      DateTime
+  fee       Float    @default(0)
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
