@@ -43,7 +43,7 @@ export default function AIButton({ panelData, panelName, context, style }: AIBut
           e.currentTarget.style.boxShadow = 'none'
         }}
       >
-        âš¡ AI
+        ⚡ AI
       </button>
       {open && (
         <AIPanel

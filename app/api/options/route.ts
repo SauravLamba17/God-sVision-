@@ -27,11 +27,11 @@ export async function GET(req: Request) {
       : 0
 
     if (optData.status !== 'fulfilled') {
-      // Options chain requires Yahoo crumb auth â€” return empty but valid response
+      // Options chain requires Yahoo crumb auth — return empty but valid response
       return NextResponse.json({
         data: { ticker, spotPrice, expiry: '', expiryDates: [], daysToExpiry: 0, calls: [], puts: [] },
         source: 'unavailable',
-        message: 'Live options chain unavailable â€” Yahoo Finance auth required',
+        message: 'Live options chain unavailable — Yahoo Finance auth required',
       })
     }
 

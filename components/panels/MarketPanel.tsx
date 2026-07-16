@@ -59,7 +59,7 @@ export default function MarketPanel() {
   const renderTable = (data: Quote[], label: string, positive: boolean) => (
     <div>
       <div className="font-mono text-[10px] px-2 py-1" style={{ color: positive ? 'var(--text-positive)' : 'var(--text-negative)', borderBottom: '1px solid #1b2e1b' }}>
-        â–² TOP {label}
+        ▲ TOP {label}
       </div>
       <table className="data-table">
         <thead>

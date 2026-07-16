@@ -1,4 +1,5 @@
 import { getCache, setCache } from '@/lib/cache'
+import { geminiGenerate } from '@/lib/gemini'
 
 export interface Narrative {
   title: string
@@ -13,6 +14,7 @@ export interface NarrativeData {
   narratives: Narrative[]
   generatedAt: number
   headlinesAnalyzed: number
+  keyConfigured: boolean
 }
 
 export async function detectNarratives(): Promise<NarrativeData> {
@@ -20,8 +22,7 @@ export async function detectNarratives(): Promise<NarrativeData> {
   const cached = getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as NarrativeData
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  const keyValid = apiKey && !apiKey.startsWith('your_') && apiKey !== 'demo' && apiKey.length > 20
+  const keyValid = !!process.env.GEMINI_API_KEY
 
   // Always fetch live headlines — used for headlinesAnalyzed count even in fallback
   let headlines: string[] = []
@@ -56,13 +57,11 @@ export async function detectNarratives(): Promise<NarrativeData> {
       ],
       generatedAt: Date.now(),
       headlinesAnalyzed: headlines.length,
+      keyConfigured: false,
     }
     setCache(cacheKey, fallback, 900)
     return fallback
   }
-
-  const Anthropic = (await import('@anthropic-ai/sdk')).default
-  const client = new Anthropic({ apiKey })
 
   const prompt = `You are a macro market analyst. Analyze these ${headlines.length} financial news headlines and identify the TOP 5 dominant market narratives driving investor attention.
 
@@ -84,25 +83,19 @@ Return a JSON array of exactly 5 narratives:
 Order by importance/prevalence. Use ALL CAPS for titles. Respond ONLY with valid JSON array.`
 
   try {
-    const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
-      messages: [{ role: 'user', content: prompt }],
-    })
-
-    const text = msg.content[0]?.type === 'text' ? msg.content[0].text : '[]'
+    const text = await geminiGenerate(prompt)
     const jsonMatch = /\[[\s\S]*\]/.exec(text)
     if (jsonMatch) {
       const narratives = JSON.parse(jsonMatch[0]) as Narrative[]
-      const result: NarrativeData = { narratives: narratives.slice(0, 5), generatedAt: Date.now(), headlinesAnalyzed: headlines.length }
-      setCache(cacheKey, result, 900) // 15 min
+      const result: NarrativeData = { narratives: narratives.slice(0, 5), generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
+      setCache(cacheKey, result, 900)
       return result
     }
   } catch (err) {
     console.error('Narrative detection error:', err)
   }
 
-  const empty: NarrativeData = { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length }
+  const empty: NarrativeData = { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
   setCache(cacheKey, empty, 300)
   return empty
 }

@@ -1,16 +1,15 @@
 import { NextRequest } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { geminiFlash } from '@/lib/gemini'
 import { getTickerSentiment } from '@/lib/apis/reddit'
 
 export async function POST(req: NextRequest) {
   const { ticker } = await req.json()
-  const apiKey = process.env.ANTHROPIC_API_KEY
   const mention = await getTickerSentiment(ticker?.toUpperCase())
 
   const encoder = new TextEncoder()
   const readable = new ReadableStream({
     async start(controller) {
-      if (!apiKey || apiKey === 'your_anthropic_api_key_here') {
+      if (!process.env.GEMINI_API_KEY || !geminiFlash) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: `Reddit data for ${ticker}: ${mention?.mentions || 0} mentions, sentiment: ${mention?.sentiment || 'UNKNOWN'}` })}\n\n`))
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
         controller.close()
@@ -25,21 +24,20 @@ export async function POST(req: NextRequest) {
       }
 
       const posts = mention.posts.map((p: any) => `• [r/${p.subreddit} · ${p.score}pts] ${p.title}`).join('\n')
-      const client = new Anthropic({ apiKey })
-      const stream = client.messages.stream({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        messages: [{
-          role: 'user',
-          content: `Based on these Reddit posts about ${ticker} (${mention.mentions} mentions, avg score ${mention.avgScore}):\n\n${posts}\n\nSummarize retail investor sentiment in 3 bullet points: (1) overall mood, (2) main bull thesis, (3) main bear concern. Be concise and direct.`,
-        }],
-      })
+      const prompt = `Based on these Reddit posts about ${ticker} (${mention.mentions} mentions, avg score ${mention.avgScore}):\n\n${posts}\n\nSummarize retail investor sentiment in 3 bullet points: (1) overall mood, (2) main bull thesis, (3) main bear concern. Be concise and direct.`
 
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`))
+      try {
+        const result = await geminiFlash.generateContentStream(prompt)
+        for await (const chunk of result.stream) {
+          const text = chunk.text()
+          if (text) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
+          }
         }
+      } catch (err: any) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: `Error: ${err.message}` })}\n\n`))
       }
+
       controller.enqueue(encoder.encode('data: [DONE]\n\n'))
       controller.close()
     },

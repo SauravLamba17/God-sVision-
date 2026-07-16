@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef, useState } from 'react'
 
 interface AIPanelProps {
@@ -23,34 +23,28 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
         const res = await fetch('/api/ai/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ panelData, panelName, context }),
+          body: JSON.stringify({ ticker: panelName, data: panelData, context, mode: 'USA' }),
         })
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'AI analysis failed' }))
+          setError(err.error || 'AI analysis failed')
+          setDone(true)
+          return
+        }
 
         const reader = res.body?.getReader()
         if (!reader) return
 
         const decoder = new TextDecoder()
-        let buffer = ''
 
         while (true) {
           const { value, done: streamDone } = await reader.read()
           if (streamDone || cancelled) break
-
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || ''
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            const payload = line.slice(6).trim()
-            if (payload === '[DONE]') { setDone(true); return }
-            try {
-              const parsed = JSON.parse(payload)
-              if (parsed.error) { setError(parsed.error); setDone(true); return }
-              if (parsed.text) setText(prev => prev + parsed.text)
-            } catch { /* ignore */ }
-          }
+          const chunk = decoder.decode(value, { stream: true })
+          if (chunk) setText(prev => prev + chunk)
         }
+        if (!cancelled) setDone(true)
       } catch (err: any) {
         if (!cancelled) setError(err.message || 'Connection failed')
         setDone(true)
@@ -61,14 +55,15 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
     return () => { cancelled = true }
   }, [panelData, panelName, context])
 
-  // Scroll to bottom as text streams in
+  // Suppress unused ref warning
+  void cursorRef
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
   }, [text])
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -102,7 +97,7 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: 'var(--text-accent)', fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em' }}>
-              âš¡ AI ANALYSIS â€” {panelName.toUpperCase()}
+              ⚡ AI ANALYSIS — {panelName.toUpperCase()}
             </span>
             {!done && (
               <span style={{
@@ -124,7 +119,7 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-negative)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
-            âœ•
+            ✕
           </button>
         </div>
 
@@ -139,11 +134,11 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
           }}
         >
           {error ? (
-            <span style={{ color: 'var(--text-negative)' }}>âš  {error}</span>
+            <span style={{ color: 'var(--text-negative)' }}>⚠ {error}</span>
           ) : (
             <>
               {text}
-              {!done && <span style={{ color: 'var(--text-accent)', animation: 'blink 1s step-end infinite' }}>â–‹</span>}
+              {!done && <span style={{ color: 'var(--text-accent)', animation: 'blink 1s step-end infinite' }}>▋</span>}
             </>
           )}
         </div>
@@ -155,7 +150,7 @@ export default function AIPanel({ panelData, panelName, context, onClose }: AIPa
           fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)',
           display: 'flex', justifyContent: 'space-between',
         }}>
-          <span>Powered by Claude Â· GOD&apos;s Vision AI</span>
+          <span>Powered by Gemini · GOD's Vision AI</span>
           <span>ESC to close</span>
         </div>
       </div>

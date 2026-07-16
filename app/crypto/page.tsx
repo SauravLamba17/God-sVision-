@@ -138,7 +138,7 @@ export default function CryptoPage() {
   const [halving, setHalving] = useState({ days: 0, hours: 0, minutes: 0 })
   const [loading, setLoading] = useState(true)
 
-  // Binance real-time WebSocket stream (symbol â†’ ticker)
+  // Binance real-time WebSocket stream (symbol → ticker)
   const binanceTickers = useBinanceStream()
 
   useEffect(() => {
@@ -239,7 +239,7 @@ export default function CryptoPage() {
             {binanceTickers.size > 0 ? (
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 1.5s ease-in-out infinite' }} />
-                BINANCE LIVE Â· {binanceTickers.size} PAIRS
+                BINANCE LIVE · {binanceTickers.size} PAIRS
               </span>
             ) : (
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
@@ -287,7 +287,7 @@ export default function CryptoPage() {
         {selectedCoin && (
           <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
             <div className="panel-header">
-              <span className="panel-header-title">{selectedCoin.name} ({selectedCoin.symbol.toUpperCase()}) â€” 30D OHLC</span>
+              <span className="panel-header-title">{selectedCoin.name} ({selectedCoin.symbol.toUpperCase()}) — 30D OHLC</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className={selectedCoin.price_change_percentage_24h >= 0 ? 'positive font-mono text-[11px]' : 'negative font-mono text-[11px]'}>
                   {formatCurrency(binanceTickers.get(selectedCoin.symbol.toUpperCase() + 'USDT')?.price ?? selectedCoin.current_price)}{' '}
@@ -367,7 +367,7 @@ export default function CryptoPage() {
         {/* Trending */}
         <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
           <div className="panel-header">
-            <span className="panel-header-title">ðŸ”¥ TRENDING</span>
+            <span className="panel-header-title">🔥 TRENDING</span>
           </div>
           {trending.map((t, i) => (
             <div key={i} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: '1px solid #0d1f0d' }}>

@@ -49,9 +49,9 @@ function MarketMoodBar({ mood }: { mood: MarketMood }) {
         <div style={{ width: `${mood.neutral}%`, background: 'var(--text-warning)', transition: 'width 0.6s ease' }} />
         <div style={{ width: `${mood.bearish}%`, background: 'var(--text-negative)', transition: 'width 0.6s ease' }} />
       </div>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', flexShrink: 0 }}>â–²{mood.bullish}%</span>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', flexShrink: 0 }}>▲{mood.bullish}%</span>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-warning)', flexShrink: 0 }}>{mood.neutral}%</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-negative)', flexShrink: 0 }}>â–¼{mood.bearish}%</span>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-negative)', flexShrink: 0 }}>▼{mood.bearish}%</span>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>SCORE: {mood.score > 0 ? '+' : ''}{mood.score}</span>
     </div>
   )
@@ -106,7 +106,7 @@ export default function NewsPage() {
           .catch(() => {})
       }
     } catch {
-      // silent â€” keep showing stale data
+      // silent — keep showing stale data
     } finally {
       setLoading(false)
     }
@@ -245,7 +245,7 @@ export default function NewsPage() {
             className="flex items-center justify-center font-mono text-[10px] text-negative font-bold animate-pulse flex-shrink-0"
             style={{ padding: '4px 12px', background: 'rgba(239,68,68,0.12)', borderBottom: '1px solid rgba(239,68,68,0.4)' }}
           >
-            âš  BREAKING â€” NEW STORIES IN THE LAST 5 MINUTES
+            ⚠ BREAKING — NEW STORIES IN THE LAST 5 MINUTES
           </div>
         )}
 
@@ -263,7 +263,7 @@ export default function NewsPage() {
           </span>
           <span className="font-mono text-[9px] text-muted">|</span>
           <span className="font-mono text-[9px] text-muted">
-            {meta?.sources || 'â€”'} SOURCES LIVE
+            {meta?.sources || '—'} SOURCES LIVE
           </span>
           <span className="font-mono text-[9px] text-muted">|</span>
           <div className="flex items-center gap-1.5">
@@ -275,7 +275,7 @@ export default function NewsPage() {
             className="font-mono text-[9px] text-accent hover:text-primary transition-colors ml-auto"
             style={{ border: '1px solid #1e293b', padding: '2px 8px', background: 'transparent', cursor: 'pointer' }}
           >
-            â†º REFRESH NOW
+            ↺ REFRESH NOW
           </button>
         </div>
 
@@ -283,7 +283,7 @@ export default function NewsPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center flex-1 gap-2">
             <span className="font-mono text-[11px] text-positive">CONNECTING TO NEWS NETWORKS<span className="blink-cursor" /></span>
-            <span className="font-mono text-[9px] text-muted">50+ RSS FEEDS â€¢ GOOGLE NEWS â€¢ HACKERNEWS â€¢ REDDIT</span>
+            <span className="font-mono text-[9px] text-muted">50+ RSS FEEDS • GOOGLE NEWS • HACKERNEWS • REDDIT</span>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
@@ -358,9 +358,9 @@ export default function NewsPage() {
                       )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="font-mono text-[10px] font-bold" style={{ color: 'var(--text-accent)' }}>{item.source}</span>
-                        <span className="text-muted text-[9px]">â€¢</span>
+                        <span className="text-muted text-[9px]">•</span>
                         <span className="font-mono text-[9px]" style={{ color: 'var(--text-muted)' }}>{item.category.toUpperCase()}</span>
-                        <span className="text-muted text-[9px]">â€¢</span>
+                        <span className="text-muted text-[9px]">•</span>
                         <span className="font-mono text-[9px]" style={{ color: isVeryNew ? 'var(--text-negative)' : isNew ? 'var(--text-positive)' : 'var(--text-muted)' }}>
                           {timeAgo(item.publishedAt)}
                         </span>

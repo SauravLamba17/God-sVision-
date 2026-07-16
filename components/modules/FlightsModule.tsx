@@ -3,19 +3,32 @@ import { useState, useEffect } from 'react';
 
 interface Props { compact?: boolean; }
 
+interface Aircraft {
+  icao24: string
+  callsign: string
+  originCountry: string
+  altitude: number | null
+  velocity: number | null
+}
+
 export default function FlightsModule({ compact }: Props) {
-  const [flights, setFlights] = useState<any[]>([]);
+  const [flights, setFlights] = useState<Aircraft[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rateLimited, setRateLimited] = useState(false);
 
   useEffect(() => {
     const limit = compact ? 8 : 15;
     const load = () =>
       fetch('/api/flights')
         .then(r => r.json())
-        .then(d => { setFlights(Array.isArray(d.states) ? d.states.slice(0, limit) : []); setLoading(false); })
+        .then(d => {
+          setFlights(Array.isArray(d.data?.aircraft) ? d.data.aircraft.slice(0, limit) : []);
+          setRateLimited(!!d.rateLimited);
+          setLoading(false);
+        })
         .catch(() => setLoading(false));
     load();
-    const iv = setInterval(load, 10000);
+    const iv = setInterval(load, 15000);
     return () => clearInterval(iv);
   }, [compact]);
 
@@ -27,6 +40,11 @@ export default function FlightsModule({ compact }: Props) {
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>FLIGHTS</span>
         <span style={{ fontSize: 8, color: 'var(--text-positive)' }}>● LIVE</span>
       </div>
+      {rateLimited && (
+        <div style={{ fontSize: '9px', color: 'var(--text-warning)', padding: '4px 8px', flexShrink: 0 }}>
+          ⚠ OpenSky rate limit reached — showing last known positions
+        </div>
+      )}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
           <div style={{ padding: 8, color: 'var(--text-muted)', fontSize: fs }}>Loading…</div>
@@ -43,17 +61,17 @@ export default function FlightsModule({ compact }: Props) {
               </tr>
             </thead>
             <tbody>
-              {flights.map((f: any, i: number) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border-dim)' }}
+              {flights.map((f, i) => (
+                <tr key={f.icao24 || i} style={{ borderBottom: '1px solid var(--border-dim)' }}
                   onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg-hover)'}
                   onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}>
-                  <td style={{ padding: compact ? '3px 5px' : '4px 7px', color: 'var(--text-accent)', fontWeight: 700 }}>{f[1]?.trim() || 'N/A'}</td>
-                  {!compact && <td style={{ padding: '4px 7px', color: 'var(--text-muted)', fontSize: 9 }}>{f[2] || '—'}</td>}
+                  <td style={{ padding: compact ? '3px 5px' : '4px 7px', color: 'var(--text-accent)', fontWeight: 700 }}>{f.callsign?.trim() || 'N/A'}</td>
+                  {!compact && <td style={{ padding: '4px 7px', color: 'var(--text-muted)', fontSize: 9 }}>{f.originCountry || '—'}</td>}
                   <td style={{ padding: compact ? '3px 5px' : '4px 7px', textAlign: 'right', color: 'var(--text-primary)' }}>
-                    {f[7] ? Math.round(f[7] * 3.281).toLocaleString() : '—'}
+                    {f.altitude ? Math.round(f.altitude).toLocaleString() : '—'}
                   </td>
                   <td style={{ padding: compact ? '3px 5px' : '4px 7px', textAlign: 'right', color: 'var(--text-info)' }}>
-                    {f[9] ? `${Math.round(f[9] * 1.944)}kt` : '—'}
+                    {f.velocity ? `${Math.round(f.velocity)}kt` : '—'}
                   </td>
                 </tr>
               ))}

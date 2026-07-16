@@ -72,7 +72,7 @@ export default function InsidersPage() {
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>SEC INSIDER TRANSACTIONS</div>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>Form 4 Filings â€” EDGAR Â· Real-Time Feed</div>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>Form 4 Filings — EDGAR · Real-Time Feed</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <AIButton panelName="Insider Transactions" panelData={txs.slice(0, 5)} context="Recent Form 4 insider transactions from SEC EDGAR. Look for clusters of insider buying/selling, big single transactions, and any notable corporate names. Provide market signal interpretation." />
@@ -91,14 +91,14 @@ export default function InsidersPage() {
             <option value={5000000}>$5M+</option>
           </select>
           <button onClick={load} style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, background: 'var(--border-color)', color: 'var(--text-positive)', border: '1px solid #22c55e40', padding: '4px 10px', borderRadius: 2, cursor: 'pointer' }}>
-            â†º REFRESH
+            ↺ REFRESH
           </button>
         </div>
       </div>
 
       {error && (
         <div style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid #ef444430', fontSize: 10, color: 'var(--text-negative)' }}>
-          EDGAR API: {error} â€” Showing cached data if available.
+          EDGAR API: {error} — Showing cached data if available.
         </div>
       )}
 
@@ -128,7 +128,7 @@ export default function InsidersPage() {
                 >
                   <td style={{ padding: '6px 10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{tx.filedDate}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-primary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.company}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{tx.ticker || 'â€”'}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{tx.ticker || '—'}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.insider}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>{tx.role}</td>
                   <td style={{ padding: '6px 10px' }}><TypeBadge type={tx.transactionType} /></td>
@@ -146,7 +146,7 @@ export default function InsidersPage() {
                     )}
                   </td>
                   <td style={{ padding: '6px 10px' }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{expanded === tx.id ? 'â–²' : 'â–¼'}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{expanded === tx.id ? '▲' : '▼'}</span>
                   </td>
                 </tr>
                 {expanded === tx.id && (
@@ -160,7 +160,7 @@ export default function InsidersPage() {
                             Transaction: {tx.transactionType} of {tx.shares.toLocaleString()} shares at ${tx.pricePerShare.toFixed(2)} each. Total: {formatValue(tx.totalValue)}.
                           </div>
                           <a href={tx.link} target="_blank" rel="noreferrer" style={{ fontSize: 9, color: 'var(--text-accent)', display: 'inline-block', marginTop: 6 }}>
-                            VIEW ON SEC EDGAR â†’
+                            VIEW ON SEC EDGAR →
                           </a>
                         </div>
                         <AIButton
@@ -180,8 +180,8 @@ export default function InsidersPage() {
       </div>
 
       <div style={{ padding: '8px 16px', borderTop: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text-muted)' }}>
-        <span>Source: SEC EDGAR Form 4 RSS Â· {displayed.length} transactions shown Â· Min value: {formatValue(minVal)}</span>
-        <span>Data refreshed on page load Â· Non-real-time</span>
+        <span>Source: SEC EDGAR Form 4 RSS · {displayed.length} transactions shown · Min value: {formatValue(minVal)}</span>
+        <span>Data refreshed on page load · Non-real-time</span>
       </div>
     </div>
   )

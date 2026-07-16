@@ -109,7 +109,7 @@ export default function HeatmapPage() {
           </span>
         </div>
       ) : view === 'sectors' ? (
-        /* Sector view â€” treemap grid weighted by market cap */
+        /* Sector view — treemap grid weighted by market cap */
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(12, 1fr)',
@@ -142,7 +142,7 @@ export default function HeatmapPage() {
                     {sector.name}
                   </div>
                   <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: `${textColor(pct)}80`, marginTop: 2 }}>
-                    {sector.etf} Â· {sector.weight}%
+                    {sector.etf} · {sector.weight}%
                   </div>
                 </div>
                 <div>
@@ -177,7 +177,7 @@ export default function HeatmapPage() {
           })}
         </div>
       ) : (
-        /* Stocks view â€” all individual stocks in a heatmap grid */
+        /* Stocks view — all individual stocks in a heatmap grid */
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',

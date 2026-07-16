@@ -105,7 +105,7 @@ export default function CalendarPage() {
               fontSize:10, padding:'4px 12px', border:`1px solid ${week===w?'var(--text-accent)':'var(--border-color)'}`,
               fontWeight: week==='this'?600:400,
             }}>
-              {w==='prev'?'â† PREV WEEK':w==='this'?'THIS WEEK':'NEXT WEEK â†’'}
+              {w==='prev'?'← PREV WEEK':w==='this'?'THIS WEEK':'NEXT WEEK →'}
             </button>
           ))}
 
@@ -149,23 +149,23 @@ export default function CalendarPage() {
                       background: upcoming ? 'rgba(255,109,0,0.04)' : isToday ? 'rgba(255,109,0,0.02)' : 'transparent',
                     }}>
                       <td style={{ textAlign:'left', color:isToday?'var(--text-accent)':'var(--text-secondary)', fontWeight:isToday?700:400, whiteSpace:'nowrap' }}>{evt.date}</td>
-                      <td style={{ color:'var(--text-muted)', whiteSpace:'nowrap' }}>{evt.time || 'â€”'}</td>
+                      <td style={{ color:'var(--text-muted)', whiteSpace:'nowrap' }}>{evt.time || '—'}</td>
                       <td><span style={{ fontFamily:'IBM Plex Mono', fontSize:10, fontWeight:700, color:'var(--text-accent)' }}>{evt.currency}</span></td>
                       <td style={{ textAlign:'left' }}>
                         <span style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-primary)' }}>{evt.event}</span>
                       </td>
                       <td><ImpactBadge impact={evt.impact} /></td>
-                      <td style={{ color:'var(--text-muted)' }}>{evt.previous || 'â€”'}</td>
-                      <td style={{ color:'var(--text-secondary)' }}>{evt.forecast || 'â€”'}</td>
+                      <td style={{ color:'var(--text-muted)' }}>{evt.previous || '—'}</td>
+                      <td style={{ color:'var(--text-secondary)' }}>{evt.forecast || '—'}</td>
                       <td style={{ color:actualColor(evt.actual, evt.forecast), fontWeight:evt.actual?700:400 }}>
-                        {evt.actual || 'â€”'}
+                        {evt.actual || '—'}
                       </td>
                     </tr>
                   )
                 })}
                 {filtered.length === 0 && !loading && (
                   <tr><td colSpan={8} style={{ textAlign:'center', color:'var(--text-muted)', padding:'24px', fontFamily:'IBM Plex Mono', fontSize:11 }}>
-                    NO EVENTS â€” TRY A DIFFERENT FILTER OR WEEK
+                    NO EVENTS — TRY A DIFFERENT FILTER OR WEEK
                   </td></tr>
                 )}
               </tbody>
@@ -181,10 +181,10 @@ export default function CalendarPage() {
             {upcoming5High.map((evt, i) => (
               <div key={i} style={{ padding:'8px 10px', borderBottom:'1px solid #1b2e1b' }}>
                 <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-primary)', lineHeight:1.3, marginBottom:3 }}>
-                  {evt.event.slice(0, 32)}{evt.event.length > 32 ? 'â€¦' : ''}
+                  {evt.event.slice(0, 32)}{evt.event.length > 32 ? '…' : ''}
                 </div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>{evt.currency} Â· {evt.date}</span>
+                  <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>{evt.currency} · {evt.date}</span>
                 </div>
                 <div style={{ marginTop:3 }}>
                   <Countdown targetDate={evt.date} targetTime={evt.time} />

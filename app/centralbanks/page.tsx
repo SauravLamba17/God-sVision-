@@ -8,7 +8,7 @@ interface Rate { bank: string; country: string; rate: number; lastChange: string
 interface Speech { id: string; bank: string; speaker: string; title: string; date: string; link: string; sentiment: 'HAWKISH' | 'DOVISH' | 'NEUTRAL'; keyWords: string[] }
 
 const SENT_COLORS = { HAWKISH: 'var(--text-negative)', DOVISH: 'var(--text-positive)', NEUTRAL: 'var(--text-warning)' }
-const DIR_ICONS = { UP: 'â–²', DOWN: 'â–¼', HOLD: 'â€”' }
+const DIR_ICONS = { UP: '▲', DOWN: '▼', HOLD: '—' }
 
 function HawkDoveMeter({ speeches }: { speeches: Speech[] }) {
   const hawks = speeches.filter(s => s.sentiment === 'HAWKISH').length
@@ -58,7 +58,7 @@ export default function CentralBanksPage() {
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>CENTRAL BANK INTELLIGENCE</div>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>Fed Â· ECB Â· BOE Â· BOJ Â· BOC Â· RBI â€” Rate Decisions & Speeches</div>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>Fed · ECB · BOE · BOJ · BOC · RBI — Rate Decisions & Speeches</div>
         </div>
         <AIButton panelName="Central Banks" panelData={{ rates, speeches: speeches.slice(0, 5) }} context="Analyze the current central bank landscape: rates, recent speeches, hawkish vs dovish balance. What's the global monetary policy trend? Where are the risks and opportunities?" />
       </div>
@@ -134,12 +134,12 @@ export default function CentralBanksPage() {
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>{expanded === speech.id ? 'â–²' : 'â–¼'}</span>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>{expanded === speech.id ? '▲' : '▼'}</span>
               </div>
               {expanded === speech.id && (
                 <div style={{ padding: '10px 36px', borderBottom: '1px solid #1b2e1b', background: 'var(--bg-terminal)', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                   <a href={speech.link} target="_blank" rel="noreferrer" style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-accent)', textDecoration: 'none' }}>
-                    VIEW FULL SPEECH ON {speech.bank} WEBSITE â†’
+                    VIEW FULL SPEECH ON {speech.bank} WEBSITE →
                   </a>
                   <AIButton
                     panelName={`${speech.bank} Speech`}

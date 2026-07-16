@@ -1,6 +1,8 @@
 ﻿import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getQuotes } from '@/lib/apis/yahoo'
+import { sendAlertEmail } from '@/lib/resend'
+import { sendPushNotification } from '@/lib/webpush'
 
 export async function GET() {
   try {
@@ -27,6 +29,33 @@ export async function GET() {
           where: { id: alert.id },
           data: { triggered: true, notified: true, triggeredAt: new Date() },
         })
+
+        // Email + push are additional delivery channels alongside the existing
+        // browser Notification() fired client-side in components/terminal/AlertChecker.tsx
+        // — that logic is untouched. This never blocks/breaks the trigger loop.
+        if (alert.userId) {
+          try {
+            const user = await prisma.user.findUnique({ where: { id: alert.userId } })
+            if (user?.email) {
+              await sendAlertEmail(user.email, `${alert.ticker} Alert Triggered`, {
+                ticker: alert.ticker,
+                condition: alert.condition,
+                targetPrice: alert.targetPrice,
+                currentPrice: price,
+              })
+            }
+
+            const subs = await prisma.pushSubscription.findMany({ where: { userId: alert.userId } })
+            for (const sub of subs) {
+              await sendPushNotification(
+                { endpoint: sub.endpoint, keys: sub.keys as any },
+                { title: `${alert.ticker} Alert`, body: `${alert.condition} $${alert.targetPrice} triggered`, url: `/markets?ticker=${alert.ticker}` }
+              )
+            }
+          } catch (notifyErr) {
+            console.error('[Alerts] Email/push dispatch failed:', notifyErr)
+          }
+        }
       }
     }
 

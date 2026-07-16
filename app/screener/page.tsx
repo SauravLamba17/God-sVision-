@@ -29,7 +29,7 @@ function mktCapLabel(cap: number) {
 }
 
 function RatingBadge({ rating }: { rating: string }) {
-  if (!rating) return <span style={{ color: 'var(--text-muted)' }}>â€”</span>
+  if (!rating) return <span style={{ color: 'var(--text-muted)' }}>—</span>
   const n = parseFloat(rating)
   const color = n <= 2 ? 'var(--text-positive)' : n <= 3 ? 'var(--text-warning)' : 'var(--text-negative)'
   const label = n <= 1.5 ? 'STRONG BUY' : n <= 2.5 ? 'BUY' : n <= 3.5 ? 'HOLD' : n <= 4.5 ? 'SELL' : 'STRONG SELL'
@@ -78,7 +78,7 @@ export default function ScreenerPage() {
 
   const SortTh = ({ col, label }: { col: keyof Stock; label: string }) => (
     <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none', textAlign: col === 'symbol' || col === 'shortName' ? 'left' : 'right', whiteSpace: 'nowrap' }}>
-      {label} {sort.key === col ? (sort.dir === 1 ? 'â–²' : 'â–¼') : ''}
+      {label} {sort.key === col ? (sort.dir === 1 ? '▲' : '▼') : ''}
     </th>
   )
 
@@ -102,7 +102,7 @@ export default function ScreenerPage() {
                   transition: 'all 0.15s',
                 }}
               >
-                {scrId === s.id ? 'â–¶ ' : '  '}{s.label}
+                {scrId === s.id ? '▶ ' : '  '}{s.label}
               </button>
             ))}
           </div>
@@ -114,7 +114,7 @@ export default function ScreenerPage() {
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{selected.shortName}</div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>${selected.price?.toFixed(2)}</div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: selected.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                {selected.changePct >= 0 ? 'â–²' : 'â–¼'} {formatPercent(selected.changePct)}
+                {selected.changePct >= 0 ? '▲' : '▼'} {formatPercent(selected.changePct)}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
                 {[
@@ -141,7 +141,7 @@ export default function ScreenerPage() {
 
       {/* Right: Table */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <PanelWrapper title={`${SCREENERS.find(s => s.id === scrId)?.label || 'SCREENER'} â€” ${stocks.length} RESULTS`}
+        <PanelWrapper title={`${SCREENERS.find(s => s.id === scrId)?.label || 'SCREENER'} — ${stocks.length} RESULTS`}
           loading={loading} error={error} source={source} onRefresh={fetchData}>
           <table className="data-table">
             <thead>
@@ -178,18 +178,18 @@ export default function ScreenerPage() {
                     </td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(s.price)}</td>
                     <td style={{ color: s.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                      {s.changePct >= 0 ? 'â–²' : 'â–¼'} {formatPercent(s.changePct)}
+                      {s.changePct >= 0 ? '▲' : '▼'} {formatPercent(s.changePct)}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>{formatNumber(s.volume)}</td>
                     <td>{mktCapLabel(s.marketCap)}</td>
                     <td style={{ color: s.trailingPE > 40 ? 'var(--text-warning)' : 'var(--text-secondary)' }}>
-                      {s.trailingPE ? s.trailingPE.toFixed(1) : 'â€”'}
+                      {s.trailingPE ? s.trailingPE.toFixed(1) : '—'}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>
-                      {s.forwardPE ? s.forwardPE.toFixed(1) : 'â€”'}
+                      {s.forwardPE ? s.forwardPE.toFixed(1) : '—'}
                     </td>
                     <td style={{ color: 'var(--text-positive)' }}>
-                      {s.dividendYield ? `${(s.dividendYield * 100).toFixed(2)}%` : 'â€”'}
+                      {s.dividendYield ? `${(s.dividendYield * 100).toFixed(2)}%` : '—'}
                     </td>
                     <td style={{ textAlign: 'right' }}><RatingBadge rating={s.analystRating} /></td>
                     <td style={{ textAlign: 'right', minWidth: 80 }}>
@@ -200,7 +200,7 @@ export default function ScreenerPage() {
                           </div>
                           <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{pct52.toFixed(0)}%</span>
                         </div>
-                      ) : 'â€”'}
+                      ) : '—'}
                     </td>
                   </tr>
                 )

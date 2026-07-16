@@ -6,7 +6,9 @@ const TTL = 4 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {
   try {
-    const symbols = req.nextUrl.searchParams.get('symbols')?.split(',').filter(Boolean) ?? [];
+    const url = new URL(req.url);
+    const symbolsParam = url.searchParams.get('symbols') ?? '';
+    const symbols = symbolsParam.split(',').map(s => s.trim()).filter(Boolean);
     if (symbols.length === 0) return NextResponse.json({});
 
     const cacheKey = [...symbols].sort().join(',');
@@ -14,17 +16,21 @@ export async function GET(req: NextRequest) {
     if (cached && Date.now() - cached.ts < TTL) return NextResponse.json(cached.data);
 
     const results: Record<string, number> = {};
-    const quotes = await Promise.allSettled(
-      symbols.map(s => yahooFinance.quote(s, { fields: ['regularMarketPreviousClose'] }))
+    await Promise.allSettled(
+      symbols.map(async (symbol) => {
+        try {
+          const quote = await yahooFinance.quote(symbol);
+          if (quote?.regularMarketPreviousClose) {
+            results[symbol] = quote.regularMarketPreviousClose;
+          }
+        } catch { /* silent per-symbol */ }
+      })
     );
-    quotes.forEach((result, i) => {
-      if (result.status === 'fulfilled' && result.value?.regularMarketPreviousClose) {
-        results[symbols[i]] = result.value.regularMarketPreviousClose;
-      }
-    });
 
     cache.set(cacheKey, { data: results, ts: Date.now() });
-    return NextResponse.json(results);
+    return NextResponse.json(results, {
+      headers: { 'Cache-Control': 's-maxage=14400' }
+    });
   } catch {
     return NextResponse.json({});
   }

@@ -40,7 +40,7 @@ function describeArc(cx: number, cy: number, r: number, startAngle: number, endA
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`
 }
 
-// Gauge goes from -150Â° to +150Â° (total 300Â°), starts at left (-150 = bottom-left)
+// Gauge goes from -150° to +150° (total 300°), starts at left (-150 = bottom-left)
 const GAUGE_START = -150
 const GAUGE_END = 150
 const TOTAL_ARC = 300
@@ -104,7 +104,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
         const res = await fetch('/api/fear-radar')
         const j = await res.json()
         if (j.data) setData(j.data)
-      } catch { /* network/parse errors â€” silently degrade */ }
+      } catch { /* network/parse errors — silently degrade */ }
       finally { setLoading(false) }
     }
     load()
@@ -127,7 +127,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
     <div style={{ fontFamily: 'IBM Plex Mono' }}>
       {!compact && (
         <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>FEAR RADAR â€” 5-SIGNAL INDEX</span>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>FEAR RADAR — 5-SIGNAL INDEX</span>
           <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{new Date(data.timestamp).toLocaleTimeString()}</span>
         </div>
       )}
@@ -168,7 +168,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
                 <div style={{ height: 3, background: 'var(--border-color)', borderRadius: 2, position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${sig.score}%`, background: getColor(sig.score), borderRadius: 2, transition: 'width 1s ease' }} />
                 </div>
-                <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{Math.round(sig.weight * 100)}% weight Â· score {sig.score}</div>
+                <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{Math.round(sig.weight * 100)}% weight · score {sig.score}</div>
               </div>
             ))}
           </div>

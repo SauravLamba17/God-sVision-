@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef, useState } from 'react'
 
 function isAfter9AmET(): boolean {
@@ -24,30 +24,13 @@ export default function DailyBrief() {
 
     try {
       const res = await fetch('/api/ai/brief')
-      const reader = res.body?.getReader()
-      if (!reader) return
-
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { value, done: streamDone } = await reader.read()
-        if (streamDone) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const payload = line.slice(6).trim()
-          if (payload === '[DONE]') { setDone(true); break }
-          try {
-            const parsed = JSON.parse(payload)
-            if (parsed.error) { setError(parsed.error); setDone(true); return }
-            if (parsed.text) setText(prev => prev + parsed.text)
-          } catch { /* ignore */ }
-        }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (data.brief) {
+        setText(data.brief)
+        setDone(true)
+      } else if (data.error) {
+        setError(data.error)
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch brief')
@@ -62,6 +45,7 @@ export default function DailyBrief() {
       setTriggered(true)
       fetchBrief()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -92,9 +76,9 @@ export default function DailyBrief() {
             color: 'var(--text-warning)', letterSpacing: '0.08em',
             textShadow: '0 0 12px rgba(245,158,11,0.4)',
           }}>
-            âš¡ AI MORNING BRIEF â€” {dateStr.toUpperCase()}
+            ⚡ AI MORNING BRIEF — {dateStr.toUpperCase()}
           </span>
-          {loading && !done && (
+          {loading && (
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 1s infinite' }} />
               GENERATING
@@ -111,7 +95,7 @@ export default function DailyBrief() {
             letterSpacing: '0.06em',
           }}
         >
-          {loading ? 'GENERATING...' : done ? 'â†» REGENERATE' : 'GENERATE BRIEF'}
+          {loading ? 'GENERATING...' : done ? '↻ REGENERATE' : 'GENERATE BRIEF'}
         </button>
       </div>
 
@@ -129,16 +113,13 @@ export default function DailyBrief() {
         }}
       >
         {error ? (
-          <span style={{ color: 'var(--text-negative)' }}>âš  {error}</span>
+          <span style={{ color: 'var(--text-negative)' }}>⚠ {error}</span>
         ) : text ? (
-          <>
-            {text}
-            {!done && <span style={{ color: 'var(--text-warning)', animation: 'blink 1s step-end infinite' }}>â–‹</span>}
-          </>
+          text
         ) : (
           <span style={{ color: 'var(--text-muted)' }}>
             {isAfter9AmET()
-              ? 'Click GENERATE BRIEF for today\'s AI-powered market analysis...'
+              ? "Click GENERATE BRIEF for today's AI-powered market analysis..."
               : 'Daily brief generates at 9:00 AM ET. Click GENERATE BRIEF to preview now.'}
           </span>
         )}
@@ -146,7 +127,7 @@ export default function DailyBrief() {
 
       {done && (
         <div style={{ borderTop: '1px solid #1e293b', padding: '3px 10px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
-          Powered by Claude Â· GOD&apos;s Vision AI Â· {new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })} ET
+          Powered by Gemini · GOD's Vision AI · {new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })} ET
         </div>
       )}
     </div>

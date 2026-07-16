@@ -20,7 +20,7 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
   const isIndia       = mode === 'INDIA'
   const marketStatus  = isIndia ? getIndianMarketStatus() : getMarketStatus()
   const exchange      = isIndia ? 'NSE/BSE' : 'NYSE/NASDAQ'
-  const statusDot     = marketStatus === 'OPEN' ? 'â— OPEN' : 'â—‹ CLOSED'
+  const statusDot     = marketStatus === 'OPEN' ? '● OPEN' : '○ CLOSED'
   const statusColor   = marketStatus === 'OPEN' ? (isIndia ? '#FF9933' : 'var(--text-positive)') : 'var(--text-negative)'
   const accentColor   = isIndia ? '#FF9933' : 'var(--text-accent)'
 
@@ -43,14 +43,14 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
         boxShadow: `0 0 40px ${accentColor}30`,
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, letterSpacing: '0.1em', marginBottom: 16 }}>
-          {isIndia ? 'ðŸ‡®ðŸ‡³ SWITCHING TO INDIA MODE' : 'ðŸ‡ºðŸ‡¸ SWITCHING TO USA MODE'}
+          {isIndia ? '🇮🇳 SWITCHING TO INDIA MODE' : '🇺🇸 SWITCHING TO USA MODE'}
         </div>
         {isIndia && (
           <>
             <div style={{ fontSize: 11, color: 'var(--text-primary)', marginBottom: 6 }}>
-              1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>â‚¹{rate.toFixed(2)}</span>
+              1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>₹{rate.toFixed(2)}</span>
             </div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated Â· {istTime} IST</div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated · {istTime} IST</div>
           </>
         )}
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6 }}>
@@ -98,7 +98,7 @@ export default function ModeToggle() {
     <>
       <button
         onClick={handleToggle}
-        title="Ctrl+Shift+I â€” Toggle India/USA Mode"
+        title="Ctrl+Shift+I — Toggle India/USA Mode"
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
           background: bg,
@@ -114,13 +114,13 @@ export default function ModeToggle() {
       >
         {isIndia ? (
           <>
-            <span style={{ color: textActive }}>ðŸ‡®ðŸ‡³ INDIA MODE</span>
-            <span style={{ color: textSecond, fontSize: 9 }}>â†’ ðŸ‡ºðŸ‡¸ USA</span>
+            <span style={{ color: textActive }}>🇮🇳 INDIA MODE</span>
+            <span style={{ color: textSecond, fontSize: 9 }}>→ 🇺🇸 USA</span>
           </>
         ) : (
           <>
-            <span style={{ color: 'var(--text-primary)' }}>ðŸ‡ºðŸ‡¸ USA MODE</span>
-            <span style={{ color: textActive, fontSize: 9 }}>â†’ ðŸ‡®ðŸ‡³ INDIA</span>
+            <span style={{ color: 'var(--text-primary)' }}>🇺🇸 USA MODE</span>
+            <span style={{ color: textActive, fontSize: 9 }}>→ 🇮🇳 INDIA</span>
           </>
         )}
       </button>

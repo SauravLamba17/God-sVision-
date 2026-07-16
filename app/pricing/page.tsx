@@ -20,7 +20,7 @@ export default function PricingPage() {
         maxWidth: '480px',
       }}>
         <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-accent)', marginBottom: '8px' }}>
-          ⚡ GOD&apos;s VISION
+          ⚡ GOD's VISION
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '8px' }}>
           Currently FREE for all users

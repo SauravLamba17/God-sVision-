@@ -6,6 +6,8 @@ import CandlestickChart from '@/components/charts/CandlestickChart'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import AIButton from '@/components/terminal/AIButton'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
+import { useAlpacaStream } from '@/lib/hooks/useAlpacaStream'
+import { useFlash } from '@/lib/hooks/useFlash'
 
 const DEFAULT_TICKERS = ['SPY','QQQ','AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','JPM','PLTR','AMD']
 
@@ -49,6 +51,10 @@ function MarketsInner() {
   const urlTicker = searchParams.get('ticker')
 
   const [selectedTicker, setSelectedTicker] = useState(urlTicker || 'SPY')
+
+  const { tickers: alpacaTickers, connected: alpacaConnected } =
+    useAlpacaStream([selectedTicker ?? 'SPY'])
+
   const [searchInput,    setSearchInput]    = useState('')
   const [period,         setPeriod]         = useState('3mo')
   const [quote,          setQuote]          = useState<Quote|null>(null)
@@ -62,6 +68,12 @@ function MarketsInner() {
   const [watchlist,      setWatchlist]      = useState<Quote[]>([])
   const [source,         setSource]         = useState('live')
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['SMA20','SMA50','RSI','MACD'])
+
+  const liveTicker = alpacaTickers.get(selectedTicker ?? 'SPY')
+  const displayPrice = liveTicker?.price || quote?.regularMarketPrice || 0
+  const displayChangePct = liveTicker?.changePct || quote?.regularMarketChangePercent || 0
+
+  const flash = useFlash(displayPrice)
 
   const toggle = (ind: string) =>
     setActiveIndicators(arr => arr.includes(ind) ? arr.filter(a => a !== ind) : [...arr, ind])
@@ -191,15 +203,37 @@ function MarketsInner() {
               <span style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)' }}>{quote.shortName}</span>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:24, fontWeight:700, color:'var(--text-primary)' }}>{formatCurrency(quote.regularMarketPrice)}</span>
+              <span style={{
+                fontFamily:'IBM Plex Mono', fontSize:24, fontWeight:700,
+                color: flash === 'up' ? '#00e676' : flash === 'down' ? '#ff1744' : 'var(--text-primary)',
+                background: flash === 'up' ? 'rgba(0,230,118,0.08)' : flash === 'down' ? 'rgba(255,23,68,0.08)' : 'transparent',
+                transition: 'all 400ms ease',
+                padding: '2px 6px',
+                borderRadius: '3px',
+              }}>{formatCurrency(displayPrice)}</span>
               <div>
-                <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, fontWeight:700, color: quote.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                  {quote.regularMarketChangePercent>=0 ? 'â–²' : 'â–¼'} {formatPercent(quote.regularMarketChangePercent)}
+                <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, fontWeight:700, color: displayChangePct>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                  {displayChangePct>=0 ? '▲' : '▼'} {formatPercent(displayChangePct)}
                 </div>
                 <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color: quote.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                   {quote.regularMarketChange>=0 ? '+' : ''}{quote.regularMarketChange?.toFixed(2)}
                 </div>
               </div>
+              {alpacaConnected ? (
+                <span style={{
+                  background: 'rgba(0,230,118,0.1)', color: '#00e676', border: '1px solid rgba(0,230,118,0.3)',
+                  borderRadius: '20px', padding: '1px 8px', fontSize: '9px', fontWeight: 700, fontFamily: 'IBM Plex Mono',
+                }}>
+                  ● LIVE
+                </span>
+              ) : (
+                <span style={{
+                  background: 'rgba(255,152,0,0.1)', color: '#ff9800', border: '1px solid rgba(255,152,0,0.3)',
+                  borderRadius: '20px', padding: '1px 8px', fontSize: '9px', fontWeight: 700, fontFamily: 'IBM Plex Mono',
+                }}>
+                  ● DELAYED 15m
+                </span>
+              )}
             </div>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
               {Object.entries(signals).filter(([k]) => k !== 'rsi' && k !== 'macdValue').map(([k,v]) => (
@@ -252,14 +286,14 @@ function MarketsInner() {
         {/* Candlestick Chart with integrated RSI/MACD */}
         <div style={{ border:'1px solid #1e293b', background:'var(--bg-terminal)', borderRadius:2, overflow:'hidden' }}>
           <div className="panel-header">
-            <span className="panel-header-title">{selectedTicker} â€” OHLCV Â· {PERIODS.find(p=>p.value===period)?.label}</span>
+            <span className="panel-header-title">{selectedTicker} — OHLCV · {PERIODS.find(p=>p.value===period)?.label}</span>
             <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color: source==='live' ? 'var(--text-positive)' : 'var(--text-warning)' }}>
-              {source==='live' ? 'â— LIVE' : 'âš  CACHED'}
+              {source==='live' ? '● LIVE' : '⚠ CACHED'}
             </span>
           </div>
           {rateLimited ? (
             <div style={{ height:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, color:'var(--text-warning)' }}>âš  YAHOO FINANCE RATE LIMIT</div>
+              <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, color:'var(--text-warning)' }}>⚠ YAHOO FINANCE RATE LIMIT</div>
               <div style={{ fontFamily:'IBM Plex Mono', fontSize:11, color:'var(--text-muted)' }}>Auto-retrying in {retryCountdown}s...</div>
               <button onClick={() => fetchTechnicals(selectedTicker, period)}
                 style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', background:'transparent', border:'1px solid #1e3a5f', padding:'4px 12px', cursor:'pointer', borderRadius:2 }}>
@@ -341,7 +375,7 @@ function MarketsInner() {
             ].map(l => (
               <a key={l.label} href={l.href} style={{ display:'block', fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-accent)', padding:'3px 0', borderBottom:'1px solid rgba(30,41,59,0.3)', textDecoration:'none' }}
                 onMouseEnter={e => (e.currentTarget.style.color='var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color='var(--text-accent)')}>
-                â†’ {l.label}
+                → {l.label}
               </a>
             ))}
           </div>

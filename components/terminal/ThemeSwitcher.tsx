@@ -11,10 +11,10 @@ const THEME_OPTIONS: Array<{
   desc: string;
   colors: string[];
 }> = [
-  { id: 'dark',          label: 'Dark',          icon: 'ðŸŒ™', desc: 'Bloomberg terminal',    colors: ['var(--bg-terminal)', 'var(--bg-terminal)', 'var(--text-accent)'] },
+  { id: 'dark',          label: 'Dark',          icon: '🌙', desc: '',                      colors: ['var(--bg-terminal)', 'var(--bg-terminal)', 'var(--text-accent)'] },
   { id: 'dark-contrast', label: 'High Contrast',  icon: 'â¬›', desc: 'Maximum accessibility', colors: ['var(--bg-terminal)', '#0a0a0a', '#ff8c00'] },
-  { id: 'light',         label: 'Light',          icon: 'â˜€ï¸', desc: 'Clean daytime theme',   colors: ['#f0f4f0', '#ffffff', '#cc4400'] },
-  { id: 'system',        label: 'System',         icon: 'ðŸ’»', desc: 'Follows your OS',       colors: ['#1a1a1a', '#f0f4f0', 'var(--text-muted)'] },
+  { id: 'light',         label: 'Light',          icon: '☀️', desc: 'Clean daytime theme',   colors: ['#f0f4f0', '#ffffff', '#cc4400'] },
+  { id: 'system',        label: 'System',         icon: '💻', desc: 'Follows your OS',       colors: ['#1a1a1a', '#f0f4f0', 'var(--text-muted)'] },
 ];
 
 export default function ThemeSwitcher() {
@@ -105,9 +105,11 @@ export default function ThemeSwitcher() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? 'var(--text-accent)' : 'var(--text-primary)' }}>
                 {opt.label}
-                {isActive && <span style={{ marginLeft: 6, fontSize: 8, color: 'var(--text-accent)' }}>âœ“ ACTIVE</span>}
+                {isActive && <span style={{ marginLeft: 6, fontSize: 8, color: 'var(--text-accent)' }}>✓ ACTIVE</span>}
               </div>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{opt.desc}</div>
+              {opt.desc && (
+                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{opt.desc}</div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
               {opt.colors.map((c, i) => (
@@ -143,7 +145,7 @@ export default function ThemeSwitcher() {
       >
         <span>{active.icon}</span>
         <span>THEME</span>
-        <span style={{ fontSize: 7 }}>{open ? 'â–²' : 'â–¼'}</span>
+        <span style={{ fontSize: 7 }}>{open ? '▲' : '▼'}</span>
       </button>
       {dropdown}
     </>

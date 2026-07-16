@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Anthropic from '@anthropic-ai/sdk'
+import { geminiGenerate } from '@/lib/gemini'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import {
@@ -7,7 +7,7 @@ import {
 } from '@/lib/apis/analyst-data'
 import { getIndianMarketStatus } from '@/lib/apis/india'
 
-const KEY_VALID = (k?: string) => !!k && !k.startsWith('your_') && k !== 'demo' && k.length > 20
+const KEY_VALID = () => !!process.env.GEMINI_API_KEY
 
 const SECTOR_MAP_IN: Record<string, string> = {
   'TCS.NS': 'IT', 'INFY.NS': 'IT',
@@ -161,7 +161,7 @@ Respond with ONLY valid JSON (no markdown code fences, no commentary before or a
 }
 topPicks must contain exactly 5 entries, ranked by conviction. Keep string fields concise (1-2 sentences).`
 
-function parseClaudeJson(text: string): any {
+function parseJson(text: string): any {
   const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   return JSON.parse(cleaned)
 }
@@ -194,26 +194,17 @@ export async function GET(req: NextRequest) {
       } catch { /* news optional */ }
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
     let result: any
     let source: 'live' | 'mock' = 'mock'
 
-    if (KEY_VALID(apiKey)) {
+    if (KEY_VALID()) {
       try {
-        const client = new Anthropic({ apiKey })
         const userPrompt = `Snapshot timestamp: ${new Date().toISOString()}\nMarket: ${market === 'IN' ? 'India NSE/BSE' : 'US NYSE/NASDAQ'}\n\nTechnical snapshots:\n${JSON.stringify(snapshots, null, 1)}\n\nMatched news headlines by ticker:\n${JSON.stringify(newsMap, null, 1)}\n\nProduce the trading briefing JSON now.`
-        const msg = await client.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
-          temperature: 0.3,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userPrompt }],
-        })
-        const textBlock = msg.content.find((b: any) => b.type === 'text') as any
-        result = parseClaudeJson(textBlock?.text || '')
+        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT)
+        result = parseJson(text)
         source = 'live'
       } catch (err) {
-        console.error('Analyst Claude synthesis failed, falling back to rule-based:', err)
+        console.error('Analyst Gemini synthesis failed, falling back to rule-based:', err)
         result = buildRuleBasedSynthesis(snapshots, market, newsMap)
       }
     } else {

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useMode } from '@/lib/context/ModeContext'
@@ -50,7 +50,7 @@ const trendColor = (t: string) => t === 'INFLOW' ? 'var(--text-positive)' : t ==
 function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: string }) {
   const rr = pick.entry > 0
     ? ((pick.target1 - pick.entry) / (pick.entry - pick.stopLoss)).toFixed(2)
-    : 'â€”'
+    : '–'
   const gainPerShare = (pick.target1 - pick.entry).toFixed(2)
   const lossPerShare = (pick.entry - pick.stopLoss).toFixed(2)
 
@@ -66,7 +66,7 @@ function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: st
       color: 'var(--text-secondary)',
     }}>
       <div style={{ fontWeight: 700, color: 'var(--text-warning)', marginBottom: 4, fontSize: 8, letterSpacing: '0.06em' }}>
-        ðŸ“š WHAT DOES THIS MEAN?
+        📚 WHAT DOES THIS MEAN?
       </div>
       <div>
         The AI thinks <b style={{ color: 'var(--text-primary)' }}>{pick.ticker.replace('.NS', '')}</b> will go{' '}
@@ -77,13 +77,13 @@ function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: st
       <div style={{ marginTop: 4 }}>
         IF YOU {pick.action === 'SELL' ? 'SHORT SELL' : 'BUY'} at {currency}{pick.entry}:
         <div style={{ marginTop: 2, paddingLeft: 8 }}>
-          <div>â€¢ You could <b style={{ color: 'var(--text-positive)' }}>gain {currency}{gainPerShare}/share</b> if it hits T1 ({currency}{pick.target1})</div>
-          <div>â€¢ You could <b style={{ color: 'var(--text-negative)' }}>lose {currency}{lossPerShare}/share</b> if it hits SL ({currency}{pick.stopLoss})</div>
-          <div>â€¢ For every {currency}1 risked, you could gain <b style={{ color: 'var(--text-positive)' }}>{currency}{rr}</b></div>
+          <div>• You could <b style={{ color: 'var(--text-positive)' }}>gain {currency}{gainPerShare}/share</b> if it hits T1 ({currency}{pick.target1})</div>
+          <div>• You could <b style={{ color: 'var(--text-negative)' }}>lose {currency}{lossPerShare}/share</b> if it hits SL ({currency}{pick.stopLoss})</div>
+          <div>• For every {currency}1 risked, you could gain <b style={{ color: 'var(--text-positive)' }}>{currency}{rr}</b></div>
         </div>
       </div>
       <div style={{ marginTop: 5, padding: '4px 6px', background: 'rgba(239,68,68,0.08)', borderLeft: '2px solid #ef4444', fontSize: 8 }}>
-        âš  This is AI analysis, not financial advice. Never invest money you cannot afford to lose.
+        ⚠ This is AI analysis, not financial advice. Never invest money you cannot afford to lose.
       </div>
     </div>
   )
@@ -94,7 +94,7 @@ export default function AnalystPanel() {
   const [isBeginnerMode] = useBeginnerMode()
   const market = isIndia ? 'IN' : 'US'
   const accent = isIndia ? '#FF9933' : 'var(--text-accent)'
-  const currency = isIndia ? 'â‚¹' : '$'
+  const currency = isIndia ? '₹' : '$'
 
   const [data, setData] = useState<AnalystData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -153,21 +153,25 @@ export default function AnalystPanel() {
     fetchData()
   }
 
-  const refreshCountdown = data ? fmtCountdown(data.nextRefresh - now) : 'â€”'
+  const refreshCountdown = data ? fmtCountdown(data.nextRefresh - now) : '–'
 
   const statusColor = data?.marketStatus === 'OPEN' ? 'var(--text-positive)' : data?.marketStatus === 'PRE-OPEN' || data?.marketStatus === 'AFTER-HOURS' ? 'var(--text-warning)' : 'var(--text-negative)'
 
   const sectionTitleStyle: React.CSSProperties = { fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '6px 10px 3px' }
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: `2px solid ${accent}`, background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div style={{
+      fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: `2px solid ${accent}`, background: 'var(--bg-panel)',
+      display: 'flex', flexDirection: 'column', height: '100%',
+      width: '100%', minWidth: 0, maxWidth: '100%', overflowX: 'hidden', overflowY: 'hidden', boxSizing: 'border-box',
+    }}>
       {/* Sticky header */}
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: '0.08em' }}>ðŸ¤– GOD&apos;S VISION ANALYST</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: '0.08em' }}>🤖 GOD'S VISION ANALYST</span>
           {data && (
             <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 2, background: `${statusColor}20`, color: statusColor }}>
-              â— {data.marketStatus}
+              ● {data.marketStatus}
             </span>
           )}
           {source && (
@@ -184,7 +188,7 @@ export default function AnalystPanel() {
               background: 'none', border: 'none', cursor: canManualRefresh ? 'pointer' : 'not-allowed',
               color: canManualRefresh ? accent : 'var(--text-muted)', fontSize: 13,
             }}>
-            â†»{!canManualRefresh && <span style={{ fontSize: 7, marginLeft: 3 }}>{fmtCountdown(manualCooldownLeft)}</span>}
+            ↻{!canManualRefresh && <span style={{ fontSize: 7, marginLeft: 3 }}>{fmtCountdown(manualCooldownLeft)}</span>}
           </button>
         </div>
       </div>
@@ -209,7 +213,7 @@ export default function AnalystPanel() {
                 lineHeight: 1.6,
               }}>
                 <div style={{ fontWeight: 700, marginBottom: 3, fontSize: 8, letterSpacing: '0.06em' }}>
-                  âš  FOR LEARNING ONLY â€” BEGINNER MODE ON
+                  ⚠ FOR LEARNING ONLY — BEGINNER MODE ON
                 </div>
                 These are AI-generated trading suggestions, not financial advice.
                 Never invest money you cannot afford to lose.
@@ -232,7 +236,7 @@ export default function AnalystPanel() {
               TOP PICKS
               {isBeginnerMode && (
                 <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
-                  â€” AI-suggested trades based on technical analysis
+                  — AI-suggested trades based on technical analysis
                 </span>
               )}
             </div>
@@ -250,7 +254,7 @@ export default function AnalystPanel() {
                         <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{p.name}</span>
                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: convictionColor(p.conviction) }} title={p.conviction} />
                       </div>
-                      <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{isOpen ? 'â–²' : 'â–¼'}</span>
+                      <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{isOpen ? '▲' : '▼'}</span>
                     </div>
                     <div style={{ padding: '0 8px 6px', display: 'flex', gap: 12, fontSize: 8, color: 'var(--text-muted)' }}>
                       <span>Entry <b style={{ color: 'var(--text-primary)' }}>{currency}{p.entry}</b></span>
@@ -265,16 +269,16 @@ export default function AnalystPanel() {
                         <b style={{ color: 'var(--text-secondary)' }}>
                           {p.entry > 0 && p.stopLoss > 0
                             ? `1:${((p.target1 - p.entry) / Math.max(p.entry - p.stopLoss, 0.01)).toFixed(1)}`
-                            : 'â€”'}
+                            : '–'}
                         </b>
                       </span>
                     </div>
                     {isOpen && (
                       <div style={{ padding: '6px 8px 8px', borderTop: '1px solid #1b2e1b', fontSize: 9, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         <div style={{ marginBottom: 4 }}>{p.technicalSummary}</div>
-                        <div style={{ marginBottom: 4, color: 'var(--text-muted)' }}>ðŸ“° {p.newsCatalyst}</div>
+                        <div style={{ marginBottom: 4, color: 'var(--text-muted)' }}>📰 {p.newsCatalyst}</div>
                         <div style={{ marginBottom: 4, color: 'var(--text-muted)' }}>
-                          âš™ <GlossaryTooltip term={
+                          ⚙ <GlossaryTooltip term={
                             p.optionsStrategy.includes('Bull Call') ? 'BULL_CALL_SPREAD' :
                             p.optionsStrategy.includes('Iron Condor') ? 'IRON_CONDOR' :
                             p.optionsStrategy.includes('Put') ? 'PUT_OPTION' : 'CALL_OPTION'
@@ -284,7 +288,7 @@ export default function AnalystPanel() {
                         <button
                           onClick={() => setSelectedTicker(p.ticker)}
                           style={{ fontSize: 8, padding: '3px 8px', background: `${accent}15`, color: accent, border: `1px solid ${accent}40`, borderRadius: 2, cursor: 'pointer', marginTop: 4 }}>
-                          DEEP DIVE â†’
+                          DEEP DIVE →
                         </button>
                       </div>
                     )}
@@ -337,7 +341,7 @@ export default function AnalystPanel() {
               SECTOR ROTATION
               {isBeginnerMode && (
                 <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
-                  â€” which industries money is flowing into/out of
+                  — which industries money is flowing into/out of
                 </span>
               )}
             </div>
@@ -351,15 +355,15 @@ export default function AnalystPanel() {
 
             {/* Risk Warnings */}
             <div style={{ margin: '0 8px 8px', padding: '6px 8px', border: '1px solid #422006', background: '#1a1206', fontSize: 8, color: '#fbbf24' }}>
-              {data.riskWarnings.map((w, i) => <div key={i} style={{ marginBottom: i < data.riskWarnings.length - 1 ? 3 : 0 }}>âš  {w}</div>)}
+              {data.riskWarnings.map((w, i) => <div key={i} style={{ marginBottom: i < data.riskWarnings.length - 1 ? 3 : 0 }}>⚠ {w}</div>)}
             </div>
           </>
         ) : null}
       </div>
 
-      {/* Mandatory compliance disclaimer â€” always rendered */}
+      {/* Mandatory compliance disclaimer — always rendered */}
       <div style={{ padding: '6px 10px', borderTop: '1px solid #1e293b', background: '#000', fontSize: 7, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-        âš  FOR INFORMATIONAL PURPOSES ONLY â€” NOT INVESTMENT ADVICE. Equity &amp; derivatives trading carries substantial risk of loss. AI-generated analysis may contain errors or omissions. Not a {isIndia ? 'SEBI' : 'SEC'}-registered investment advisor. Consult a licensed financial advisor before trading. Past performance does not guarantee future results.
+        ⚠ FOR INFORMATIONAL PURPOSES ONLY — NOT INVESTMENT ADVICE. Equity &amp; derivatives trading carries substantial risk of loss. AI-generated analysis may contain errors or omissions. Not a {isIndia ? 'SEBI' : 'SEC'}-registered investment advisor. Consult a licensed financial advisor before trading. Past performance does not guarantee future results.
       </div>
 
       {selectedTicker && (

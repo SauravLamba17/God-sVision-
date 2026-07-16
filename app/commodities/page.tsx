@@ -77,7 +77,7 @@ export default function CommoditiesPage() {
                 {c?.price ? formatCurrency(c.price) : 'N/A'}
               </div>
               <div className={`font-mono text-[11px] ${(c?.changePct || 0) >= 0 ? 'text-positive' : 'text-negative'}`}>
-                {c?.changePct ? formatPercent(c.changePct) : 'â€”'} | {c?.unit && `per ${c.unit}`}
+                {c?.changePct ? formatPercent(c.changePct) : '—'} | {c?.unit && `per ${c.unit}`}
               </div>
             </div>
           )
@@ -108,9 +108,9 @@ export default function CommoditiesPage() {
                       </td>
                       <td className="font-mono">{c?.price ? formatCurrency(c.price) : 'N/A'}</td>
                       <td className={c?.changePct !== null && c?.changePct !== undefined ? (c.changePct >= 0 ? 'positive' : 'negative') : 'neutral'}>
-                        {c?.changePct !== null && c?.changePct !== undefined ? formatPercent(c.changePct) : 'â€”'}
+                        {c?.changePct !== null && c?.changePct !== undefined ? formatPercent(c.changePct) : '—'}
                       </td>
-                      <td className="text-muted text-[10px]">/{c?.unit || 'â€”'}</td>
+                      <td className="text-muted text-[10px]">/{c?.unit || '—'}</td>
                     </tr>
                   )
                 })}

@@ -1,17 +1,17 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
-import { WORLD_CITIES } from '@/lib/apis/openweather'
+import { WORLD_CITIES, wmoToIcon, wmoToDescription, getWeatherEmoji } from '@/lib/apis/openweather'
 import LineChartComponent from '@/components/charts/LineChart'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
 
-// API returns Fahrenheit (units=imperial) and mph â€” convert on display
+// API returns Fahrenheit (units=imperial) and mph — convert on display
 type TempUnit = 'C' | 'F'
 
 interface WeatherData {
   city: string
-  temp: number       // Â°F from API
-  feelsLike: number  // Â°F from API
+  temp: number       // °F from API
+  feelsLike: number  // °F from API
   humidity: number
   windSpeed: number  // mph from API
   windDeg: number
@@ -26,14 +26,14 @@ interface WeatherData {
 interface ForecastData {
   daily: {
     time: string[]
-    temperature_2m_max: number[]  // Â°F
-    temperature_2m_min: number[]  // Â°F
+    temperature_2m_max: number[]  // °F
+    temperature_2m_min: number[]  // °F
     precipitation_sum: number[]
     weather_code: number[]
   }
   hourly: {
     time: string[]
-    temperature_2m: number[]      // Â°F
+    temperature_2m: number[]      // °F
     precipitation_probability: number[]
   }
 }
@@ -48,13 +48,7 @@ interface NOAAAlert {
   }
 }
 
-const WEATHER_ICONS: Record<string, string> = {
-  '01d': 'â˜€ï¸', '02d': 'â›…', '03d': 'ðŸŒ¤', '04d': 'â˜ï¸',
-  '09d': 'ðŸŒ§', '10d': 'ðŸŒ¦', '11d': 'â›ˆ', '13d': 'â„ï¸',
-  '50d': 'ðŸŒ«', '01n': 'ðŸŒ™', '02n': 'ðŸŒ™', '03n': 'â˜ï¸', '04n': 'â˜ï¸',
-}
-
-function getIcon(code: string) { return WEATHER_ICONS[code] || 'ðŸŒ¡' }
+function getIcon(code: string) { return getWeatherEmoji(code) }
 
 function TempToggle({ unit, onChange }: { unit: TempUnit; onChange: (u: TempUnit) => void }) {
   return (
@@ -84,7 +78,7 @@ function TempToggle({ unit, onChange }: { unit: TempUnit; onChange: (u: TempUnit
             transition: 'all 150ms ease',
           }}
         >
-          Â°{u}
+          °{u}
         </button>
       ))}
     </div>
@@ -112,19 +106,19 @@ export default function WeatherPage() {
     try { localStorage.setItem('gv_temp_unit', u) } catch { /* ignore */ }
   }
 
-  // Conversion helpers â€” API data stored as Â°F and mph
+  // Conversion helpers — API data stored as °F and mph
   const fToDisplay = (f: number | undefined | null): string => {
-    if (f == null) return 'â€”'
-    if (tempUnit === 'C') return `${Math.round((f - 32) * 5 / 9)}Â°C`
-    return `${Math.round(f)}Â°F`
+    if (f == null) return '—'
+    if (tempUnit === 'C') return `${Math.round((f - 32) * 5 / 9)}°C`
+    return `${Math.round(f)}°F`
   }
   const windToDisplay = (mph: number | undefined | null): string => {
-    if (mph == null) return 'â€”'
+    if (mph == null) return '—'
     if (tempUnit === 'C') return `${Math.round(mph * 1.609)} km/h`
     return `${Math.round(mph)} mph`
   }
   const visToDisplay = (mi: number | undefined | null): string => {
-    if (mi == null) return 'â€”'
+    if (mi == null) return '—'
     if (tempUnit === 'C') return `${Math.round(mi * 1.609)} km`
     return `${Math.round(mi)} mi`
   }
@@ -178,7 +172,7 @@ export default function WeatherPage() {
     if (found) { setSelectedCity(found); setSearch('') }
   }
 
-  // Hourly chart â€” key on tempUnit so it re-renders when unit changes
+  // Hourly chart — key on tempUnit so it re-renders when unit changes
   const hourlyChartData = forecast?.hourly ? (() => {
     const len = Math.min(24, forecast.hourly.time.length)
     return Array.from({ length: len }, (_, i) => ({
@@ -261,15 +255,19 @@ export default function WeatherPage() {
                 const maxT = forecast.daily.temperature_2m_max[i]
                 const minT = forecast.daily.temperature_2m_min[i]
                 const precip = forecast.daily.precipitation_sum[i]
+                const code = forecast.daily.weather_code[i]
+                const dayIcon = getIcon(wmoToIcon(code))
+                const dayCondition = wmoToDescription(code)
                 return (
-                  <div key={date} className="flex-1 text-center p-2">
+                  <div key={date} className="flex-1 text-center p-2" title={dayCondition}>
                     <div className="font-mono text-[9px] text-muted">
                       {new Date(date).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
                     </div>
                     <div className="font-mono text-[9px] text-muted mb-1">
                       {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
-                    <div className="text-lg mb-1">â˜ï¸</div>
+                    <div className="text-lg mb-1">{dayIcon}</div>
+                    <div className="font-mono text-[8px] text-muted mb-1 capitalize">{dayCondition}</div>
                     <div className="font-mono text-[12px] text-positive">{fToDisplay(maxT)}</div>
                     <div className="font-mono text-[11px] text-neutral">{fToDisplay(minT)}</div>
                     {precip > 0 && (
@@ -282,15 +280,15 @@ export default function WeatherPage() {
           </PanelWrapper>
         )}
 
-        {/* Hourly Chart â€” key forces remount on unit change */}
+        {/* Hourly Chart — key forces remount on unit change */}
         {hourlyChartData.length > 0 && (
-          <PanelWrapper title={`24H TEMPERATURE (Â°${tempUnit})`}>
+          <PanelWrapper title={`24H TEMPERATURE (°${tempUnit})`}>
             <LineChartComponent
               key={tempUnit}
               data={hourlyChartData}
               color="#ff6d00"
               height={140}
-              formatValue={(v) => `${v.toFixed(0)}Â°${tempUnit}`}
+              formatValue={(v) => `${v.toFixed(0)}°${tempUnit}`}
             />
           </PanelWrapper>
         )}
@@ -323,7 +321,7 @@ export default function WeatherPage() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'left' }}>CITY</th>
-                <th>TEMP ({tempUnit === 'C' ? 'Â°C' : 'Â°F'})</th>
+                <th>TEMP ({tempUnit === 'C' ? '°C' : '°F'})</th>
                 <th>
                   <GlossaryTooltip term="HUMIDITY">HUM</GlossaryTooltip>
                 </th>
@@ -350,7 +348,7 @@ export default function WeatherPage() {
 
         {/* NOAA Alerts */}
         {noaaAlerts.length > 0 && (
-          <PanelWrapper title="âš  NOAA ALERTS">
+          <PanelWrapper title="⚠ NOAA ALERTS">
             <div className="divide-y" style={{ borderColor: 'var(--border-dim)' }}>
               {noaaAlerts.map((alert, i) => (
                 <div key={i} className="px-2 py-1.5">

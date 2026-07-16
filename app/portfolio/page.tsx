@@ -277,10 +277,10 @@ export default function PortfolioPage() {
               </table>
               <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                 {[
-                  { range: 'â‰¥0.8', color: 'var(--text-negative)', label: 'High' },
-                  { range: 'â‰¥0.5', color: 'var(--text-warning)', label: 'Med' },
-                  { range: 'â‰¥0.2', color: 'var(--text-secondary)', label: 'Low' },
-                  { range: 'â‰¥0',   color: 'var(--text-positive)', label: '+Div' },
+                  { range: '≥0.8', color: 'var(--text-negative)', label: 'High' },
+                  { range: '≥0.5', color: 'var(--text-warning)', label: 'Med' },
+                  { range: '≥0.2', color: 'var(--text-secondary)', label: 'Low' },
+                  { range: '≥0',   color: 'var(--text-positive)', label: '+Div' },
                   { range: '<0',   color: '#a78bfa', label: 'Neg' },
                 ].map(l => (
                   <div key={l.range} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -318,7 +318,7 @@ export default function PortfolioPage() {
           <div className="panel-header">
             <span className="panel-header-title">ADD POSITION</span>
             <button onClick={() => setShowForm(s => !s)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              {showForm ? 'â–¼' : 'â–¶'}
+              {showForm ? '▼' : '▶'}
             </button>
           </div>
           {showForm && (
@@ -347,10 +347,10 @@ export default function PortfolioPage() {
 
       {/* Right: Holdings Table + Transactions */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <PanelWrapper title={`PORTFOLIO HOLDINGS â€” ${holdings.length} POSITIONS`} loading={loading} source="live" accentColor="#22c55e">
+        <PanelWrapper title={`PORTFOLIO HOLDINGS — ${holdings.length} POSITIONS`} loading={loading} source="live" accentColor="#22c55e">
           {holdings.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)' }}>NO POSITIONS â€” ADD YOUR FIRST HOLDING</span>
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)' }}>NO POSITIONS — ADD YOUR FIRST HOLDING</span>
               <button onClick={() => setShowForm(true)} className="btn-terminal">+ ADD POSITION</button>
             </div>
           ) : (
@@ -379,23 +379,23 @@ export default function PortfolioPage() {
                     </td>
                     <td>{h.quantity}</td>
                     <td>{formatCurrency(h.buyPrice)}</td>
-                    <td style={{ fontWeight: 600 }}>{h.currentPrice ? formatCurrency(h.currentPrice) : 'â€”'}</td>
-                    <td style={{ color: 'var(--text-primary)' }}>{h.currentValue ? formatCurrency(h.currentValue) : 'â€”'}</td>
+                    <td style={{ fontWeight: 600 }}>{h.currentPrice ? formatCurrency(h.currentPrice) : '—'}</td>
+                    <td style={{ color: 'var(--text-primary)' }}>{h.currentValue ? formatCurrency(h.currentValue) : '—'}</td>
                     <td style={{ color: 'var(--text-secondary)' }}>
-                      {totalValue > 0 && h.currentValue ? `${((h.currentValue / totalValue) * 100).toFixed(1)}%` : 'â€”'}
+                      {totalValue > 0 && h.currentValue ? `${((h.currentValue / totalValue) * 100).toFixed(1)}%` : '—'}
                     </td>
                     <td style={{ color: (h.pnl || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                      {h.pnl !== undefined ? `${h.pnl >= 0 ? '+' : ''}${formatCurrency(Math.abs(h.pnl))}` : 'â€”'}
+                      {h.pnl !== undefined ? `${h.pnl >= 0 ? '+' : ''}${formatCurrency(Math.abs(h.pnl))}` : '—'}
                     </td>
                     <td style={{ color: (h.pnlPct || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {h.pnlPct !== undefined ? formatPercent(h.pnlPct) : 'â€”'}
+                      {h.pnlPct !== undefined ? formatPercent(h.pnlPct) : '—'}
                     </td>
                     <td style={{ color: (h.dayChange || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {h.dayChange !== undefined ? `${h.dayChange >= 0 ? '+' : ''}$${Math.abs(h.dayChange).toFixed(2)}` : 'â€”'}
+                      {h.dayChange !== undefined ? `${h.dayChange >= 0 ? '+' : ''}$${Math.abs(h.dayChange).toFixed(2)}` : '—'}
                     </td>
                     <td>
                       <button onClick={() => removeHolding(h.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-negative)', fontSize: 12, padding: '0 4px' }}>âœ•</button>
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-negative)', fontSize: 12, padding: '0 4px' }}>✕</button>
                     </td>
                   </tr>
                 ))}
@@ -409,7 +409,7 @@ export default function PortfolioPage() {
           <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px' }}>
             <span className="panel-header-title">TRANSACTION HISTORY ({txs.length})</span>
             <button onClick={() => setShowTxForm(s => !s)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-accent)', background: 'none', border: '1px solid #1b2e1b', padding: '2px 8px', cursor: 'pointer', borderRadius: 2 }}>
-              {showTxForm ? 'â–¼ CANCEL' : '+ LOG TRADE'}
+              {showTxForm ? '▼ CANCEL' : '+ LOG TRADE'}
             </button>
           </div>
           {showTxForm && (
@@ -448,9 +448,9 @@ export default function PortfolioPage() {
                     <td>{tx.quantity}</td>
                     <td>{formatCurrency(tx.price)}</td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(tx.quantity * tx.price)}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{tx.fee > 0 ? formatCurrency(tx.fee) : 'â€”'}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: 9, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes || 'â€”'}</td>
-                    <td><button onClick={() => deleteTx(tx.id)} style={{ background: 'none', border: 'none', color: 'var(--text-negative)', cursor: 'pointer', fontSize: 11 }}>âœ•</button></td>
+                    <td style={{ color: 'var(--text-muted)' }}>{tx.fee > 0 ? formatCurrency(tx.fee) : '—'}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 9, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes || '—'}</td>
+                    <td><button onClick={() => deleteTx(tx.id)} style={{ background: 'none', border: 'none', color: 'var(--text-negative)', cursor: 'pointer', fontSize: 11 }}>✕</button></td>
                   </tr>
                 ))}
               </tbody>

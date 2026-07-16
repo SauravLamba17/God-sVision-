@@ -77,14 +77,14 @@ export default function SearchBar() {
   return (
     <div className="search-bar-container" style={{ position: 'relative', width: 260 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-panel)', border: '1px solid #1e3a5f', borderRadius: 4, padding: '3px 8px' }}>
-        <span style={{ color: 'var(--text-accent)', fontSize: 11, flexShrink: 0 }}>âŒ•</span>
+        <span style={{ color: 'var(--text-accent)', fontSize: 11, flexShrink: 0 }}>⌕</span>
         <input
           ref={inputRef}
           value={query}
           onChange={handleChange}
           onKeyDown={handleKey}
           onFocus={() => query && setOpen(true)}
-          placeholder="Search ticker / company...  âŒƒK"
+          placeholder="Search ticker / company...  ⌃K"
           style={{
             background: 'none', border: 'none', outline: 'none', width: '100%',
             fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-primary)',
@@ -123,7 +123,7 @@ export default function SearchBar() {
                 fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)',
                 padding: '1px 4px', background: 'rgba(30,41,59,0.8)', borderRadius: 2, flexShrink: 0,
               }}>
-                {r.quoteType} Â· {r.exchange}
+                {r.quoteType} · {r.exchange}
               </span>
             </div>
           ))}

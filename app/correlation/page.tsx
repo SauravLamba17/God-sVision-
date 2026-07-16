@@ -67,10 +67,10 @@ export default function CorrelationPage() {
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>CROSS-ASSET CORRELATION MATRIX</div>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>90-Day Pearson Correlation Â· {n} Assets Â· Daily Returns</div>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>90-Day Pearson Correlation · {n} Assets · Daily Returns</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Updated: {data ? new Date(data.generatedAt).toLocaleTimeString() : 'â€”'}</span>
+          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Updated: {data ? new Date(data.generatedAt).toLocaleTimeString() : '—'}</span>
           <AIButton panelName="Correlation Matrix" panelData={{ symbols, matrix: matrix.map((row, i) => ({ asset: symbols[i], ...Object.fromEntries(symbols.map((s, j) => [s, row[j]])) })) }} context="Analyze this cross-asset correlation matrix. Identify which pairs are most correlated, most negatively correlated (hedges), and any surprising relationships. What does this tell us about current market regime?" />
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function CorrelationPage() {
               </span>
             </div>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8 }}>
-              {selectedA.name} vs {selectedB.name} â€” 90-day daily log return Pearson correlation
+              {selectedA.name} vs {selectedB.name} — 90-day daily log return Pearson correlation
             </div>
             <AIButton
               panelName={`${selectedA.symbol}/${selectedB.symbol} Correlation`}

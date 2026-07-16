@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -95,7 +95,7 @@ export default function StatusBar() {
         }}>
           {liveCount}/{statuses.length} FEEDS LIVE
         </span>
-        <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+        <span style={{ color: 'var(--border-bright)' }}>│</span>
         <span style={{ color: 'var(--text-muted)' }}>
           REFRESH <span style={{ color: 'var(--text-accent)' }}>{String(refresh).padStart(2, '0')}s</span>
         </span>
@@ -103,24 +103,24 @@ export default function StatusBar() {
 
       {/* Right: version + mode + sound */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
-        <span style={{ color: 'var(--text-accent)', letterSpacing: '0.06em' }}>GOD&apos;S VISION</span>
+        <span style={{ color: 'var(--text-accent)', letterSpacing: '0.06em' }}>GOD'S VISION</span>
         <span style={{ color: 'var(--border-color)' }}>v1.0</span>
-        <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+        <span style={{ color: 'var(--border-bright)' }}>│</span>
         <span style={{ color: 'var(--text-muted)' }}>:3001</span>
-        <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+        <span style={{ color: 'var(--border-bright)' }}>│</span>
         {isIndia ? (
           <>
-            <span style={{ color: '#FF9933' }}>ðŸ‡®ðŸ‡³ IN MARKETS</span>
-            <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+            <span style={{ color: '#FF9933' }}>🇮🇳 IN MARKETS</span>
+            <span style={{ color: 'var(--border-bright)' }}>│</span>
             <span suppressHydrationWarning style={{ color: 'var(--text-muted)' }}>
-              1 USD = â‚¹{exchangeRate.toFixed(2)}
+              1 USD = ₹{exchangeRate.toFixed(2)}
             </span>
-            <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+            <span style={{ color: 'var(--border-bright)' }}>│</span>
           </>
         ) : (
           <>
-            <span style={{ color: 'var(--text-secondary)' }}>ðŸ‡ºðŸ‡¸ US MARKETS</span>
-            <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+            <span style={{ color: 'var(--text-secondary)' }}>🇺🇸 US MARKETS</span>
+            <span style={{ color: 'var(--border-bright)' }}>│</span>
           </>
         )}
         <Link href="/glossary" style={{
@@ -133,9 +133,9 @@ export default function StatusBar() {
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-accent)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-accent)' }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-color)' }}
         >
-          ðŸ“š LEARN
+          📚 LEARN
         </Link>
-        <span style={{ color: 'var(--border-bright)' }}>â”‚</span>
+        <span style={{ color: 'var(--border-bright)' }}>│</span>
         <SoundControl />
       </div>
     </footer>

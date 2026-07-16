@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 
 function fmt(v: number | null, type: 'currency' | 'pct' | 'ratio' | 'shares' = 'currency'): string {
-  if (v === null || v === undefined || isNaN(v as number)) return 'â€”'
+  if (v === null || v === undefined || isNaN(v as number)) return '—'
   if (type === 'pct')    return `${(v * 100).toFixed(2)}%`
   if (type === 'ratio')  return v.toFixed(2)
   if (type === 'shares') {
@@ -23,7 +23,7 @@ function StatRow({ label, value, type, good }: { label: string; value: number | 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(30,41,59,0.5)' }}>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: display === 'â€”' ? 'var(--text-muted)' : (good === true ? 'var(--text-positive)' : good === false ? 'var(--text-negative)' : 'var(--text-primary)') }}>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: display === '—' ? 'var(--text-muted)' : (good === true ? 'var(--text-positive)' : good === false ? 'var(--text-negative)' : 'var(--text-primary)') }}>
         {display}
       </span>
     </div>
@@ -80,7 +80,7 @@ function StatementTable({ data, type }: { data: any[]; type: Tab }) {
   const rows = type === 'income' ? INCOME_ROWS : type === 'balance' ? BALANCE_ROWS : CASHFLOW_ROWS
   const periods = data.map(d => {
     const raw = d.endDate
-    if (!raw) return 'â€”'
+    if (!raw) return '—'
     return typeof raw === 'string' ? raw.slice(0, 7) : new Date(raw).toISOString().slice(0, 7)
   })
 
@@ -128,7 +128,7 @@ export default function FinancialsPage() {
       const res  = await fetch(`/api/financials?ticker=${t}&period=${p}`)
       const json = await res.json()
       if (json.rateLimited) {
-        setError('Yahoo Finance rate limit â€” auto-retrying in 30s...')
+        setError('Yahoo Finance rate limit — auto-retrying in 30s...')
         setTimeout(() => fetchData(t, p), 30000)
         setLoading(false)
         return
@@ -176,7 +176,7 @@ export default function FinancialsPage() {
           <div style={{ width: 220, flexShrink: 0, overflowY: 'auto' }}>
             <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #22c55e', background: 'var(--bg-panel)', padding: '10px 12px' }}>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-positive)', letterSpacing: '0.08em', marginBottom: 8 }}>
-                {ticker} â€” KEY METRICS
+                {ticker} — KEY METRICS
               </div>
               <StatRow label="Revenue"          value={km.revenue} />
               <StatRow label="Gross Profit"     value={km.grossProfit} />
@@ -217,7 +217,7 @@ export default function FinancialsPage() {
             ))}
           </div>
 
-          <PanelWrapper title={`${ticker} â€” ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} accentColor="#22c55e">
+          <PanelWrapper title={`${ticker} — ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} accentColor="#22c55e">
             {data && tab !== 'metrics' && <StatementTable data={data[tab]} type={tab} />}
             {data && tab === 'metrics' && km && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: 8 }}>

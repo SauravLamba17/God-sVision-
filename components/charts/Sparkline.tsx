@@ -9,7 +9,7 @@ interface SparklineProps {
 }
 
 export default function Sparkline({ data, positive, width = 80, height = 32 }: SparklineProps) {
-  if (!data || data.length === 0) return <span className="text-muted text-[9px]">â€”</span>
+  if (!data || data.length === 0) return <span className="text-muted text-[9px]">—</span>
 
   const isPositive = positive !== undefined ? positive : (data[data.length - 1] >= data[0])
   const color = isPositive ? 'var(--text-positive)' : 'var(--text-negative)'

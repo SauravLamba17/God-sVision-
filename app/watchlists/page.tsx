@@ -119,7 +119,7 @@ export default function WatchlistsPage() {
                     <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 600, color: active?.id === g.id ? 'var(--text-accent)' : 'var(--text-secondary)' }}>{g.name}</div>
                     <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>{g.items.length} TICKERS</div>
                   </div>
-                  <button onClick={e => { e.stopPropagation(); removeGroup(g.id) }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11, padding: '0 2px' }}>âœ•</button>
+                  <button onClick={e => { e.stopPropagation(); removeGroup(g.id) }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11, padding: '0 2px' }}>✕</button>
                 </div>
               ))
             )}
@@ -166,7 +166,7 @@ export default function WatchlistsPage() {
                   <form onSubmit={addTicker} style={{ display: 'flex', gap: 4 }}>
                     <input value={newTicker} onChange={e => setNewTicker(e.target.value.toUpperCase())} placeholder="ADD TICKER" className="input-terminal" style={{ width: 120 }} autoFocus />
                     <button type="submit" className="btn-terminal">ADD</button>
-                    <button type="button" onClick={() => setShowAdd(false)} className="btn-terminal">âœ•</button>
+                    <button type="button" onClick={() => setShowAdd(false)} className="btn-terminal">✕</button>
                   </form>
                 ) : (
                   <button onClick={() => setShowAdd(true)} className="btn-terminal">+ ADD TICKER</button>
@@ -174,10 +174,10 @@ export default function WatchlistsPage() {
               </div>
             </div>
 
-            <PanelWrapper title={`${active.name} â€” LIVE QUOTES`} loading={qLoading} source="live" accentColor="#38bdf8">
+            <PanelWrapper title={`${active.name} — LIVE QUOTES`} loading={qLoading} source="live" accentColor="#38bdf8">
               {active.items.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, gap: 10 }}>
-                  <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)' }}>EMPTY WATCHLIST â€” ADD TICKERS ABOVE</span>
+                  <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)' }}>EMPTY WATCHLIST — ADD TICKERS ABOVE</span>
                 </div>
               ) : (
                 <table className="data-table">
@@ -204,10 +204,10 @@ export default function WatchlistsPage() {
                             <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: 12 }}>{item.ticker}</span>
                           </td>
                           <td style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 12 }}>
-                            {q ? formatCurrency(q.price) : <span style={{ color: 'var(--text-muted)' }}>â€”</span>}
+                            {q ? formatCurrency(q.price) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                           </td>
                           <td style={{ color: pos ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                            {q ? `${q.change >= 0 ? '+' : ''}${formatCurrency(Math.abs(q.change))}` : 'â€”'}
+                            {q ? `${q.change >= 0 ? '+' : ''}${formatCurrency(Math.abs(q.change))}` : '—'}
                           </td>
                           <td>
                             {q ? (
@@ -216,20 +216,20 @@ export default function WatchlistsPage() {
                                 background: pos ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                                 color: pos ? 'var(--text-positive)' : 'var(--text-negative)',
                               }}>
-                                {pos ? 'â–²' : 'â–¼'} {Math.abs(q.changePct).toFixed(2)}%
+                                {pos ? '▲' : '▼'} {Math.abs(q.changePct).toFixed(2)}%
                               </span>
-                            ) : 'â€”'}
+                            ) : '—'}
                           </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{q ? formatCurrency(q.high) : 'â€”'}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{q ? formatCurrency(q.low)  : 'â€”'}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{q ? formatCurrency(q.high) : '—'}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{q ? formatCurrency(q.low)  : '—'}</td>
                           <td style={{ color: 'var(--text-muted)' }}>
-                            {q ? (q.volume >= 1e6 ? `${(q.volume/1e6).toFixed(1)}M` : `${(q.volume/1e3).toFixed(0)}K`) : 'â€”'}
+                            {q ? (q.volume >= 1e6 ? `${(q.volume/1e6).toFixed(1)}M` : `${(q.volume/1e3).toFixed(0)}K`) : '—'}
                           </td>
                           <td style={{ color: 'var(--text-muted)' }}>
-                            {q?.marketCap ? (q.marketCap >= 1e12 ? `$${(q.marketCap/1e12).toFixed(2)}T` : `$${(q.marketCap/1e9).toFixed(0)}B`) : 'â€”'}
+                            {q?.marketCap ? (q.marketCap >= 1e12 ? `$${(q.marketCap/1e12).toFixed(2)}T` : `$${(q.marketCap/1e9).toFixed(0)}B`) : '—'}
                           </td>
                           <td onClick={e => { e.stopPropagation(); removeItem(item.id) }}>
-                            <span style={{ color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12, padding: '0 4px' }}>âœ•</span>
+                            <span style={{ color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12, padding: '0 4px' }}>✕</span>
                           </td>
                         </tr>
                       )
@@ -241,7 +241,7 @@ export default function WatchlistsPage() {
           </>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 16 }}>âŠž</span>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 16 }}>⊞</span>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11 }}>CREATE A WATCHLIST TO GET STARTED</span>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>Use the panel on the left to create your first watchlist</span>
           </div>

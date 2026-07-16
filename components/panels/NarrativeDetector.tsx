@@ -14,6 +14,7 @@ interface NarrativeData {
   narratives: Narrative[]
   generatedAt: number
   headlinesAnalyzed: number
+  keyConfigured?: boolean
 }
 
 const SENT_COLORS = { BULLISH: 'var(--text-positive)', BEARISH: 'var(--text-negative)', NEUTRAL: 'var(--text-warning)' }
@@ -42,19 +43,31 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
     </div>
   )
 
-  if (!data || data.narratives.length === 0) return (
-    <div style={{ padding: compact ? 8 : 12, fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>
-      No narratives detected â€” configure ANTHROPIC_API_KEY for live analysis.
-    </div>
-  )
+  if (!data || data.narratives.length === 0) {
+    if (data?.keyConfigured === false) return (
+      <div style={{ padding: compact ? 8 : 12, fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>
+        AI narratives unavailable — GEMINI_API_KEY not configured
+      </div>
+    )
+    return (
+      <div style={{ padding: compact ? 8 : 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>
+          Analyzing market headlines for emerging narratives...
+        </div>
+        {[100, 85, 92].map((w, i) => (
+          <div key={i} className="skeleton" style={{ height: 10, width: `${w}%`, borderRadius: 2 }} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: 'IBM Plex Mono' }}>
       {!compact && (
         <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-accent)', letterSpacing: '0.1em', fontWeight: 700 }}>âš¡ AI NARRATIVE DETECTOR</span>
+          <span style={{ fontSize: 10, color: 'var(--text-accent)', letterSpacing: '0.1em', fontWeight: 700 }}>⚡ AI NARRATIVE DETECTOR</span>
           <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>
-            {data.headlinesAnalyzed} headlines Â· {new Date(data.generatedAt).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false })} ET
+            {data.headlinesAnalyzed} headlines · {new Date(data.generatedAt).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false })} ET
           </span>
         </div>
       )}

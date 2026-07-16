@@ -109,11 +109,11 @@ export async function GET(request: NextRequest) {
     if (!msg.includes('Too Many Requests') && !msg.includes('429') && !msg.includes('invalid json')) {
       return NextResponse.json({ error: msg })
     }
-    // Rate limited â€” try direct without crumb (some modules don't require it)
+    // Rate limited — try direct without crumb (some modules don't require it)
     try {
       s = await fetchViaDirect(ticker, moduleStr)
     } catch {
-      return NextResponse.json({ error: 'Yahoo Finance rate limit reached â€” try again in a moment', rateLimited: true }, { status: 429 })
+      return NextResponse.json({ error: 'Yahoo Finance rate limit reached — try again in a moment', rateLimited: true }, { status: 429 })
     }
   }
 

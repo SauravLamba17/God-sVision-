@@ -43,14 +43,14 @@ export default function RBIPolicyTracker() {
   const rateRange = maxRate - minRate || 1
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)' }}>
+    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-header)' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>ðŸ¦ RBI POLICY TRACKER</span>
-        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>MPC Â· {data.nextMPC.daysAway}d to next</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
+        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>MPC · {data.nextMPC.daysAway}d to next</span>
       </div>
 
-      <div style={{ padding: '8px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div style={{ padding: '8px 10px', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8 }}>
         {/* Rates */}
         <div>
           <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.08em' }}>KEY RATES</div>

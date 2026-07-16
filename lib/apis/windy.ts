@@ -8,19 +8,39 @@ export interface Webcam {
   title: string
   status: string
   location: { city: string; country: string; latitude: number; longitude: number }
-  images: { current: { preview: string } }
-  player?: { day?: { embed?: string } }
+  images: { current: { preview: string; thumbnail?: string } }
+  player?: { day?: string; live?: string }
 }
 
 export async function getTopWebcams(limit = 20): Promise<Webcam[]> {
   if (!KEY) return getStaticWebcams()
   try {
     const { data } = await axios.get(`${BASE}/webcams`, {
-      params: { lang: 'en', limit, orderby: 'popularity', include: 'images,player,location' },
-      headers: { 'X-WINDY-KEY': KEY },
+      params: { lang: 'en', limit, offset: 0, orderby: 'popularity', include: 'images,player,location' },
+      headers: { 'x-windy-api-key': KEY },
       timeout: 10000
     })
-    return data.webcams || []
+    const webcams = (data.webcams || []) as any[]
+    return webcams
+      .filter(w => w.status === 'active')
+      .map(w => ({
+        id: String(w.webcamId),
+        title: w.title,
+        status: w.status,
+        location: {
+          city: w.location?.city || '',
+          country: w.location?.country || '',
+          latitude: w.location?.latitude,
+          longitude: w.location?.longitude,
+        },
+        images: {
+          current: {
+            preview: w.images?.current?.preview || '',
+            thumbnail: w.images?.current?.thumbnail || '',
+          },
+        },
+        player: { day: w.player?.day, live: w.player?.live },
+      }))
   } catch {
     return getStaticWebcams()
   }

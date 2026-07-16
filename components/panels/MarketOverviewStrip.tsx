@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useEffect, useState, useCallback } from 'react'
 
-/* â”€â”€ Tiny inline sparkline SVG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tiny inline sparkline SVG ─────────────────────────────────────────── */
 function Spark({ data, positive, w = 64, h = 28 }: { data: number[]; positive: boolean; w?: number; h?: number }) {
   if (!data || data.length < 2) return <svg width={w} height={h} />
   const min = Math.min(...data), max = Math.max(...data), range = max - min || 1
@@ -18,7 +18,7 @@ function Spark({ data, positive, w = 64, h = 28 }: { data: number[]; positive: b
   )
 }
 
-/* â”€â”€ Number formatters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Number formatters ─────────────────────────────────────────────────── */
 function fmtPrice(n: number, unit: string) {
   if (!n) return 'N/A'
   if (unit === '%') return n.toFixed(2) + '%'
@@ -32,7 +32,7 @@ function fmtPct(n: number) {
   return `${sign}${n.toFixed(2)}%`
 }
 
-/* â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Types ─────────────────────────────────────────────────────────────── */
 interface QuoteTick {
   symbol: string; label: string; price: number; change: number
   changePct: number; sparkline: number[]; unit?: string
@@ -44,7 +44,7 @@ interface OverviewData {
   globalMarkets: QuoteTick[]; breadth: Breadth; fetchedAt: number
 }
 
-/* â”€â”€ Section A â€” 5 index cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section A — 5 index cards ─────────────────────────────────────────── */
 function IndexCard({ q }: { q: QuoteTick }) {
   const pos = q.changePct >= 0
   const cc  = pos ? 'var(--text-positive)' : 'var(--text-negative)'
@@ -63,7 +63,7 @@ function IndexCard({ q }: { q: QuoteTick }) {
             {fmtPrice(q.price, q.unit || '')}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color: cc, marginTop: 2 }}>
-            {pos ? 'â–²' : 'â–¼'} {fmtPct(q.changePct)}
+            {pos ? '▲' : '▼'} {fmtPct(q.changePct)}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: cc }}>
             {q.change >= 0 ? '+' : ''}{q.change.toFixed(2)}
@@ -75,7 +75,7 @@ function IndexCard({ q }: { q: QuoteTick }) {
   )
 }
 
-/* â”€â”€ Section B â€” commodity strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section B — commodity strip ───────────────────────────────────────── */
 function CommodityStrip({ items }: { items: QuoteTick[] }) {
   return (
     <div style={{
@@ -103,7 +103,7 @@ function CommodityStrip({ items }: { items: QuoteTick[] }) {
   )
 }
 
-/* â”€â”€ Section C â€” global market row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section C — global market row ─────────────────────────────────────── */
 function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; region: string; label: string }) {
   const filtered = markets.filter(m => m.region === region)
   if (!filtered.length) return null
@@ -114,7 +114,7 @@ function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; reg
         const pos = q.changePct >= 0
         return (
           <span key={q.symbol} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            {i > 0 && <span style={{ color: 'var(--border-color)', margin: '0 6px' }}>Â·</span>}
+            {i > 0 && <span style={{ color: 'var(--border-color)', margin: '0 6px' }}>·</span>}
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-secondary)' }}>{q.label}</span>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: pos ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
               {fmtPrice(q.price, '')} <span style={{ fontSize: 8 }}>{fmtPct(q.changePct)}</span>
@@ -127,7 +127,7 @@ function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; reg
   )
 }
 
-/* â”€â”€ Section D â€” breadth bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section D — breadth bar ────────────────────────────────────────────── */
 function BreadthBar({ breadth }: { breadth: Breadth }) {
   const total   = breadth.advancing + breadth.declining + breadth.unchanged || 500
   const advPct  = (breadth.advancing / total) * 100
@@ -144,11 +144,11 @@ function BreadthBar({ breadth }: { breadth: Breadth }) {
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
-          <span style={{ color: 'var(--text-positive)', fontWeight: 700 }}>â–² {breadth.advancing}</span>
+          <span style={{ color: 'var(--text-positive)', fontWeight: 700 }}>▲ {breadth.advancing}</span>
           <span style={{ color: 'var(--text-muted)', marginLeft: 2 }}>ADV</span>
         </span>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
-          <span style={{ color: 'var(--text-negative)', fontWeight: 700 }}>â–¼ {breadth.declining}</span>
+          <span style={{ color: 'var(--text-negative)', fontWeight: 700 }}>▼ {breadth.declining}</span>
           <span style={{ color: 'var(--text-muted)', marginLeft: 2 }}>DEC</span>
         </span>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
@@ -160,7 +160,7 @@ function BreadthBar({ breadth }: { breadth: Breadth }) {
   )
 }
 
-/* â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Main component ─────────────────────────────────────────────────────── */
 export default function MarketOverviewStrip() {
   const [data,    setData]    = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -190,7 +190,7 @@ export default function MarketOverviewStrip() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>
-          â–¸ GLOBAL MARKET MONITOR
+          ▸ GLOBAL MARKET MONITOR
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {source === 'live' && (
@@ -200,7 +200,7 @@ export default function MarketOverviewStrip() {
           )}
           <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>{etStr} ET</span>
           <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12, lineHeight: 1 }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>â†»</button>
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
         </div>
       </div>
 
@@ -212,7 +212,7 @@ export default function MarketOverviewStrip() {
         <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>Market data unavailable</div>
       ) : (
         <>
-          {/* Section A â€” 5 index cards */}
+          {/* Section A — 5 index cards */}
           <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1b2e1b' }}>
             {data.indices.map((q, i) => (
               <div key={q.symbol} style={{ flex: 1, borderRight: i < data.indices.length - 1 ? '1px solid #1b2e1b' : 'none' }}>
@@ -224,10 +224,10 @@ export default function MarketOverviewStrip() {
             )}
           </div>
 
-          {/* Section B â€” Commodity + Bond strip */}
+          {/* Section B — Commodity + Bond strip */}
           {data.commodities.length > 0 && <CommodityStrip items={data.commodities} />}
 
-          {/* Section C â€” Global market rows */}
+          {/* Section C — Global market rows */}
           <div style={{ background: '#040904' }}>
             <GlobalMarketRow markets={data.globalMarkets} region="ASIA" label="ASIA" />
             <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -236,7 +236,7 @@ export default function MarketOverviewStrip() {
             </div>
           </div>
 
-          {/* Section D â€” Breadth */}
+          {/* Section D — Breadth */}
           <div style={{ borderTop: '1px solid #1b2e1b', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
             <div style={{ borderRight: '1px solid #1b2e1b' }}>
               <BreadthBar breadth={data.breadth} />
@@ -252,7 +252,7 @@ export default function MarketOverviewStrip() {
   )
 }
 
-/* â”€â”€ Market status clock (right half of Section D) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Market status clock (right half of Section D) ──────────────────────── */
 function MarketClock() {
   const [status, setStatus] = useState('')
   const [time,   setTime]   = useState('')
@@ -286,7 +286,7 @@ function MarketClock() {
         {status || '---'}
       </div>
       <div suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{time}</div>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>NYSE Â· NASDAQ Â· CME</div>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>NYSE · NASDAQ · CME</div>
     </div>
   )
 }

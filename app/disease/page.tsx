@@ -87,7 +87,7 @@ export default function DiseasePage() {
             GLOBAL HEALTH INTELLIGENCE
           </div>
           <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginTop:2 }}>
-            Source: disease.sh Â· Data refreshes hourly
+            Source: disease.sh · Data refreshes hourly
           </div>
         </div>
         {global_ && <AIButton
@@ -117,12 +117,12 @@ export default function DiseasePage() {
                 <thead style={{ position:'sticky', top:0, zIndex:1 }}>
                   <tr>
                     <th style={{ textAlign:'left' }}>COUNTRY</th>
-                    <th onClick={() => toggleSort('cases')} style={thStyle('cases')}>TOTAL CASES{sortKey==='cases'?sortDir===-1?'â†“':'â†‘':''}</th>
-                    <th onClick={() => toggleSort('active')} style={thStyle('active')}>ACTIVE{sortKey==='active'?sortDir===-1?'â†“':'â†‘':''}</th>
-                    <th onClick={() => toggleSort('deaths')} style={thStyle('deaths')}>DEATHS{sortKey==='deaths'?sortDir===-1?'â†“':'â†‘':''}</th>
-                    <th onClick={() => toggleSort('todayCases')} style={thStyle('todayCases')}>TODAY{sortKey==='todayCases'?sortDir===-1?'â†“':'â†‘':''}</th>
-                    <th onClick={() => toggleSort('todayDeaths')} style={thStyle('todayDeaths')}>DTH/DAY{sortKey==='todayDeaths'?sortDir===-1?'â†“':'â†‘':''}</th>
-                    <th onClick={() => toggleSort('casesPerMillion')} style={thStyle('casesPerMillion')}>CASES/1M{sortKey==='casesPerMillion'?sortDir===-1?'â†“':'â†‘':''}</th>
+                    <th onClick={() => toggleSort('cases')} style={thStyle('cases')}>TOTAL CASES{sortKey==='cases'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('active')} style={thStyle('active')}>ACTIVE{sortKey==='active'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('deaths')} style={thStyle('deaths')}>DEATHS{sortKey==='deaths'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('todayCases')} style={thStyle('todayCases')}>TODAY{sortKey==='todayCases'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('todayDeaths')} style={thStyle('todayDeaths')}>DTH/DAY{sortKey==='todayDeaths'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('casesPerMillion')} style={thStyle('casesPerMillion')}>CASES/1M{sortKey==='casesPerMillion'?sortDir===-1?'↓':'↑':''}</th>
                     <th>DEATH RATE</th>
                   </tr>
                 </thead>
@@ -138,9 +138,9 @@ export default function DiseasePage() {
                       <td style={{ color:'var(--text-negative)' }}>{formatNumber(c.deaths)}</td>
                       <td style={{ color:todayCasesColor(c.todayCases) }}>{formatNumber(c.todayCases)}</td>
                       <td style={{ color:c.todayDeaths > 100 ? 'var(--text-negative)' : 'var(--text-secondary)' }}>{formatNumber(c.todayDeaths)}</td>
-                      <td>{c.casesPerMillion?.toFixed(0) || 'â€”'}</td>
+                      <td>{c.casesPerMillion?.toFixed(0) || '—'}</td>
                       <td style={{ color: c.deaths/c.cases > 0.02 ? 'var(--text-negative)' : 'var(--text-secondary)' }}>
-                        {c.cases > 0 ? ((c.deaths/c.cases)*100).toFixed(2) + '%' : 'â€”'}
+                        {c.cases > 0 ? ((c.deaths/c.cases)*100).toFixed(2) + '%' : '—'}
                       </td>
                     </tr>
                   ))}

@@ -27,7 +27,7 @@ export async function GET() {
       ...SECTORS.flatMap(s => s.stocks.slice(0, 5)),
     ])]
 
-    // Use chart-based quotes (no crumb needed â€” parallel query1 v8/finance/chart fetches)
+    // Use chart-based quotes (no crumb needed — parallel query1 v8/finance/chart fetches)
     const quotes = await getQuotes(allTickers)
 
     const priceMap: Record<string, any> = {}

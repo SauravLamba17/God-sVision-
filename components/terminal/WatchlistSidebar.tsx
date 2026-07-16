@@ -69,7 +69,7 @@ export default function WatchlistSidebar() {
 
   return (
     <>
-      {/* Star icon toggle â€” always visible */}
+      {/* Star icon toggle — always visible */}
       <button
         onClick={() => setOpen(o => !o)}
         title="Watchlist (W)"
@@ -94,7 +94,7 @@ export default function WatchlistSidebar() {
           transition: 'right 0.25s ease, color 0.2s',
         }}
       >
-        â˜…
+        ★
       </button>
 
       {/* Sidebar */}
@@ -115,8 +115,8 @@ export default function WatchlistSidebar() {
       }}>
         {/* Header */}
         <div style={{ padding: '8px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-warning)', fontWeight: 700, letterSpacing: '0.1em' }}>â˜… WATCHLIST</span>
-          <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{items.length} items Â· W to close</span>
+          <span style={{ fontSize: 10, color: 'var(--text-warning)', fontWeight: 700, letterSpacing: '0.1em' }}>★ WATCHLIST</span>
+          <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{items.length} items · W to close</span>
         </div>
 
         {/* Items */}
@@ -137,7 +137,7 @@ export default function WatchlistSidebar() {
                         {isPos ? '+' : ''}{(item.changePct ?? 0).toFixed(2)}%
                       </div>
                     </>
-                  ) : <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>â€”</div>}
+                  ) : <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>—</div>}
                 </div>
                 <button
                   onClick={() => removeTicker(item.ticker)}

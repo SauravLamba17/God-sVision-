@@ -14,7 +14,7 @@ model User {
   email          String?   @unique
   emailVerified  DateTime?
   image          String?
-  password       String?
+  password       String?   @db.Text
   plan           String    @default("free")
   stripeCustomerId String?  @unique
   accounts       Account[]
@@ -23,6 +23,7 @@ model User {
   portfolioHoldings PortfolioHolding[]
   priceAlerts    PriceAlert[]
   newsAlerts     NewsAlert[]
+  pushSubscriptions PushSubscription[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -152,6 +153,15 @@ model Watchlist {
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([userId, ticker])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  keys      Json
+  createdAt DateTime @default(now())
 }
 
 model Transaction {

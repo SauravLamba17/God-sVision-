@@ -13,10 +13,10 @@ interface FlowData {
 function FlowBar({ value, label }: { value: number; label: string }) {
   const isPos   = value >= 0
   const color   = isPos ? 'var(--text-positive)' : 'var(--text-negative)'
-  const arrow   = isPos ? 'â–²' : 'â–¼'
+  const arrow   = isPos ? '▲' : '▼'
   const dispVal = Math.abs(value) >= 10000
-    ? `â‚¹${(Math.abs(value) / 100).toFixed(0)} Cr`
-    : `â‚¹${Math.abs(value).toLocaleString('en-IN')} Cr`
+    ? `₹${(Math.abs(value) / 100).toFixed(0)} Cr`
+    : `₹${Math.abs(value).toLocaleString('en-IN')} Cr`
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -61,10 +61,10 @@ export default function FIIDIIFlow() {
   const fiiColor     = data.fiiNetEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)'
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)' }}>
+    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>ðŸ“Š FII / DII FLOWS</span>
-        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>NSE Data Â· {data.lastUpdated}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
+        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>NSE Data · {data.lastUpdated}</span>
       </div>
 
       <div style={{ padding: '10px 12px' }}>
@@ -77,19 +77,19 @@ export default function FIIDIIFlow() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>FII YTD</span>
             <span style={{ fontSize: 9, fontWeight: 700, color: data.fiiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-              {data.fiiYTDEquity > 0 ? '+' : ''}â‚¹{(data.fiiYTDEquity / 100).toFixed(0)} Cr
+              {data.fiiYTDEquity > 0 ? '+' : ''}₹{(data.fiiYTDEquity / 100).toFixed(0)} Cr
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>DII YTD</span>
             <span style={{ fontSize: 9, fontWeight: 700, color: data.diiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-              {data.diiYTDEquity > 0 ? '+' : ''}â‚¹{(data.diiYTDEquity / 100).toFixed(0)} Cr
+              {data.diiYTDEquity > 0 ? '+' : ''}₹{(data.diiYTDEquity / 100).toFixed(0)} Cr
             </span>
           </div>
         </div>
 
         <div style={{ marginTop: 8, padding: '4px 6px', background: `${fiiColor}10`, border: `1px solid ${fiiColor}30`, borderRadius: 3 }}>
-          <span style={{ fontSize: 8, color: fiiColor }}>FII {fiiSentiment} â€” {data.fiiNetEquity > 0 ? 'bullish for Nifty' : 'bearish pressure on Nifty'}</span>
+          <span style={{ fontSize: 8, color: fiiColor }}>FII {fiiSentiment} — {data.fiiNetEquity > 0 ? 'bullish for Nifty' : 'bearish pressure on Nifty'}</span>
         </div>
       </div>
     </div>

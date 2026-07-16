@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { PushSubscribe } from '@/components/terminal/PushSubscribe'
 
 interface PriceAlert { id: number; ticker: string; condition: string; targetPrice: number; triggered: boolean; active: boolean; createdAt: string; triggeredAt?: string }
 interface NewsAlert  { id: number; keyword: string; active: boolean; createdAt: string }
@@ -35,7 +36,7 @@ export default function AlertsPage() {
           json.triggered.forEach((id: number) => {
             const alert = priceAlerts.find(a => a.id === id)
             if (!alert) return
-            new Notification(`ðŸ”” ALERT TRIGGERED`, {
+            new Notification(`🔔 ALERT TRIGGERED`, {
               body: `${alert.ticker} is ${alert.condition} ${formatPrice(alert.targetPrice)}`,
               icon: '/favicon.ico',
               tag:  `alert-${id}`,
@@ -108,17 +109,18 @@ export default function AlertsPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: notifPerm === 'granted' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${notifPerm === 'granted' ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 4 }}>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: notifPerm === 'granted' ? 'var(--text-positive)' : 'var(--text-warning)' }}>
-              {notifPerm === 'granted' ? 'ðŸ”” NOTIFICATIONS ON' : notifPerm === 'denied' ? 'ðŸ”• BLOCKED' : 'ðŸ”” NOTIFICATIONS OFF'}
+              {notifPerm === 'granted' ? '🔔 NOTIFICATIONS ON' : notifPerm === 'denied' ? '🔕 BLOCKED' : '🔔 NOTIFICATIONS OFF'}
             </span>
             {notifPerm !== 'granted' && notifPerm !== 'denied' && (
               <button onClick={requestNotifPermission} className="btn-terminal" style={{ fontSize: 8, padding: '1px 6px' }}>ENABLE</button>
             )}
           </div>
+          <PushSubscribe />
         </div>
       </div>
 
       <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span>â— Price checks every 30 seconds â€” global AlertChecker running in background</span>
+        <span>● Price checks every 30 seconds — global AlertChecker running in background</span>
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           <span style={{ fontSize: 8, color: 'var(--text-muted)', alignSelf: 'center' }}>SOUND TEST:</span>
           {[
@@ -149,8 +151,8 @@ export default function AlertsPage() {
             <div>
               <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>CONDITION</label>
               <select value={form.condition} onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} className="input-terminal" style={{ width: 100 }}>
-                <option value="above">ABOVE â–²</option>
-                <option value="below">BELOW â–¼</option>
+                <option value="above">ABOVE ▲</option>
+                <option value="below">BELOW ▼</option>
               </select>
             </div>
             <button type="submit" className="btn-terminal" style={{ alignSelf:'flex-end' }}>+ SET ALERT</button>
@@ -171,12 +173,12 @@ export default function AlertsPage() {
       <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
         <div className="panel-header">
           <span className="panel-header-title">PRICE ALERTS ({priceAlerts.length})</span>
-          <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-positive)' }}>â— MONITORING {activeAlerts} ACTIVE</span>
+          <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-positive)' }}>● MONITORING {activeAlerts} ACTIVE</span>
         </div>
         {loading ? (
           <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', padding:16 }}>LOADING<span className="blink-cursor" /></div>
         ) : priceAlerts.length === 0 ? (
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)', padding:24, textAlign:'center' }}>NO ALERTS â€” SET ONE ABOVE</div>
+          <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)', padding:24, textAlign:'center' }}>NO ALERTS — SET ONE ABOVE</div>
         ) : (
           <table className="data-table">
             <thead><tr><th style={{ textAlign:'left' }}>TICKER</th><th>CONDITION</th><th>TARGET PRICE</th><th>STATUS</th><th>CREATED</th><th>TRIGGERED AT</th><th></th></tr></thead>
@@ -184,7 +186,7 @@ export default function AlertsPage() {
               {priceAlerts.map(a => (
                 <tr key={a.id} style={{ background: triggered.includes(a.id) ? 'rgba(245,158,11,0.06)' : undefined }}>
                   <td style={{ textAlign:'left', color:'var(--text-accent)', fontWeight:700 }}>{a.ticker}</td>
-                  <td style={{ color: a.condition==='above' ? 'var(--text-positive)' : 'var(--text-negative)' }}>{a.condition==='above' ? 'â–² ABOVE' : 'â–¼ BELOW'}</td>
+                  <td style={{ color: a.condition==='above' ? 'var(--text-positive)' : 'var(--text-negative)' }}>{a.condition==='above' ? '▲ ABOVE' : '▼ BELOW'}</td>
                   <td style={{ fontWeight:600, color:'var(--text-primary)' }}>{formatPrice(a.targetPrice)}</td>
                   <td>
                     <span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, fontWeight:700,
@@ -192,12 +194,12 @@ export default function AlertsPage() {
                       color:      a.triggered ? 'var(--text-warning)' : a.active ? 'var(--text-positive)' : 'var(--text-muted)',
                       border:`1px solid ${a.triggered ? 'rgba(245,158,11,0.4)' : a.active ? 'rgba(34,197,94,0.4)' : 'var(--border-color)'}`,
                     }}>
-                      {a.triggered ? 'ðŸ”” TRIGGERED' : a.active ? 'â— WATCHING' : 'â—‹ INACTIVE'}
+                      {a.triggered ? '🔔 TRIGGERED' : a.active ? '● WATCHING' : '○ INACTIVE'}
                     </span>
                   </td>
                   <td style={{ color:'var(--text-muted)', fontSize:9 }}>{new Date(a.createdAt).toLocaleDateString()}</td>
-                  <td style={{ color:'var(--text-warning)', fontSize:9 }}>{a.triggeredAt ? new Date(a.triggeredAt).toLocaleString() : 'â€”'}</td>
-                  <td><button onClick={() => deleteAlert(a.id,'price')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>âœ•</button></td>
+                  <td style={{ color:'var(--text-warning)', fontSize:9 }}>{a.triggeredAt ? new Date(a.triggeredAt).toLocaleString() : '—'}</td>
+                  <td><button onClick={() => deleteAlert(a.id,'price')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
                 </tr>
               ))}
             </tbody>
@@ -214,9 +216,9 @@ export default function AlertsPage() {
               {newsAlerts.map(a => (
                 <tr key={a.id}>
                   <td style={{ textAlign:'left', color:'var(--text-primary)', fontWeight:600 }}>{a.keyword}</td>
-                  <td><span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, background:'rgba(34,197,94,0.15)', color:'var(--text-positive)', border:'1px solid rgba(34,197,94,0.4)' }}>â— ACTIVE</span></td>
+                  <td><span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, background:'rgba(34,197,94,0.15)', color:'var(--text-positive)', border:'1px solid rgba(34,197,94,0.4)' }}>● ACTIVE</span></td>
                   <td style={{ color:'var(--text-muted)', fontSize:9 }}>{new Date(a.createdAt).toLocaleDateString()}</td>
-                  <td><button onClick={() => deleteAlert(a.id,'news')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>âœ•</button></td>
+                  <td><button onClick={() => deleteAlert(a.id,'news')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
                 </tr>
               ))}
             </tbody>

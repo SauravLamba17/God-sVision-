@@ -78,7 +78,7 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
           lineHeight: 1,
           fontWeight: 700,
           transition: 'all 0.15s',
-        }}>â„¹</span>
+        }}>ℹ</span>
       )}
       {visible && (
         <div style={{

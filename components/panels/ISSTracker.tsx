@@ -38,8 +38,8 @@ export default function ISSTracker() {
       {/* Position */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
         {[
-          { label:'LATITUDE',  value: pos ? `${pos.lat.toFixed(3)}Â°` : 'â€”' },
-          { label:'LONGITUDE', value: pos ? `${pos.lng.toFixed(3)}Â°` : 'â€”' },
+          { label:'LATITUDE',  value: pos ? `${pos.lat.toFixed(3)}°` : '—' },
+          { label:'LONGITUDE', value: pos ? `${pos.lng.toFixed(3)}°` : '—' },
           { label:'ALTITUDE',  value: pos ? `${pos.altitude} km` : '408 km' },
           { label:'VELOCITY',  value: pos ? `${pos.velocity.toLocaleString()} km/h` : '27,600 km/h' },
           { label:'ORBIT #',   value: `${orbitCount} today` },
@@ -92,7 +92,7 @@ export default function ISSTracker() {
       {/* Crew list */}
       <div style={{ fontSize:9, color:'var(--text-muted)', marginBottom:3 }}>CREW ABOARD ISS:</div>
       {crew.slice(0, 6).map(a => (
-        <div key={a.name} style={{ fontSize:9, color:'var(--text-secondary)', lineHeight:1.6 }}>â€¢ {a.name}</div>
+        <div key={a.name} style={{ fontSize:9, color:'var(--text-secondary)', lineHeight:1.6 }}>• {a.name}</div>
       ))}
       {crew.length > 6 && <div style={{ fontSize:9, color:'var(--text-muted)' }}>+{crew.length - 6} more</div>}
 

@@ -56,14 +56,14 @@ export default function GlossaryPage() {
       }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-accent, #38bdf8)', letterSpacing: '0.08em' }}>
-            ðŸ“š FINANCIAL GLOSSARY
+            📚 FINANCIAL GLOSSARY
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-muted, #475569)', marginTop: 3 }}>
-            Showing {entries.length} of {total} terms â€” hover any â„¹ icon in the terminal for instant definitions
+            Showing {entries.length} of {total} terms — hover any ℹ icon in the terminal for instant definitions
           </div>
         </div>
         <div style={{ fontSize: 9, color: 'var(--text-muted, #475569)', textAlign: 'right' }}>
-          GOD&apos;s Vision Â· Financial Education
+          GOD's Vision · Financial Education
         </div>
       </div>
 
@@ -171,7 +171,7 @@ export default function GlossaryPage() {
                   }}>{entry.simpleDefinition}</div>
                 </div>
                 <span style={{ fontSize: 9, color: 'var(--text-muted, #475569)', flexShrink: 0 }}>
-                  {isExpanded ? 'â–²' : 'â–¼'}
+                  {isExpanded ? '▲' : '▼'}
                 </span>
               </div>
 
@@ -226,9 +226,9 @@ export default function GlossaryPage() {
         textAlign: 'center',
         lineHeight: 1.6,
       }}>
-        âš  FOR EDUCATIONAL PURPOSES ONLY. Not financial advice. Always consult a SEBI-registered advisor before investing.
+        ⚠ FOR EDUCATIONAL PURPOSES ONLY. Not financial advice. Always consult a SEBI-registered advisor before investing.
         <br />
-        GOD&apos;s Vision Financial Glossary Â· {total} terms
+        GOD's Vision Financial Glossary · {total} terms
       </div>
     </div>
   )

@@ -84,7 +84,7 @@ export default function NiftyHeatmap() {
                 const isPos = s.changePct >= 0
                 return (
                   <div key={t}
-                    title={`${displayName}: â‚¹${s.price?.toFixed(2)} (${s.changePct?.toFixed(2)}%)`}
+                    title={`${displayName}: ₹${s.price?.toFixed(2)} (${s.changePct?.toFixed(2)}%)`}
                     onClick={() => window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } }))}
                     style={{
                       background: bg, border: '1px solid rgba(255,255,255,0.08)',

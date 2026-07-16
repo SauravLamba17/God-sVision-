@@ -12,6 +12,7 @@ interface PanelWrapperProps {
   onRefresh?: () => void
   fullHeight?: boolean
   accentColor?: string
+  headerExtra?: ReactNode
 }
 
 export default function PanelWrapper({
@@ -24,6 +25,7 @@ export default function PanelWrapper({
   onRefresh,
   fullHeight = false,
   accentColor = 'var(--text-accent)',
+  headerExtra,
 }: PanelWrapperProps) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
@@ -37,9 +39,9 @@ export default function PanelWrapper({
   // Compute data age badge
   const ageMs   = lastUpdated ? Date.now() - lastUpdated.getTime() : null
   const ageBadge = ageMs === null ? null
-    : ageMs < 5 * 60_000  ? { label: 'â— LIVE',    color: 'var(--text-positive)' }
-    : ageMs < 30 * 60_000 ? { label: 'â— RECENT',  color: 'var(--text-warning)' }
-    : { label: 'âš  DELAYED', color: 'var(--text-accent)' }
+    : ageMs < 5 * 60_000  ? { label: '● LIVE',    color: 'var(--text-positive)' }
+    : ageMs < 30 * 60_000 ? { label: '● RECENT',  color: 'var(--text-warning)' }
+    : { label: '⚠ DELAYED', color: 'var(--text-accent)' }
 
   return (
     <div
@@ -51,6 +53,9 @@ export default function PanelWrapper({
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         overflow: 'hidden',
         position: 'relative',
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
       }}
     >
       {/* Subtle glow in top-left corner from accent color */}
@@ -89,6 +94,7 @@ export default function PanelWrapper({
               LIVE
             </span>
           )}
+          {headerExtra}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -105,7 +111,7 @@ export default function PanelWrapper({
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
               title="Refresh"
             >
-              â†»
+              ↻
             </button>
           )}
           <span suppressHydrationWarning style={{
@@ -130,7 +136,7 @@ export default function PanelWrapper({
           </div>
         ) : error ? (
           <div className="error-state">
-            âš  {isCached ? 'CACHED DATA' : 'DATA UNAVAILABLE'}
+            ⚠ {isCached ? 'CACHED DATA' : 'DATA UNAVAILABLE'}
             {!isCached && <div style={{ marginTop: 4, fontSize: 9, color: 'var(--text-muted)' }}>{error}</div>}
           </div>
         ) : (

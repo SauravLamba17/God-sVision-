@@ -126,7 +126,7 @@ export default function MapPage() {
                   <div>{q.place}</div>
                   <div style={{ color: '#546e7a' }}>Depth: {q.depth.toFixed(0)}km</div>
                   <div style={{ color: '#546e7a' }}>{timeAgo(q.time)}</div>
-                  {q.tsunami === 1 && <div style={{ color: 'var(--text-negative)', fontWeight: 700 }}>âš  TSUNAMI WARNING</div>}
+                  {q.tsunami === 1 && <div style={{ color: 'var(--text-negative)', fontWeight: 700 }}>⚠ TSUNAMI WARNING</div>}
                 </div>
               </Popup>
             </CircleMarker>
@@ -150,7 +150,7 @@ export default function MapPage() {
                     <div>{a.originCountry}</div>
                     <div style={{ color: '#546e7a' }}>Alt: {a.altitude ? `${Math.round(a.altitude).toLocaleString()}ft` : 'N/A'}</div>
                     <div style={{ color: '#546e7a' }}>Speed: {a.velocity ? `${Math.round(a.velocity)}kts` : 'N/A'}</div>
-                    <div style={{ color: '#546e7a' }}>Hdg: {a.heading ? `${Math.round(a.heading)}Â°` : 'N/A'}</div>
+                    <div style={{ color: '#546e7a' }}>Hdg: {a.heading ? `${Math.round(a.heading)}°` : 'N/A'}</div>
                     {a.squawk && <div style={{ color: '#546e7a' }}>Squawk: {a.squawk}</div>}
                   </div>
                 </Popup>
@@ -166,9 +166,9 @@ export default function MapPage() {
         }}>
           <div className="font-mono text-[10px] text-accent font-bold mb-2">MAP LAYERS</div>
           {[
-            { key: 'earthquakes', label: 'ðŸŒ EARTHQUAKES', count: earthquakes.length },
-            { key: 'flights', label: 'âœˆ FLIGHTS', count: aircraft.length },
-            { key: 'weather', label: 'ðŸŒ§ WEATHER', count: 0 },
+            { key: 'earthquakes', label: '🌍 EARTHQUAKES', count: earthquakes.length },
+            { key: 'flights', label: '✈ FLIGHTS', count: aircraft.length },
+            { key: 'weather', label: '🌧 WEATHER', count: 0 },
           ].map(layer => (
             <label key={layer.key} className="flex items-center gap-2 mb-1 cursor-pointer">
               <input
@@ -191,7 +191,7 @@ export default function MapPage() {
           background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', padding: '8px 12px',
         }}>
           <div className="font-mono text-[9px] text-accent mb-1">EARTHQUAKE MAGNITUDE</div>
-          {[['â‰¥7.0', 'var(--text-negative)'], ['5.0-6.9', 'var(--text-accent)'], ['3.0-4.9', '#ffd600'], ['<3.0', '#546e7a']].map(([label, color]) => (
+          {[['≥7.0', 'var(--text-negative)'], ['5.0-6.9', 'var(--text-accent)'], ['3.0-4.9', '#ffd600'], ['<3.0', '#546e7a']].map(([label, color]) => (
             <div key={label} className="flex items-center gap-2 mb-0.5">
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: color as string, display: 'inline-block' }} />
               <span className="font-mono text-[9px] text-muted">{label}</span>
@@ -220,7 +220,7 @@ export default function MapPage() {
             </div>
             <p className="text-primary text-[10px] leading-tight mt-0.5">{q.place}</p>
             <p className="text-muted text-[9px] font-mono">Depth: {q.depth.toFixed(0)}km</p>
-            {q.tsunami === 1 && <p className="text-negative text-[9px] font-mono animate-pulse">âš  TSUNAMI</p>}
+            {q.tsunami === 1 && <p className="text-negative text-[9px] font-mono animate-pulse">⚠ TSUNAMI</p>}
           </div>
         ))}
       </div>

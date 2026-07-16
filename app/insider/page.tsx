@@ -67,7 +67,7 @@ export default function InsiderPage() {
         padding: '6px 12px',
       }}>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: 'var(--text-warning)', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(245,158,11,0.4)' }}>
-          INSIDER TRANSACTIONS â€” SEC FORM 4
+          INSIDER TRANSACTIONS — SEC FORM 4
         </span>
         <div style={{ display: 'flex', gap: 4 }}>
           {(Object.keys(TYPES) as Array<'latest'|'purchases'|'sales'>).map(t => (
@@ -114,7 +114,7 @@ export default function InsiderPage() {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
           {source === 'fallback' && (
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-warning)', padding: '2px 8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 3 }}>
-              âš  DEMO DATA â€” OpenInsider scrape may be blocked
+              ⚠ DEMO DATA — OpenInsider scrape may be blocked
             </span>
           )}
         </div>
@@ -123,7 +123,7 @@ export default function InsiderPage() {
       {/* Main table */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <PanelWrapper title={`${TYPES[type]}${ticker ? ` â€” ${ticker}` : ''} (${trades.length})`}
+          <PanelWrapper title={`${TYPES[type]}${ticker ? ` — ${ticker}` : ''} (${trades.length})`}
             loading={loading} error={error} source={source} onRefresh={fetchData} accentColor="#f59e0b">
             <table className="data-table">
               <thead>
@@ -163,17 +163,17 @@ export default function InsiderPage() {
                         color:      t.isBuy ? 'var(--text-positive)' : 'var(--text-negative)',
                         border:     `1px solid ${t.isBuy ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'}`,
                       }}>
-                        {t.isBuy ? 'â–² BUY' : 'â–¼ SELL'}
+                        {t.isBuy ? '▲ BUY' : '▼ SELL'}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-primary)' }}>${t.price?.toFixed(2) || 'â€”'}</td>
+                    <td style={{ color: 'var(--text-primary)' }}>${t.price?.toFixed(2) || '—'}</td>
                     <td style={{ color: t.isBuy ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {t.quantity > 0 ? `${t.isBuy ? '+' : '-'}${t.quantity.toLocaleString()}` : 'â€”'}
+                      {t.quantity > 0 ? `${t.isBuy ? '+' : '-'}${t.quantity.toLocaleString()}` : '—'}
                     </td>
                     <td style={{ color: t.isBuy ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                      {t.value ? formatVal(t.value) : 'â€”'}
+                      {t.value ? formatVal(t.value) : '—'}
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{t.deltaOwned || 'â€”'}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{t.deltaOwned || '—'}</td>
                   </tr>
                 ))}
                 {trades.length === 0 && !loading && (
@@ -204,7 +204,7 @@ export default function InsiderPage() {
                   color: selected.isBuy ? 'var(--text-positive)' : 'var(--text-negative)',
                   fontFamily: 'IBM Plex Mono', fontSize: 12, fontWeight: 700, textAlign: 'center',
                 }}>
-                  {selected.isBuy ? 'â–² PURCHASE' : 'â–¼ SALE'} â€” {formatVal(selected.value)}
+                  {selected.isBuy ? '▲ PURCHASE' : '▼ SALE'} — {formatVal(selected.value)}
                 </div>
                 {[
                   { k: 'INSIDER',       v: selected.insider },
@@ -221,7 +221,7 @@ export default function InsiderPage() {
                   <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 4 }}>
                     <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{row.k}</span>
                     <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-secondary)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
-                      {row.v || 'â€”'}
+                      {row.v || '—'}
                     </span>
                   </div>
                 ))}

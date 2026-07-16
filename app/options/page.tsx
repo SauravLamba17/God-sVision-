@@ -23,7 +23,7 @@ function greekColor(v: number | null): string {
 }
 
 function GreekCell({ v, prefix = '' }: { v: number|null; prefix?: string }) {
-  if (v === null) return <td style={{ color: 'var(--text-muted)', textAlign: 'right' }}>â€”</td>
+  if (v === null) return <td style={{ color: 'var(--text-muted)', textAlign: 'right' }}>—</td>
   return (
     <td style={{ color: greekColor(v), textAlign: 'right', fontWeight: 500 }}>
       {prefix}{v.toFixed(v !== null && Math.abs(v) < 0.01 ? 4 : 3)}
@@ -121,7 +121,7 @@ export default function OptionsPage() {
               color:      viewMode === m ? '#a78bfa' : 'var(--text-muted)',
               borderColor: viewMode === m ? '#a78bfa' : 'var(--border-color)',
             }}>
-              {m === 'chain' ? 'â‰¡ CHAIN' : 'â—« VOL SURFACE'}
+              {m === 'chain' ? '≡ CHAIN' : '◫ VOL SURFACE'}
             </button>
           ))}
         </div>
@@ -171,7 +171,7 @@ export default function OptionsPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
           <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
             <div className="panel-header">
-              <span className="panel-header-title">IV SMILE / SKEW â€” {ticker} {expiry}</span>
+              <span className="panel-header-title">IV SMILE / SKEW — {ticker} {expiry}</span>
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>Implied volatility by strike vs spot ({formatCurrency(spotPrice)})</span>
             </div>
             <ResponsiveContainer width="100%" height={240}>
@@ -200,7 +200,7 @@ export default function OptionsPage() {
 
           {/* IV Heatmap grid */}
           <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
-            <div className="panel-header"><span className="panel-header-title">IV HEATMAP â€” CALLS</span></div>
+            <div className="panel-header"><span className="panel-header-title">IV HEATMAP — CALLS</span></div>
             <div style={{ padding: '8px 12px', overflowX: 'auto' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {data.calls.filter(c=>c.iv>0).sort((a,b)=>a.strike-b.strike).map(c => {
@@ -219,7 +219,7 @@ export default function OptionsPage() {
                 })}
               </div>
               <div style={{ display:'flex', gap:12, marginTop:8, fontFamily:'IBM Plex Mono', fontSize:8, color:'var(--text-muted)' }}>
-                {[['rgba(56,189,248,0.3)','<20% (Low)'],['rgba(34,197,94,0.4)','20-40%'],['rgba(245,158,11,0.5)','40-60%'],['rgba(249,115,22,0.6)','60-80%'],['rgba(239,68,68,0.7)','â‰¥80% (Elevated)']].map(([bg,label])=>(
+                {[['rgba(56,189,248,0.3)','<20% (Low)'],['rgba(34,197,94,0.4)','20-40%'],['rgba(245,158,11,0.5)','40-60%'],['rgba(249,115,22,0.6)','60-80%'],['rgba(239,68,68,0.7)','≥80% (Elevated)']].map(([bg,label])=>(
                   <div key={label} style={{display:'flex',alignItems:'center',gap:4}}>
                     <div style={{width:12,height:12,borderRadius:2,background:bg}} />{label}
                   </div>
@@ -232,7 +232,7 @@ export default function OptionsPage() {
 
       {/* Calls / Puts tabs + table */}
       {viewMode === 'chain' && <div style={{ flex: 1, minHeight: 0 }}>
-        <PanelWrapper title={`${ticker} OPTIONS â€” ${tab.toUpperCase()}`}
+        <PanelWrapper title={`${ticker} OPTIONS — ${tab.toUpperCase()}`}
           loading={loading} error={error} source={source} onRefresh={() => fetchData(ticker, expiry)}
           accentColor="#a78bfa">
           <div style={{ display: 'flex', borderBottom: '1px solid #1e293b' }}>
@@ -244,7 +244,7 @@ export default function OptionsPage() {
                 background: tab === t ? 'rgba(167,139,250,0.1)' : 'transparent',
                 color: tab === t ? '#a78bfa' : 'var(--text-muted)',
                 borderBottom: tab === t ? '2px solid #a78bfa' : '2px solid transparent',
-              }}>{t === 'calls' ? 'â–² CALLS' : 'â–¼ PUTS'}</button>
+              }}>{t === 'calls' ? '▲ CALLS' : '▼ PUTS'}</button>
             ))}
           </div>
           <table className="data-table">
@@ -276,15 +276,15 @@ export default function OptionsPage() {
                     ${c.strike?.toFixed(0)}
                     {c.inTheMoney && <span style={{ fontSize: 8, color: 'var(--text-accent)', marginLeft: 4 }}>ITM</span>}
                   </td>
-                  <td>{c.bid?.toFixed(2) || 'â€”'}</td>
-                  <td>{c.ask?.toFixed(2) || 'â€”'}</td>
-                  <td style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{c.mid?.toFixed(2) || 'â€”'}</td>
-                  <td>{c.lastPrice?.toFixed(2) || 'â€”'}</td>
+                  <td>{c.bid?.toFixed(2) || '—'}</td>
+                  <td>{c.ask?.toFixed(2) || '—'}</td>
+                  <td style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{c.mid?.toFixed(2) || '—'}</td>
+                  <td>{c.lastPrice?.toFixed(2) || '—'}</td>
                   <td style={{ color: c.iv > 80 ? 'var(--text-negative)' : c.iv > 40 ? 'var(--text-warning)' : 'var(--text-secondary)' }}>
                     {c.iv?.toFixed(1)}%
                   </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{c.volume?.toLocaleString() || 'â€”'}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{c.openInterest?.toLocaleString() || 'â€”'}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{c.volume?.toLocaleString() || '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{c.openInterest?.toLocaleString() || '—'}</td>
                   <GreekCell v={c.delta} />
                   <GreekCell v={c.gamma} />
                   <GreekCell v={c.theta} />

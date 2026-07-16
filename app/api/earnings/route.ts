@@ -3,7 +3,7 @@ import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
 
 // Upcoming earnings dates (manually curated + updated periodically)
-// These are approximate â€” within 2 weeks of now
+// These are approximate — within 2 weeks of now
 const UPCOMING_EARNINGS: { ticker: string; date: string; epsEstimate: number | null; revenueEstimate: number | null }[] = [
   { ticker: 'AAPL',  date: '2026-07-31', epsEstimate: 1.57, revenueEstimate: 89.5e9 },
   { ticker: 'MSFT',  date: '2026-07-29', epsEstimate: 3.12, revenueEstimate: 68.9e9 },
@@ -47,14 +47,14 @@ export async function GET(req: Request) {
       epsEstimate:      upcoming?.epsEstimate || null,
       revenueEstimate:  upcoming?.revenueEstimate || null,
       currentPrice:     q?.regularMarketPrice || null,
-      history: [], // live history requires quoteSummary (crumb auth) â€” not available
+      history: [], // live history requires quoteSummary (crumb auth) — not available
     }
 
     setCache(cacheKey, data, 3600)
     return NextResponse.json({ data, source: 'live' })
   }
 
-  // Upcoming earnings list â€” merge curated dates with live price data
+  // Upcoming earnings list — merge curated dates with live price data
   const cacheKey = 'earnings_upcoming_v2'
   const cached = getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })

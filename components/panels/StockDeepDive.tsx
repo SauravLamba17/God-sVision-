@@ -48,7 +48,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('technical')
   const accent = market === 'IN' ? '#FF9933' : 'var(--text-accent)'
-  const currency = market === 'IN' ? 'â‚¹' : '$'
+  const currency = market === 'IN' ? '₹' : '$'
 
   useEffect(() => {
     let cancelled = false
@@ -106,12 +106,12 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
               <>
                 <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{currency}{data.snapshot.price.toFixed(2)}</span>
                 <span style={{ fontSize: 10, color: data.snapshot.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                  {data.snapshot.changePct >= 0 ? 'â–²' : 'â–¼'} {Math.abs(data.snapshot.changePct).toFixed(2)}%
+                  {data.snapshot.changePct >= 0 ? '▲' : '▼'} {Math.abs(data.snapshot.changePct).toFixed(2)}%
                 </span>
               </>
             )}
           </div>
-          <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}>âœ•</button>
+          <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Tabs */}
@@ -146,13 +146,13 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                   )}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
                     {([
-                      ['RSI', 'RSI (14)', data.snapshot.rsi?.toFixed(1) ?? 'â€”'],
-                      ['MACD', 'MACD Hist', data.snapshot.macd.histogram?.toFixed(2) ?? 'â€”'],
-                      ['ATR', 'ATR (14)', data.snapshot.atr?.toFixed(2) ?? 'â€”'],
-                      ['SUPERTREND', 'Supertrend', data.snapshot.supertrend.trend ?? 'â€”'],
-                      ['SMA', 'SMA20', data.snapshot.sma20?.toFixed(2) ?? 'â€”'],
-                      ['SMA', 'SMA50', data.snapshot.sma50?.toFixed(2) ?? 'â€”'],
-                      ['VWAP', 'VWAP', data.snapshot.vwap?.toFixed(2) ?? 'â€”'],
+                      ['RSI', 'RSI (14)', data.snapshot.rsi?.toFixed(1) ?? '—'],
+                      ['MACD', 'MACD Hist', data.snapshot.macd.histogram?.toFixed(2) ?? '—'],
+                      ['ATR', 'ATR (14)', data.snapshot.atr?.toFixed(2) ?? '—'],
+                      ['SUPERTREND', 'Supertrend', data.snapshot.supertrend.trend ?? '—'],
+                      ['SMA', 'SMA20', data.snapshot.sma20?.toFixed(2) ?? '—'],
+                      ['SMA', 'SMA50', data.snapshot.sma50?.toFixed(2) ?? '—'],
+                      ['VWAP', 'VWAP', data.snapshot.vwap?.toFixed(2) ?? '—'],
                       ['VOLUME', 'Vol Ratio', `${data.snapshot.volumeRatio.toFixed(2)}x`],
                     ] as [string, string, string][]).map(([glossaryKey, label, val]) => (
                       <div key={label} style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
@@ -224,7 +224,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
 
               {tab === 'options' && (
                 <div>
-                  <div style={{ fontSize: 8, color: 'var(--text-warning)', marginBottom: 8 }}>âš  {data.optionsChain.note}</div>
+                  <div style={{ fontSize: 8, color: 'var(--text-warning)', marginBottom: 8 }}>⚠ {data.optionsChain.note}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9 }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid #1b2e1b' }}>
@@ -300,7 +300,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
         </div>
 
         <div style={{ padding: '6px 16px', borderTop: '1px solid #1e293b', background: '#000', fontSize: 7, color: 'var(--text-muted)' }}>
-          âš  AI-generated analysis for informational purposes only. Not investment advice.
+          ⚠ AI-generated analysis for informational purposes only. Not investment advice.
         </div>
       </div>
     </div>

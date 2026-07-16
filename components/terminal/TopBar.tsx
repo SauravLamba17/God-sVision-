@@ -130,7 +130,7 @@ export default function TopBar() {
               color: 'var(--text-accent)',
               letterSpacing: '0.1em', whiteSpace: 'nowrap', lineHeight: 1,
             }}>
-              GOD&apos;S VISION
+              GOD'S VISION
             </span>
             <span style={{ fontSize: 13 }}>{isIndia ? '🇮🇳' : '🇺🇸'}</span>
           </div>

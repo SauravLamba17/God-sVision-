@@ -19,7 +19,7 @@ function SpreadBadge({ label, value }: { label: string; value: number | null }) 
         {value >= 0 ? '+' : ''}{value.toFixed(2)}%
       </span>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 2 }}>{label} SPREAD</span>
-      {inv && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-negative)', marginTop: 2 }}>âš  INVERTED</span>}
+      {inv && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-negative)', marginTop: 2 }}>⚠ INVERTED</span>}
     </div>
   )
 }
@@ -78,7 +78,7 @@ export default function YieldCurvePage() {
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>Source: FRED / Federal Reserve</span>
         {(inverted10_2 || inverted10_3m) && (
           <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color: 'var(--text-negative)', padding: '2px 8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 3 }}>
-            âš  YIELD CURVE INVERTED â€” RECESSION SIGNAL
+            ⚠ YIELD CURVE INVERTED — RECESSION SIGNAL
           </span>
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
@@ -121,9 +121,9 @@ export default function YieldCurvePage() {
                 {curve.map(m => (
                   <tr key={m.label}>
                     <td style={{ textAlign: 'left', color: 'var(--text-accent)', fontWeight: 700 }}>{m.label}</td>
-                    <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{m.value !== null ? `${m.value.toFixed(3)}%` : 'â€”'}</td>
+                    <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{m.value !== null ? `${m.value.toFixed(3)}%` : '—'}</td>
                     <td style={{ color: m.change !== null ? (m.change >= 0 ? 'var(--text-positive)' : 'var(--text-negative)') : 'var(--text-muted)' }}>
-                      {m.change !== null ? `${m.change >= 0 ? '+' : ''}${m.change.toFixed(3)}` : 'â€”'}
+                      {m.change !== null ? `${m.change >= 0 ? '+' : ''}${m.change.toFixed(3)}` : '—'}
                     </td>
                   </tr>
                 ))}

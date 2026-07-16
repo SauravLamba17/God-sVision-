@@ -1,11 +1,11 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import Anthropic from '@anthropic-ai/sdk'
+import { geminiGenerate } from '@/lib/gemini'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { buildStockSnapshot, matchNewsForTicker, generateSyntheticOptionsChain, StockSnapshot } from '@/lib/apis/analyst-data'
 import { getQuoteSummary } from '@/lib/apis/yahoo'
 
-const KEY_VALID = (k?: string) => !!k && !k.startsWith('your_') && k !== 'demo' && k.length > 20
+const KEY_VALID = () => !!process.env.GEMINI_API_KEY
 
 function simpleScore(s: StockSnapshot): number {
   let score = 0
@@ -61,26 +61,17 @@ export async function GET(req: NextRequest) {
       fundamentals = await getQuoteSummary(ticker)
     } catch { /* best-effort only */ }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
     let ai: { analysis: string; verdict: string; confidence: number }
 
-    if (KEY_VALID(apiKey)) {
+    if (KEY_VALID()) {
       try {
-        const client = new Anthropic({ apiKey })
         const { candles, ...snapshotForPrompt } = snapshot
         const userPrompt = `Stock snapshot:\n${JSON.stringify(snapshotForPrompt, null, 1)}\n\nRecent headlines:\n${JSON.stringify(news.map(n => n.title), null, 1)}\n\nProduce the verdict JSON now.`
-        const msg = await client.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 800,
-          temperature: 0.3,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userPrompt }],
-        })
-        const textBlock = msg.content.find((b: any) => b.type === 'text') as any
-        const cleaned = (textBlock?.text || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT)
+        const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
         ai = JSON.parse(cleaned)
       } catch (err) {
-        console.error('Stock deep-dive Claude call failed, using rule-based verdict:', err)
+        console.error('Stock deep-dive Gemini call failed, using rule-based verdict:', err)
         ai = ruleBasedVerdict(snapshot, news)
       }
     } else {
@@ -89,7 +80,7 @@ export async function GET(req: NextRequest) {
 
     const result = { snapshot, news, optionsChain, fundamentals, ai, generatedAt: Date.now() }
     setCache(cacheKey, result, 300)
-    return NextResponse.json({ data: result, source: KEY_VALID(apiKey) ? 'live' : 'mock' })
+    return NextResponse.json({ data: result, source: KEY_VALID() ? 'live' : 'mock' })
   } catch (err) {
     const fallback = getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })

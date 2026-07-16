@@ -22,7 +22,7 @@ function SceneWorldMap() {
     <div style={{ position:'relative', width:'100%', height:'100%', background:'var(--bg-terminal)' }}>
       <iframe src="/map" style={{ width:'100%', height:'100%', border:'none' }} title="World Map" />
       <div style={{ position:'absolute', bottom:40, left:'50%', transform:'translateX(-50%)', fontFamily:'IBM Plex Mono', fontSize:11, color:'var(--text-accent)', textAlign:'center', background:'rgba(0,0,0,0.7)', padding:'4px 16px', borderRadius:2 }}>
-        LIVE GLOBAL MAP â€” FLIGHTS Â· EARTHQUAKES Â· ISS
+        LIVE GLOBAL MAP — FLIGHTS · EARTHQUAKES · ISS
       </div>
     </div>
   )
@@ -143,7 +143,7 @@ function SceneGlobalNews({ news }: { news: NewsItem[] }) {
   return (
     <div style={{ height:'100%', overflow:'hidden', padding:'0 40px', display:'flex', flexDirection:'column', justifyContent:'center' }}>
       <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-accent)', letterSpacing:'0.3em', marginBottom:20, textAlign:'center' }}>
-        GLOBAL NEWS FEED â€” LIVE
+        GLOBAL NEWS FEED — LIVE
       </div>
       <div style={{ flex:1, overflow:'hidden', position:'relative' }}>
         <div style={{ transform:`translateY(-${offset}px)`, transition:'none' }}>
@@ -315,7 +315,7 @@ export default function GodModePage() {
 
       {/* Scene label */}
       <div style={{ position:'absolute', top:12, right:16, fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', letterSpacing:'0.15em', opacity:0.7 }}>
-        {SCENES[scene]} â€” PRESS ESC TO EXIT Â· 1-6 TO JUMP
+        {SCENES[scene]} — PRESS ESC TO EXIT · 1-6 TO JUMP
       </div>
     </div>
   )

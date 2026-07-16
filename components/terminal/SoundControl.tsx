@@ -29,7 +29,7 @@ export default function SoundControl({ showTestButtons = false }: { showTestButt
       )}
       <button
         onClick={toggle}
-        title={muted ? 'Sound muted â€” click to enable' : 'Sound on â€” click to mute'}
+        title={muted ? 'Sound muted — click to enable' : 'Sound on — click to mute'}
         style={{
           background:'none', border:'none', cursor:'pointer',
           fontFamily:'IBM Plex Mono', fontSize:14,
@@ -39,7 +39,7 @@ export default function SoundControl({ showTestButtons = false }: { showTestButt
         onMouseEnter={e => (e.currentTarget.style.color = muted ? 'var(--text-muted)' : 'var(--text-warning)')}
         onMouseLeave={e => (e.currentTarget.style.color = muted ? 'var(--text-muted)' : 'var(--text-accent)')}
       >
-        {muted ? 'ðŸ”‡' : 'ðŸ”Š'}
+        {muted ? '🔇' : '📊'}
       </button>
     </div>
   )

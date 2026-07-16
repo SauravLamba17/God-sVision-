@@ -46,22 +46,22 @@ export default function CryptoPanel() {
 
   return (
     <PanelWrapper title="CRYPTO TOP 10" loading={loading} error={error} source={source} onRefresh={fetchData}>
-      <table className="data-table">
+      <table className="data-table" style={{ width: '100%', tableLayout: 'fixed' }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left' }}>#</th>
-            <th style={{ textAlign: 'left' }}>COIN</th>
-            <th>PRICE</th>
-            <th>24H%</th>
-            <th>7D%</th>
-            <th>MKT CAP</th>
+            <th style={{ textAlign: 'left', width: '8%' }}>#</th>
+            <th style={{ textAlign: 'left', width: '28%' }}>COIN</th>
+            <th style={{ width: '20%' }}>PRICE</th>
+            <th style={{ width: '16%' }}>24H%</th>
+            <th style={{ width: '14%' }}>7D%</th>
+            <th style={{ width: '14%' }}>MKT CAP</th>
           </tr>
         </thead>
         <tbody>
           {coins.map(coin => (
             <tr key={coin.id}>
               <td style={{ textAlign: 'left' }} className="text-muted">{coin.market_cap_rank}</td>
-              <td style={{ textAlign: 'left' }}>
+              <td style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <span className="text-accent font-bold">{coin.symbol.toUpperCase()}</span>
                 <span className="text-muted ml-1 text-[9px]">{coin.name.slice(0, 10)}</span>
               </td>

@@ -12,7 +12,7 @@ interface EarningsHistory {
 }
 
 function formatRevenue(v: number|null) {
-  if (!v) return 'â€”'
+  if (!v) return '—'
   if (v >= 1e9)  return `$${(v / 1e9).toFixed(1)}B`
   if (v >= 1e6)  return `$${(v / 1e6).toFixed(0)}M`
   return `$${v.toFixed(0)}`
@@ -126,9 +126,9 @@ export default function EarningsPage() {
                           <td style={{ textAlign: 'left' }}>
                             <span style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{ev.ticker}</span>
                           </td>
-                          <td style={{ color: 'var(--text-positive)' }}>{ev.epsEstimate ? `$${ev.epsEstimate.toFixed(2)}` : 'â€”'}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{ev.epsLow ? `$${ev.epsLow.toFixed(2)}` : 'â€”'}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{ev.epsHigh ? `$${ev.epsHigh.toFixed(2)}` : 'â€”'}</td>
+                          <td style={{ color: 'var(--text-positive)' }}>{ev.epsEstimate ? `$${ev.epsEstimate.toFixed(2)}` : '—'}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{ev.epsLow ? `$${ev.epsLow.toFixed(2)}` : '—'}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{ev.epsHigh ? `$${ev.epsHigh.toFixed(2)}` : '—'}</td>
                           <td style={{ color: 'var(--text-secondary)' }}>{formatRevenue(ev.revenueEstimate)}</td>
                           <td style={{ color: 'var(--text-muted)', fontSize: 9 }}>{ev.timing}</td>
                         </tr>
@@ -144,7 +144,7 @@ export default function EarningsPage() {
 
       {/* Right: Earnings history detail */}
       <div style={{ width: 340, flexShrink: 0 }}>
-        <PanelWrapper title={detail ? `${detail.ticker} â€” EARNINGS HISTORY` : 'SELECT A TICKER'} loading={detailLoading} accentColor="#22c55e">
+        <PanelWrapper title={detail ? `${detail.ticker} — EARNINGS HISTORY` : 'SELECT A TICKER'} loading={detailLoading} accentColor="#22c55e">
           {!detail ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10 }}>
               Click any row to see earnings history
@@ -155,7 +155,7 @@ export default function EarningsPage() {
                 <div style={{ padding: '8px 10px', background: 'rgba(34,197,94,0.06)', borderBottom: '1px solid #1e293b' }}>
                   <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>NEXT REPORT DATE</div>
                   <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 13, fontWeight: 700, color: 'var(--text-positive)', marginTop: 2 }}>
-                    {detail.nextDate} {detail.epsEst !== null && <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>Â· EPS EST ${detail.epsEst.toFixed(2)}</span>}
+                    {detail.nextDate} {detail.epsEst !== null && <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>· EPS EST ${detail.epsEst.toFixed(2)}</span>}
                   </div>
                 </div>
               )}
@@ -176,16 +176,16 @@ export default function EarningsPage() {
                       <tr key={i}>
                         <td style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>{h.period}</td>
                         <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                          {h.actual !== null ? `$${h.actual.toFixed(2)}` : 'â€”'}
+                          {h.actual !== null ? `$${h.actual.toFixed(2)}` : '—'}
                         </td>
                         <td style={{ color: 'var(--text-secondary)' }}>
-                          {h.estimate !== null ? `$${h.estimate.toFixed(2)}` : 'â€”'}
+                          {h.estimate !== null ? `$${h.estimate.toFixed(2)}` : '—'}
                         </td>
                         <td style={{ color: beat ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                          {h.surprise !== null ? `${beat ? '+' : ''}$${h.surprise.toFixed(2)}` : 'â€”'}
+                          {h.surprise !== null ? `${beat ? '+' : ''}$${h.surprise.toFixed(2)}` : '—'}
                         </td>
                         <td style={{ color: beat ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                          {h.surprisePct !== null ? `${beat ? '+' : ''}${h.surprisePct.toFixed(1)}%` : 'â€”'}
+                          {h.surprisePct !== null ? `${beat ? '+' : ''}${h.surprisePct.toFixed(1)}%` : '—'}
                         </td>
                       </tr>
                     )

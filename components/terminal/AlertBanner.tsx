@@ -20,7 +20,7 @@ export default function AlertBanner() {
           id: string; magnitude: number; place: string; tsunami: number
         }) => ({
           id: q.id,
-          message: `âš  EARTHQUAKE M${q.magnitude.toFixed(1)} â€” ${q.place}${q.tsunami ? ' â€” TSUNAMI WARNING' : ''}`,
+          message: `⚠ EARTHQUAKE M${q.magnitude.toFixed(1)} — ${q.place}${q.tsunami ? ' — TSUNAMI WARNING' : ''}`,
           type: 'earthquake' as const
         }))
         setAlerts(eqAlerts)

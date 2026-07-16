@@ -29,6 +29,10 @@ const PAGES: SearchItem[] = [
   { id: 'portfolio',   label: 'PORTFOLIO',    sublabel: 'Track your positions',       category: 'PAGE', href: '/portfolio' },
   { id: 'alerts',      label: 'ALERTS',       sublabel: 'Price & news alerts',        category: 'PAGE', href: '/alerts' },
   { id: 'yield-curve', label: 'YIELD CURVE',  sublabel: 'Treasury yield curve',       category: 'PAGE', href: '/yield-curve' },
+  { id: 'bonds',       label: 'BONDS',        sublabel: 'Fixed income / bonds',       category: 'PAGE', href: '/bonds' },
+  { id: 'backtest',    label: 'BACKTEST',     sublabel: 'Backtesting engine',         category: 'PAGE', href: '/backtest' },
+  { id: 'chat',        label: 'CHAT',         sublabel: 'GOD\'s Vision live chat',    category: 'PAGE', href: '/chat' },
+  { id: 'sheets',      label: 'SHEETS',       sublabel: 'Google Sheets add-on setup', category: 'PAGE', href: '/sheets' },
   { id: 'insiders',     label: 'INSIDERS',      sublabel: 'SEC Form 4 insider transactions', category: 'PAGE', href: '/insiders' },
   { id: 'centralbanks',label: 'CENTRAL BANKS', sublabel: 'Fed/ECB/BOE speeches & rates',   category: 'PAGE', href: '/centralbanks' },
   { id: 'correlation',  label: 'CORRELATION',   sublabel: '90-day cross-asset matrix',      category: 'PAGE', href: '/correlation' },
@@ -48,7 +52,7 @@ const STOCKS: SearchItem[] = [
 ].map(sym => ({
   id: `stock-${sym}`,
   label: sym,
-  sublabel: 'Equity â€” Markets',
+  sublabel: 'Equity — Markets',
   category: 'STOCK' as Category,
   href: `/markets?ticker=${sym}`,
 }))
@@ -62,7 +66,7 @@ const ETFS: SearchItem[] = [
 ].map(({ sym, name }) => ({
   id: `etf-${sym}`,
   label: sym,
-  sublabel: `ETF â€” ${name}`,
+  sublabel: `ETF — ${name}`,
   category: 'ETF' as Category,
   href: `/markets?ticker=${sym}`,
 }))
@@ -80,7 +84,7 @@ const CRYPTO: SearchItem[] = [
 ].map(({ sym, name }) => ({
   id: `crypto-${sym}`,
   label: sym,
-  sublabel: `Crypto â€” ${name}`,
+  sublabel: `Crypto — ${name}`,
   category: 'CRYPTO' as Category,
   href: `/crypto`,
 }))
@@ -101,7 +105,7 @@ const FOREX: SearchItem[] = [
 ].map(({ pair, label, name }) => ({
   id: `forex-${pair}`,
   label,
-  sublabel: `Forex â€” ${name}`,
+  sublabel: `Forex — ${name}`,
   category: 'FOREX' as Category,
   href: `/forex?pair=${pair}`,
 }))
@@ -294,7 +298,7 @@ export default function CommandPalette() {
 
                 {/* Arrow indicator */}
                 {i === selected && (
-                  <span style={{ marginLeft: 'auto', color: 'var(--text-warning)', fontSize: 12 }}>â†’</span>
+                  <span style={{ marginLeft: 'auto', color: 'var(--text-warning)', fontSize: 12 }}>→</span>
                 )}
               </div>
             ))
@@ -308,9 +312,9 @@ export default function CommandPalette() {
           display: 'flex', gap: 16,
           fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)',
         }}>
-          <span>â†‘â†“ navigate</span>
-          <span>â†µ open</span>
-          <span>âŒ˜K / ctrl+K toggle</span>
+          <span>↑↓ navigate</span>
+          <span>↵ open</span>
+          <span>⌘K / ctrl+K toggle</span>
           <span style={{ marginLeft: 'auto' }}>{results.length} results</span>
         </div>
       </div>

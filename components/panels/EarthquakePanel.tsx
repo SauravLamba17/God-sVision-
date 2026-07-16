@@ -58,7 +58,7 @@ export default function EarthquakePanel({ limit = 5 }: { limit?: number }) {
                   <div className="flex items-center gap-2">
                     <span className="text-muted text-[9px] font-mono">DEPTH: {q.depth.toFixed(0)}km</span>
                     {q.tsunami === 1 && (
-                      <span className="text-negative text-[9px] font-mono animate-pulse">âš  TSUNAMI</span>
+                      <span className="text-negative text-[9px] font-mono animate-pulse">⚠ TSUNAMI</span>
                     )}
                   </div>
                 </div>

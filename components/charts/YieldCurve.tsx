@@ -68,7 +68,7 @@ export default function YieldCurve() {
       <div className="panel-header">
         <span className="panel-header-title">US TREASURY YIELD CURVE</span>
         <span className={`font-mono text-[10px] ${inverted ? 'text-negative' : 'text-positive'}`}>
-          {inverted ? 'âš  INVERTED (RECESSION SIGNAL)' : 'âœ“ NORMAL'}
+          {inverted ? '⚠ INVERTED (RECESSION SIGNAL)' : '✓ NORMAL'}
         </span>
       </div>
       <div className="p-2">

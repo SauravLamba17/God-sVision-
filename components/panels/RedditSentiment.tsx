@@ -40,7 +40,7 @@ export default function RedditSentiment() {
     <div>
       {/* Header */}
       <div style={{ padding:'4px 8px', borderBottom:'1px solid #1b2e1b', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>TICKER Â· MENTIONS Â· SENTIMENT</span>
+        <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>TICKER · MENTIONS · SENTIMENT</span>
         <span style={{ fontFamily:'IBM Plex Mono', fontSize:8, color:'var(--text-muted)' }}>r/WSB + r/investing + r/stocks</span>
       </div>
       {mentions.map((m, i) => (
@@ -56,17 +56,17 @@ export default function RedditSentiment() {
             {m.subreddits.includes('wallstreetbets') && m.avgScore > 1000 && (
               <span style={{ fontFamily:'IBM Plex Mono', fontSize:8, color:'#fff', background:'var(--text-negative)', padding:'1px 4px', borderRadius:2 }}>WSB</span>
             )}
-            <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginLeft:'auto' }}>{expanded===m.ticker?'â–²':'â–¼'}</span>
+            <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginLeft:'auto' }}>{expanded===m.ticker?'▲':'▼'}</span>
           </div>
           {expanded === m.ticker && (
             <div style={{ background:'var(--bg-terminal)', borderBottom:'1px solid #1b2e1b', padding:'8px 12px' }}>
               <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginBottom:4 }}>TOP POST:</div>
               <a href={m.topPost.url} target="_blank" rel="noreferrer"
                 style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', textDecoration:'none', display:'block', lineHeight:1.4, marginBottom:4 }}>
-                {m.topPost.title.slice(0, 120)}{m.topPost.title.length > 120 ? 'â€¦' : ''}
+                {m.topPost.title.slice(0, 120)}{m.topPost.title.length > 120 ? '…' : ''}
               </a>
               <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>
-                r/{m.topPost.subreddit} Â· {m.topPost.score.toLocaleString()} pts Â· avg {m.avgScore} pts
+                r/{m.topPost.subreddit} · {m.topPost.score.toLocaleString()} pts · avg {m.avgScore} pts
               </div>
             </div>
           )}
@@ -74,7 +74,7 @@ export default function RedditSentiment() {
       ))}
       {mentions.length === 0 && (
         <div style={{ padding:16, fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)', textAlign:'center' }}>
-          No ticker mentions fetched yet â€” Reddit APIs may be throttled.
+          No ticker mentions fetched yet — Reddit APIs may be throttled.
         </div>
       )}
     </div>

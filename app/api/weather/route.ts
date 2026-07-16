@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getWeather, getForecast, getNOAAAlerts, WORLD_CITIES } from '@/lib/apis/openweather'
+import { getWeather, getForecast, getNOAAAlerts, WORLD_CITIES, INDIA_CITIES } from '@/lib/apis/openweather'
 import { setCache, getCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'cities'
+  const region = searchParams.get('region') || 'world'
   const lat = parseFloat(searchParams.get('lat') || '40.71')
   const lon = parseFloat(searchParams.get('lon') || '-74.01')
   const city = searchParams.get('city') || 'New York'
@@ -37,11 +38,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data, source: 'live' })
     }
 
-    const key = 'weather_cities'
+    const cityList = region === 'india' ? INDIA_CITIES : WORLD_CITIES
+    const key = region === 'india' ? 'weather_cities_india' : 'weather_cities'
     const cached = getCache(key)
     if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
     const results = await Promise.allSettled(
-      WORLD_CITIES.map(c => getWeather(c.lat, c.lon, c.name))
+      cityList.map(c => getWeather(c.lat, c.lon, c.name))
     )
     const data = results
       .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof getWeather>>> => r.status === 'fulfilled')

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef, useCallback } from 'react'
 import {
   createChart, ColorType, CrosshairMode,
@@ -27,9 +27,19 @@ interface Props {
   }
 }
 
-const BG   = 'var(--bg-terminal)'
-const GRID = 'var(--border-color)'
-const TEXT = 'var(--text-muted)'
+// Hardcoded hex — lightweight-charts cannot parse CSS variables
+const BG          = '#050a05'
+const GRID        = '#1b2e1b'
+const TEXT        = '#607d8b'
+const UP_COLOR    = '#00e676'
+const DOWN_COLOR  = '#ff1744'
+const BORDER_UP   = '#00e676'
+const BORDER_DOWN = '#ff1744'
+const WICK_UP     = '#00e676'
+const WICK_DOWN   = '#ff1744'
+const SMA20_COLOR = '#40c4ff'
+const SMA50_COLOR = '#ff6d00'
+const CROSSHAIR   = '#607d8b'
 
 function filterNull(data: IndicatorPoint[]): { time: Time; value: number }[] {
   return data.filter(d => d.value !== null).map(d => ({ time: d.time as Time, value: d.value as number }))
@@ -50,11 +60,28 @@ export default function CandlestickChartInner({
     createChart(el, {
       width: el.offsetWidth,
       height: h,
-      layout: { background: { type: ColorType.Solid, color: BG }, textColor: TEXT },
-      grid:   { vertLines: { color: GRID }, horzLines: { color: GRID } },
-      rightPriceScale: { borderColor: GRID, scaleMargins: { top: 0.05, bottom: 0.05 } },
-      timeScale: { borderColor: GRID, timeVisible: true, secondsVisible: false },
-      crosshair: { mode: CrosshairMode.Normal },
+      layout: {
+        background: { type: ColorType.Solid, color: BG },
+        textColor: TEXT,
+      },
+      grid: {
+        vertLines: { color: GRID },
+        horzLines: { color: GRID },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: { color: CROSSHAIR, labelBackgroundColor: '#0a140a' },
+        horzLine: { color: CROSSHAIR, labelBackgroundColor: '#0a140a' },
+      },
+      rightPriceScale: {
+        borderColor: GRID,
+        scaleMargins: { top: 0.05, bottom: 0.05 },
+      },
+      timeScale: {
+        borderColor: GRID,
+        timeVisible: true,
+        secondsVisible: false,
+      },
     }), [])
 
   useEffect(() => {
@@ -64,14 +91,17 @@ export default function CandlestickChartInner({
     const count = (showRsi ? 1 : 0) + (showMacd ? 1 : 0)
     const mainH = height - count * subH
 
-    // â”€â”€ Main chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Main chart ───────────────────────────────────────────────────
     const chart = makeChart(mainRef.current, mainH)
     mainChart.current = chart
 
     const candleSeries: ISeriesApi<'Candlestick'> = chart.addCandlestickSeries({
-      upColor: 'var(--text-positive)', downColor: 'var(--text-negative)',
-      borderUpColor: 'var(--text-positive)', borderDownColor: 'var(--text-negative)',
-      wickUpColor:   'var(--text-positive)', wickDownColor:   'var(--text-negative)',
+      upColor:        UP_COLOR,
+      downColor:      DOWN_COLOR,
+      borderUpColor:  BORDER_UP,
+      borderDownColor: BORDER_DOWN,
+      wickUpColor:    WICK_UP,
+      wickDownColor:  WICK_DOWN,
     })
     candleSeries.setData(
       candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close }))
@@ -95,8 +125,8 @@ export default function CandlestickChartInner({
 
     // Overlay lines
     const lineOpts = (color: string, w = 1) => ({ color, lineWidth: w as 1|2|3|4, lastValueVisible: false, priceLineVisible: false })
-    if (overlays.sma20?.length)   { const s = chart.addLineSeries(lineOpts('var(--text-accent)')); s.setData(filterNull(overlays.sma20)) }
-    if (overlays.sma50?.length)   { const s = chart.addLineSeries(lineOpts('var(--text-warning)')); s.setData(filterNull(overlays.sma50)) }
+    if (overlays.sma20?.length)   { const s = chart.addLineSeries(lineOpts(SMA20_COLOR)); s.setData(filterNull(overlays.sma20)) }
+    if (overlays.sma50?.length)   { const s = chart.addLineSeries(lineOpts(SMA50_COLOR)); s.setData(filterNull(overlays.sma50)) }
     if (overlays.sma200?.length)  { const s = chart.addLineSeries(lineOpts('#a78bfa')); s.setData(filterNull(overlays.sma200)) }
     if (overlays.ema12?.length)   { const s = chart.addLineSeries(lineOpts('#34d399')); s.setData(filterNull(overlays.ema12)) }
     if (overlays.ema26?.length)   { const s = chart.addLineSeries(lineOpts('#fb923c')); s.setData(filterNull(overlays.ema26)) }
@@ -106,12 +136,12 @@ export default function CandlestickChartInner({
       const l = chart.addLineSeries(opt); l.setData(filterNull(overlays.bbLower))
     }
 
-    // â”€â”€ RSI sub-chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── RSI sub-chart ─────────────────────────────────────────────────
     if (showRsi && rsiRef.current && rsiData.length) {
       const rc = makeChart(rsiRef.current, subH)
       rsiChart.current = rc
       rc.timeScale().applyOptions({ visible: false })
-      const rsiSeries = rc.addLineSeries({ color: 'var(--text-accent)', lineWidth: 1 as 1, lastValueVisible: true, priceLineVisible: false })
+      const rsiSeries = rc.addLineSeries({ color: SMA20_COLOR, lineWidth: 1 as 1, lastValueVisible: true, priceLineVisible: false })
       rsiSeries.setData(filterNull(rsiData))
       rc.addLineSeries({ color: '#ef444460', lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
         .setData(rsiData.filter(d => d.value !== null).map(d => ({ time: d.time as Time, value: 70 })))
@@ -127,7 +157,7 @@ export default function CandlestickChartInner({
       })
     }
 
-    // â”€â”€ MACD sub-chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── MACD sub-chart ────────────────────────────────────────────────
     if (showMacd && macdRef.current && macdData.length) {
       const mc = makeChart(macdRef.current, subH)
       macdChart.current = mc
@@ -142,8 +172,8 @@ export default function CandlestickChartInner({
           color: d.hist! >= 0 ? '#22c55e80' : '#ef444480',
         }))
       )
-      const macdLine   = mc.addLineSeries({ color: 'var(--text-accent)',  lineWidth: 1 as 1, lastValueVisible: true,  priceLineVisible: false })
-      const signalLine = mc.addLineSeries({ color: 'var(--text-accent)',  lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
+      const macdLine   = mc.addLineSeries({ color: SMA20_COLOR, lineWidth: 1 as 1, lastValueVisible: true,  priceLineVisible: false })
+      const signalLine = mc.addLineSeries({ color: SMA50_COLOR, lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
       macdLine.setData(macdData.filter(d => d.macd   !== null).map(d => ({ time: d.time as Time, value: d.macd! })))
       signalLine.setData(macdData.filter(d => d.signal !== null).map(d => ({ time: d.time as Time, value: d.signal! })))
 

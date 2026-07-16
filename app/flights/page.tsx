@@ -35,6 +35,7 @@ export default function FlightsPage() {
   const [search, setSearch] = useState('')
   const [isMounted, setIsMounted] = useState(false)
   const [selected, setSelected] = useState<Aircraft | null>(null)
+  const [rateLimited, setRateLimited] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -48,6 +49,7 @@ export default function FlightsPage() {
         setAircraft(json.data.aircraft || [])
         setCounts(json.data.counts || { total: 0, usa: 0, europe: 0, asia: 0 })
       }
+      setRateLimited(!!json.rateLimited)
     } catch { /* silent */ }
     finally { setLoading(false) }
   }
@@ -79,7 +81,7 @@ export default function FlightsPage() {
     <div className="flex flex-col h-full">
       {/* Stats Bar */}
       <div style={{ background: 'var(--bg-terminal)', borderBottom: '1px solid #1b2e1b', padding: '6px 12px' }} className="flex items-center gap-6 flex-shrink-0">
-        <div className="font-mono text-[10px] text-accent font-bold">LIVE FLIGHT TRACKER â€” OPENSKY NETWORK</div>
+        <div className="font-mono text-[10px] text-accent font-bold">LIVE FLIGHT TRACKER — OPENSKY NETWORK</div>
         {[
           { label: 'TOTAL TRACKED', value: counts.total, color: 'var(--text-accent)' },
           { label: 'OVER USA', value: counts.usa, color: '#2196f3' },
@@ -101,6 +103,19 @@ export default function FlightsPage() {
           />
         </div>
       </div>
+
+      {rateLimited && (
+        <div style={{
+          fontFamily: 'IBM Plex Mono',
+          fontSize: '9px',
+          color: 'var(--text-warning)',
+          padding: '4px 12px',
+          background: 'var(--bg-terminal)',
+          borderBottom: '1px solid #1b2e1b',
+        }} className="flex-shrink-0">
+          ⚠ OpenSky rate limit reached — showing last known positions
+        </div>
+      )}
 
       {/* Altitude Legend */}
       <div style={{ background: '#000', borderBottom: '1px solid #0d1f0d', padding: '4px 12px' }} className="flex items-center gap-6">
@@ -140,7 +155,7 @@ export default function FlightsPage() {
                       <div style={{ color: '#546e7a' }}>{a.originCountry}</div>
                       <div>ALT: <span style={{ color: altColor(a.altitude) }}>{a.altitude ? `${Math.round(a.altitude).toLocaleString()}ft` : 'GROUND'}</span></div>
                       <div>SPD: <span style={{ color: '#c8e6c9' }}>{a.velocity ? `${Math.round(a.velocity)}kts` : 'N/A'}</span></div>
-                      <div>HDG: <span style={{ color: '#c8e6c9' }}>{a.heading ? `${Math.round(a.heading)}Â°` : 'N/A'}</span></div>
+                      <div>HDG: <span style={{ color: '#c8e6c9' }}>{a.heading ? `${Math.round(a.heading)}°` : 'N/A'}</span></div>
                       {a.squawk && <div>SQK: <span style={{ color: '#c8e6c9' }}>{a.squawk}</span></div>}
                     </div>
                   </Popup>

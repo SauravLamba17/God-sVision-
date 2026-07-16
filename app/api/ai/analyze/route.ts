@@ -1,69 +1,64 @@
-import Anthropic from '@anthropic-ai/sdk'
-import { NextRequest } from 'next/server'
-
-const PANEL_SYSTEM = `You are a senior quantitative analyst and portfolio strategist with 20 years on the trading desk.
-You have direct access to live terminal data from GOD's Vision — a Bloomberg-grade financial intelligence platform.
-Deliver analysis in crisp, terminal-style prose: no bullet lists, no headers, no markdown.
-Speak in facts, signals, and conviction. Under 250 words. Start immediately with the key insight.`
-
-const KEY_VALID = (k?: string) =>
-  !!k && !k.startsWith('your_') && k !== 'demo' && k.length > 20
+import { NextRequest, NextResponse } from 'next/server';
+import { geminiFlash } from '@/lib/gemini';
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!KEY_VALID(apiKey)) {
-    return new Response(
-      `data: ${JSON.stringify({ error: 'Add ANTHROPIC_API_KEY to .env.local to enable AI analysis (console.anthropic.com)' })}\n\ndata: [DONE]\n\n`,
-      { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } }
-    )
-  }
+  try {
+    if (!geminiFlash) {
+      return NextResponse.json(
+        { error: 'AI not configured. Add GEMINI_API_KEY to .env.local' },
+        { status: 503 }
+      );
+    }
 
-  const { panelData, panelName, context } = await req.json()
-  const client = new Anthropic({ apiKey })
+    const body = await req.json();
+    const { ticker, context, mode, data } = body;
 
-  const userPrompt = `Live ${panelName} feed — ${new Date().toUTCString()}:\n\n${JSON.stringify(panelData, null, 2)}${context ? `\n\nAdditional context: ${context}` : ''}\n\nGive your analysis.`
+    const systemPrompt = `You are GOD's Vision Analyst — a senior quantitative analyst with 20 years of experience at top hedge funds. You specialize in ${mode === 'INDIA' ? 'Indian equity markets (NSE/BSE), Nifty options, RBI policy' : 'US equity markets, Fed policy, S&P 500'}.
 
-  const encoder = new TextEncoder()
+Give specific, actionable analysis. Always include:
+- Current price assessment (cheap/fair/expensive)
+- Key support and resistance levels
+- Short-term bias (bullish/bearish/neutral) with reasoning
+- Risk factors to watch
+- One specific trade idea with entry, target, and stop loss
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        const stream = client.messages.stream({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
-          system: PANEL_SYSTEM,
-          messages: [{ role: 'user', content: userPrompt }],
-        })
+Be direct and specific. No vague statements. Use ${mode === 'INDIA' ? 'INR (₹)' : 'USD ($)'} for all prices.`;
 
-        for await (const event of stream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
-            )
+    const userPrompt = `Analyze ${ticker} and provide a complete trading assessment.
+${data ? `Current data: ${JSON.stringify(data)}` : ''}
+${context ? `Additional context: ${context}` : ''}
+
+Format your response in clear sections:
+ASSESSMENT | LEVELS | BIAS | TRADE IDEA | RISKS`;
+
+    const flash = geminiFlash;
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+          const result = await flash.generateContentStream(fullPrompt);
+          for await (const chunk of result.stream) {
+            const text = chunk.text();
+            if (text) {
+              controller.enqueue(encoder.encode(text));
+            }
           }
+          controller.close();
+        } catch (e: any) {
+          controller.enqueue(encoder.encode(`\n\nError: ${e.message}`));
+          controller.close();
         }
+      },
+    });
 
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } catch (err: any) {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: err.message || 'Analysis failed' })}\n\n`)
-        )
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } finally {
-        controller.close()
-      }
-    },
-  })
-
-  return new Response(readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    },
-  })
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 }

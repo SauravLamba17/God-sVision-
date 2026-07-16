@@ -1,20 +1,13 @@
 import axios from 'axios'
 
-// MOCK DATA — used when OpenSky is rate-limited (429)
-const MOCK_AIRCRAFT: Aircraft[] = [
-  { icao24:'a0b1c2', callsign:'UAL234', originCountry:'United States', longitude:-87.65, latitude:41.97, altitude:35000, onGround:false, velocity:480, heading:270, verticalRate:0, squawk:'1200' },
-  { icao24:'b1c2d3', callsign:'DAL456', originCountry:'United States', longitude:-73.78, latitude:40.64, altitude:0,     onGround:true,  velocity:0,   heading:90,  verticalRate:0, squawk:'7700' },
-  { icao24:'c2d3e4', callsign:'BAW175', originCountry:'United Kingdom', longitude:-0.46, latitude:51.47, altitude:38000, onGround:false, velocity:510, heading:300, verticalRate:0, squawk:'1300' },
-  { icao24:'d3e4f5', callsign:'LFT882', originCountry:'France',         longitude:2.55,  latitude:48.99, altitude:32000, onGround:false, velocity:460, heading:185, verticalRate:-200, squawk:'2100' },
-  { icao24:'e4f5a6', callsign:'SWA1234', originCountry:'United States', longitude:-105.0,latitude:39.85, altitude:33000, onGround:false, velocity:490, heading:90,  verticalRate:0, squawk:'0001' },
-  { icao24:'f5a6b7', callsign:'CCA901', originCountry:'China',          longitude:121.3, latitude:31.15, altitude:36000, onGround:false, velocity:505, heading:40,  verticalRate:100, squawk:'1234' },
-  { icao24:'a6b7c8', callsign:'EZY445', originCountry:'United Kingdom', longitude:13.40, latitude:52.51, altitude:28000, onGround:false, velocity:440, heading:220, verticalRate:-300, squawk:'3300' },
-  { icao24:'b7c8d9', callsign:'ANA787', originCountry:'Japan',          longitude:139.77,latitude:35.68, altitude:0,     onGround:true,  velocity:0,   heading:0,   verticalRate:0, squawk:'0000' },
-  { icao24:'c8d9e0', callsign:'AFR001', originCountry:'France',         longitude:-43.17,latitude:-22.8, altitude:37000, onGround:false, velocity:520, heading:30,  verticalRate:0, squawk:'4400' },
-  { icao24:'d9e0f1', callsign:'QFA002', originCountry:'Australia',      longitude:151.2, latitude:-33.9, altitude:39000, onGround:false, velocity:515, heading:270, verticalRate:0, squawk:'5500' },
-  { icao24:'e0f1a2', callsign:'AAL100', originCountry:'United States', longitude:-118.4, latitude:33.94, altitude:0,     onGround:true,  velocity:0,   heading:0,   verticalRate:0, squawk:'0000' },
-  { icao24:'f1a2b3', callsign:'SIA21',  originCountry:'Singapore',      longitude:103.98,latitude:1.35,  altitude:35000, onGround:false, velocity:500, heading:300, verticalRate:0, squawk:'6600' },
-]
+// Thrown when OpenSky returns 429 — callers should show an honest
+// "rate limited" state, never fabricate frozen mock aircraft.
+export class OpenSkyRateLimitError extends Error {
+  constructor() {
+    super('OpenSky rate limit reached')
+    this.name = 'OpenSkyRateLimitError'
+  }
+}
 
 export interface Aircraft {
   icao24: string
@@ -39,11 +32,20 @@ export async function getAllAircraft(bounds?: { minLat: number; maxLat: number; 
     params.lomax = bounds.maxLon
   }
 
+  // Authenticated OpenSky requests get a far higher rate limit than
+  // anonymous ones (~4000 credits/day vs almost nothing). Add
+  // OPENSKY_USERNAME / OPENSKY_PASSWORD to .env.local to enable —
+  // falls back to anonymous access if either is missing.
+  const username = process.env.OPENSKY_USERNAME
+  const password = process.env.OPENSKY_PASSWORD
+  const auth = username && password ? { username, password } : undefined
+
   try {
     const { data } = await axios.get('https://opensky-network.org/api/states/all', {
       params,
       timeout: 15000,
-      headers: { 'User-Agent': 'GodVision/1.0' }
+      headers: { 'User-Agent': 'GodVision/1.0' },
+      ...(auth ? { auth } : {}),
     })
 
     const states = data.states || []
@@ -65,7 +67,7 @@ export async function getAllAircraft(bounds?: { minLat: number; maxLat: number; 
       .slice(0, 3000)
   } catch (err: any) {
     if (err?.response?.status === 429 || err?.message?.includes('429')) {
-      return MOCK_AIRCRAFT
+      throw new OpenSkyRateLimitError()
     }
     throw err
   }

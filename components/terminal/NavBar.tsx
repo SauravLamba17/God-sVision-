@@ -11,22 +11,26 @@ const ThemeSwitcher        = dynamic(() => import('./ThemeSwitcher'),        { s
 const BeginnerModeToggle   = dynamic(() => import('./BeginnerModeToggle'),   { ssr: false })
 
 const NAV_F_ITEMS = [
-  { key: 'F1',  label: 'DASH',     href: '/',          icon: 'â—ˆ' },
-  { key: 'F2',  label: 'MARKETS',  href: '/markets',   icon: 'ðŸ“ˆ' },
-  { key: 'F3',  label: 'CRYPTO',   href: '/crypto',    icon: 'â‚¿' },
-  { key: 'F4',  label: 'FOREX',    href: '/forex',     icon: 'ðŸ’±' },
-  { key: 'F5',  label: 'MACRO',    href: '/macro',     icon: 'ðŸ¦' },
-  { key: 'F6',  label: 'CALENDAR', href: '/calendar',  icon: 'ðŸ“…' },
-  { key: 'F7',  label: 'NEWS',     href: '/news',      icon: 'ðŸ“¡' },
-  { key: 'F8',  label: 'MAP',      href: '/map',       icon: 'ðŸŒ' },
-  { key: 'F9',  label: 'CAM',      href: '/cameras',   icon: 'ðŸ“·' },
-  { key: 'F10', label: 'FLIGHTS',  href: '/flights',   icon: 'âœˆ' },
-  { key: 'F11', label: 'WEATHER',  href: '/weather',   icon: 'ðŸŒ¤' },
-  { key: 'F12', label: 'SPORTS',   href: '/sports',    icon: 'âš½' },
+  { key: 'F1',  label: 'DASH',     href: '/',          icon: '◈' },
+  { key: 'F2',  label: 'MARKETS',  href: '/markets',   icon: '📈' },
+  { key: 'F3',  label: 'CRYPTO',   href: '/crypto',    icon: '₿' },
+  { key: 'F4',  label: 'FOREX',    href: '/forex',     icon: '💱' },
+  { key: 'F5',  label: 'MACRO',    href: '/macro',     icon: '🏦' },
+  { key: 'F6',  label: 'CALENDAR', href: '/calendar',  icon: '📅' },
+  { key: 'F7',  label: 'NEWS',     href: '/news',      icon: '📡' },
+  { key: 'F8',  label: 'MAP',      href: '/map',       icon: '🌍' },
+  { key: 'F9',  label: 'CAM',      href: '/cameras',   icon: '📷' },
+  { key: 'F10', label: 'FLIGHTS',  href: '/flights',   icon: '✈' },
+  { key: 'F11', label: 'WEATHER',  href: '/weather',   icon: '🌤' },
+  { key: 'F12', label: 'SPORTS',   href: '/sports',    icon: '⚽' },
 ]
 
 const NAV_EXTRA = [
   { label: 'COMMODITIES', href: '/commodities' },
+  { label: 'BONDS',       href: '/bonds' },
+  { label: 'BACKTEST',    href: '/backtest' },
+  { label: 'CHAT',        href: '/chat' },
+  { label: 'SHEETS',      href: '/sheets' },
   { label: 'PORTFOLIO',   href: '/portfolio' },
   { label: 'ALERTS',      href: '/alerts' },
   { label: 'SCREENER',    href: '/screener' },
@@ -175,7 +179,7 @@ export default function NavBar() {
             {/* Single/Split toggle */}
             <button
               onClick={toggleSplit}
-              title="Ctrl+Shift+S â€” Toggle Split View"
+              title="Ctrl+Shift+S — Toggle Split View"
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 background: splitMode ? 'rgba(255,109,0,0.12)' : 'transparent',
@@ -185,7 +189,7 @@ export default function NavBar() {
                 cursor: 'pointer', letterSpacing: '0.06em',
               }}
             >
-              {splitMode ? 'âŠž' : 'âŠ¡'} {splitMode ? 'SPLIT' : 'SINGLE'}
+              {splitMode ? '⊞' : '⊡'} {splitMode ? 'SPLIT' : 'SINGLE'}
             </button>
 
             {/* GOD MODE */}
@@ -197,7 +201,7 @@ export default function NavBar() {
               fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color: '#000',
               textDecoration: 'none', letterSpacing: '0.08em',
             }}>
-              âš¡ GOD
+              ⚡ GOD
             </Link>
           </div>
         </div>

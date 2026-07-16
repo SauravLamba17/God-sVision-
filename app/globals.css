@@ -1,3 +1,4 @@
+@charset "UTF-8";
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
@@ -181,9 +182,10 @@
 html, body {
   background-color: var(--bg-terminal) !important;
   color: var(--text-primary) !important;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
   font-size: 12px;
   overflow: hidden;
+  max-width: 100vw;
   height: 100%;
   transition: background-color 200ms ease, color 200ms ease;
 }
@@ -669,6 +671,19 @@ body::after {
 }
 
 /* ═══════════════════════════════════════════
+   SKELETON LOADING
+═══════════════════════════════════════════ */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.skeleton {
+  background: var(--bg-hover);
+  border-radius: 2px;
+  animation: skeleton-pulse 1.5s ease infinite;
+}
+
+/* ═══════════════════════════════════════════
    THEME-AWARE COMPONENT OVERRIDES
 ═══════════════════════════════════════════ */
 [data-theme="light"] .panel-header-title { text-shadow: none; }
@@ -677,3 +692,8 @@ body::after {
 [data-theme="light"] .modal-content { box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
 [data-theme="light"] body::before { display: none; }
 [data-theme="light"] body::after  { display: none; }
+
+@keyframes sparkPulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.6; }
+}

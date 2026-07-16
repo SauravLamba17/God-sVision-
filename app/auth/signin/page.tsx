@@ -63,7 +63,7 @@ export default function SignInPage() {
       <div style={{ width: 380, background: '#050a05', border: '1px solid #1b2e1b', borderTop: '2px solid #ff6d00', padding: 28 }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 20, color: '#ff6d00', fontWeight: 700, letterSpacing: '0.12em' }}>⚡ GOD&apos;S VISION</div>
+          <div style={{ fontSize: 20, color: '#ff6d00', fontWeight: 700, letterSpacing: '0.12em' }}>⚡ GOD'S VISION</div>
           <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.2em', marginTop: 4 }}>FINANCIAL INTELLIGENCE TERMINAL</div>
         </div>
 

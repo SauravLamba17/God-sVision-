@@ -14,7 +14,7 @@ interface CalendarEvent {
   country:     string
 }
 
-// Static 2025-2026 economic calendar â€” key events
+// Static 2025-2026 economic calendar — key events
 const STATIC_CALENDAR: CalendarEvent[] = [
   // FOMC 2025
   { date: '2025-01-29', time: '14:00 ET', event: 'FOMC Interest Rate Decision', category: 'FED', importance: 'HIGH', country: 'US', previous: '4.50%' },
@@ -72,7 +72,7 @@ const STATIC_CALENDAR: CalendarEvent[] = [
   { date: '2026-05-01', time: '08:30 ET', event: 'Non-Farm Payrolls - Apr 2026', category: 'EMPLOYMENT', importance: 'HIGH', country: 'US' },
   { date: '2026-06-05', time: '08:30 ET', event: 'Non-Farm Payrolls - May 2026', category: 'EMPLOYMENT', importance: 'HIGH', country: 'US' },
   { date: '2026-07-02', time: '08:30 ET', event: 'Non-Farm Payrolls - Jun 2026', category: 'EMPLOYMENT', importance: 'HIGH', country: 'US' },
-  // GDP (BEA quarterly advance release â€” ~4 weeks after quarter end)
+  // GDP (BEA quarterly advance release — ~4 weeks after quarter end)
   { date: '2025-01-30', time: '08:30 ET', event: 'GDP Advance Estimate - Q4 2024', category: 'GDP', importance: 'HIGH', country: 'US' },
   { date: '2025-04-30', time: '08:30 ET', event: 'GDP Advance Estimate - Q1 2025', category: 'GDP', importance: 'HIGH', country: 'US' },
   { date: '2025-07-30', time: '08:30 ET', event: 'GDP Advance Estimate - Q2 2025', category: 'GDP', importance: 'HIGH', country: 'US' },
@@ -80,7 +80,7 @@ const STATIC_CALENDAR: CalendarEvent[] = [
   { date: '2026-01-28', time: '08:30 ET', event: 'GDP Advance Estimate - Q4 2025', category: 'GDP', importance: 'HIGH', country: 'US' },
   { date: '2026-04-29', time: '08:30 ET', event: 'GDP Advance Estimate - Q1 2026', category: 'GDP', importance: 'HIGH', country: 'US' },
   { date: '2026-07-29', time: '08:30 ET', event: 'GDP Advance Estimate - Q2 2026', category: 'GDP', importance: 'HIGH', country: 'US' },
-  // PCE (Fed's preferred inflation measure â€” last Friday of month)
+  // PCE (Fed's preferred inflation measure — last Friday of month)
   { date: '2025-01-31', time: '08:30 ET', event: 'PCE Price Index - Dec 2024', category: 'INFLATION', importance: 'HIGH', country: 'US', previous: '2.4%' },
   { date: '2025-02-28', time: '08:30 ET', event: 'PCE Price Index - Jan 2025', category: 'INFLATION', importance: 'HIGH', country: 'US' },
   { date: '2025-03-28', time: '08:30 ET', event: 'PCE Price Index - Feb 2025', category: 'INFLATION', importance: 'HIGH', country: 'US' },

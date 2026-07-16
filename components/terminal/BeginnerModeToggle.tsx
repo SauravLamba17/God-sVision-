@@ -9,7 +9,7 @@ export default function BeginnerModeToggle() {
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       <button
         onClick={() => setEnabled(!enabled)}
-        title={enabled ? 'Turn off Beginner Mode' : 'Turn on Beginner Mode â€” adds tooltips and plain-English explanations'}
+        title={enabled ? 'Turn off Beginner Mode' : 'Turn on Beginner Mode — adds tooltips and plain-English explanations'}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -26,7 +26,7 @@ export default function BeginnerModeToggle() {
           whiteSpace: 'nowrap',
         }}
       >
-        ðŸ“š {enabled ? 'LEARN: ON' : 'LEARN'}
+        📚 {enabled ? 'LEARN: ON' : 'LEARN'}
       </button>
       {enabled && (
         <Link
@@ -47,7 +47,7 @@ export default function BeginnerModeToggle() {
             whiteSpace: 'nowrap',
           }}
         >
-          GLOSSARY â†’
+          GLOSSARY →
         </Link>
       )}
     </div>

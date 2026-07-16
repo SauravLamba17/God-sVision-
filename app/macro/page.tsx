@@ -147,7 +147,7 @@ export default function MacroPage() {
                   <td className="font-mono text-accent">{cb.rate.toFixed(2)}%</td>
                   <td className="text-muted">{cb.currency}</td>
                   <td className={cb.trend === 'hike' ? 'positive' : cb.trend === 'cut' ? 'negative' : 'neutral'}>
-                    {cb.trend === 'hike' ? 'â–²' : cb.trend === 'cut' ? 'â–¼' : 'â—'}
+                    {cb.trend === 'hike' ? '▲' : cb.trend === 'cut' ? '▼' : '●'}
                   </td>
                 </tr>
               ))}
