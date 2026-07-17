@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useRef, useEffect } from 'react'
 import { GLOSSARY } from '@/lib/glossary'
 import { useBeginnerMode } from '@/lib/hooks/useBeginnerMode'

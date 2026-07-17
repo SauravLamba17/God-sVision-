@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import { formatCurrency, formatPercent } from '@/lib/utils'

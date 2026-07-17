@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import { magnitudeColor, timeAgo } from '@/lib/utils'

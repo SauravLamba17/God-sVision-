@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { formatCurrency, formatPercent } from '@/lib/utils'

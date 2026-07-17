@@ -1,4 +1,4 @@
-﻿import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic'
 export type { OHLCCandle, IndicatorPoint } from './CandlestickChartInner'
 
 export default dynamic(() => import('./CandlestickChartInner'), {

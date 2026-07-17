@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { timeAgo } from '@/lib/utils'
 

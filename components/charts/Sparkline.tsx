@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts'
 
 interface SparklineProps {

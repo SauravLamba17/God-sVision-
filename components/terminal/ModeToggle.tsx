@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { useMode } from '@/lib/context/ModeContext'
 import { getIndianMarketStatus } from '@/lib/apis/india'

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import MacroPanel from '@/components/panels/MacroPanel'

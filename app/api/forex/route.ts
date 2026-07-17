@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getForexRates, getForexMatrix, MAJOR_PAIRS, CENTRAL_BANK_RATES } from '@/lib/apis/forex'
 import { setCache, getCache } from '@/lib/cache'
 

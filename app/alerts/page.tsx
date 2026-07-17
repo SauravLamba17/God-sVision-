@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { PushSubscribe } from '@/components/terminal/PushSubscribe'
 

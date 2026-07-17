@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getTickerMentions, getTickerSentiment } from '@/lib/apis/reddit'
 
 export async function GET(req: NextRequest) {

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import yahooFinance from 'yahoo-finance2'
 import { getCache, setCache } from '@/lib/cache'
 import { blackScholes, daysToExpiry } from '@/lib/black-scholes'

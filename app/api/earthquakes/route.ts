@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getRecentEarthquakes, getSignificantEarthquakes } from '@/lib/apis/usgs'
 import { setCache, getCache } from '@/lib/cache'
 

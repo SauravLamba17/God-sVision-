@@ -1,4 +1,4 @@
-﻿import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { fetchCalendarEvents } from '@/lib/apis/calendar'
 import { getCache, setCache } from '@/lib/cache'
 

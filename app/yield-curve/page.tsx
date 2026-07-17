@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip,

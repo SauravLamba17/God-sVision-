@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from './PanelWrapper'
 import { magnitudeColor, timeAgo } from '@/lib/utils'

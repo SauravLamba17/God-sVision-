@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { scoreHeadlines, computeMarketMood } from '@/lib/apis/newsSentiment'
 
 export async function POST(req: NextRequest) {

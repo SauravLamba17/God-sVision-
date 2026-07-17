@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { fetchInsiderTransactions } from '@/lib/apis/insiders'
 
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import CandlestickChart from '@/components/charts/CandlestickChart'
 import type { OHLCCandle, IndicatorPoint } from '@/components/charts/CandlestickChartInner'

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getQuotes } from '@/lib/apis/yahoo'
 import { sendAlertEmail } from '@/lib/resend'

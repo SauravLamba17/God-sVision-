@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { fetchMCXCommodities } from '@/lib/apis/india'
 

@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import './globals.css'
 import ClientLayout from '@/components/terminal/ClientLayout'
 import { Providers } from '@/components/providers/Providers'

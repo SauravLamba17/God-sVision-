@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getCorrelationMatrix, ASSETS } from '@/lib/apis/correlation'
 
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>

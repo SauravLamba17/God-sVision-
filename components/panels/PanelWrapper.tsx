@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect, ReactNode } from 'react'
 import { formatTimestamp } from '@/lib/utils'
 

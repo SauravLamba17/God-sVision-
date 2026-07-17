@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import { WORLD_CITIES, wmoToIcon, wmoToDescription, getWeatherEmoji } from '@/lib/apis/openweather'

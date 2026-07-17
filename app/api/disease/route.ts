@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { fetchGlobalStats, fetchCountryStats, fetchHistoricalGlobal } from '@/lib/apis/disease'
 
 export async function GET(req: NextRequest) {
