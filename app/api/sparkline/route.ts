@@ -3,7 +3,7 @@ import yahooFinance from 'yahoo-finance2';
 
 // Cache: much longer TTL to avoid re-triggering Yahoo's rate limit
 const cache = new Map<string, { data: number[]; ts: number; source: string }>();
-const YAHOO_TTL = 5 * 60 * 1000;      // 5 minutes for Yahoo-sourced symbols
+const YAHOO_TTL = 15 * 60 * 1000;     // 15 minutes for Yahoo-sourced symbols (Gold, USD Index, all India indices) — longer TTL eases Yahoo's persistent rate limit
 const ALPACA_TTL = 60 * 1000;         // 1 minute for Alpaca (higher limit, can refresh more)
 const COINGECKO_TTL = 60 * 1000;      // 1 minute for crypto
 
@@ -25,25 +25,44 @@ async function fetchFromAlpaca(symbol: string): Promise<number[]> {
   const secretKey = process.env.ALPACA_SECRET_KEY;
   if (!apiKey || !secretKey) return [];
 
+  const headers = {
+    'APCA-API-KEY-ID': apiKey,
+    'APCA-API-SECRET-KEY': secretKey,
+  };
   const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
 
-  const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?` +
-    `start=${start.toISOString()}&end=${now.toISOString()}&timeframe=5Min&limit=100&feed=iex`;
+  // Try intraday 5-minute bars first (best resolution during market hours)
+  try {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?` +
+      `start=${start.toISOString()}&end=${now.toISOString()}&timeframe=5Min&limit=100&feed=iex`;
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+    if (res.ok) {
+      const data = await res.json();
+      const bars = data.bars ?? [];
+      const prices = bars.map((b: any) => b.c).filter((c: number) => typeof c === 'number' && c > 0);
+      if (prices.length >= 2) return prices;
+    }
+  } catch { /* fall through to daily bars */ }
 
-  const res = await fetch(url, {
-    headers: {
-      'APCA-API-KEY-ID': apiKey,
-      'APCA-API-SECRET-KEY': secretKey,
-    },
-    signal: AbortSignal.timeout(6000),
-  });
+  // Fallback: last week of daily closes — covers pre-market, weekends and
+  // holidays when there are no intraday 5-minute bars yet, so the S&P 500 and
+  // NASDAQ sparklines still render a curve instead of staying empty.
+  try {
+    const dailyStart = new Date(now);
+    dailyStart.setDate(dailyStart.getDate() - 7);
+    const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?` +
+      `start=${dailyStart.toISOString()}&end=${now.toISOString()}&timeframe=1Day&limit=10&feed=iex`;
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+    if (res.ok) {
+      const data = await res.json();
+      const bars = data.bars ?? [];
+      return bars.map((b: any) => b.c).filter((c: number) => typeof c === 'number' && c > 0);
+    }
+  } catch { /* return empty below */ }
 
-  if (!res.ok) return [];
-  const data = await res.json();
-  const bars = data.bars ?? [];
-  return bars.map((b: any) => b.c).filter((c: number) => typeof c === 'number' && c > 0);
+  return [];
 }
 
 async function fetchFromCoinGecko(coinId: string): Promise<number[]> {

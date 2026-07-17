@@ -135,6 +135,24 @@ export default function FlightsPage() {
             <span className="font-mono text-[11px] text-positive">FETCHING FLIGHT DATA<span className="blink-cursor" /></span>
           </div>
         ) : (
+          <>
+          {/* Honest empty state — the map tiles still render underneath, but a
+              clear message tells the user why there are no aircraft markers
+              (OpenSky's anonymous API is frequently rate limited on Vercel). */}
+          {aircraft.length === 0 && !rateLimited && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 500, pointerEvents: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div style={{
+                fontFamily: 'IBM Plex Mono', fontSize: 12, color: 'var(--text-muted)',
+                background: 'rgba(0,0,0,0.7)', border: '1px solid var(--border-color)',
+                borderRadius: 4, padding: '10px 16px', textAlign: 'center',
+              }}>
+                No aircraft data available right now — this may be temporary
+              </div>
+            </div>
+          )}
           <MapContainer center={[30, 0]} zoom={3} style={{ position: 'absolute', inset: 0, height: '100%', width: '100%' }} attributionControl={false}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
             {filtered.map(a => (
@@ -163,6 +181,7 @@ export default function FlightsPage() {
               ) : null
             ))}
           </MapContainer>
+          </>
         )}
       </div>
     </div>

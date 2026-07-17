@@ -71,6 +71,7 @@ function VideoModal({ src, title, onClose }: { src: string; title: string; onClo
 }
 
 function FeaturedCard({ cam, onOpen }: { cam: FeaturedStream; onOpen: () => void }) {
+  const [imgError, setImgError] = useState(false)
   return (
     <div
       onClick={onOpen}
@@ -84,16 +85,26 @@ function FeaturedCard({ cam, onOpen }: { cam: FeaturedStream; onOpen: () => void
         📍 {cam.location} · 📹 LIVE STREAM
       </div>
       <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', background: '#000' }}>
-        <img
-          src={`https://i.ytimg.com/vi/${cam.embedId}/hqdefault.jpg`}
-          alt={cam.title}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}>
-            ▶
+        {imgError ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span style={{ fontSize: 20, opacity: 0.5 }}>📵</span>
+            <span className="text-muted font-mono text-[10px]">Feed unavailable</span>
           </div>
-        </div>
+        ) : (
+          <>
+            <img
+              src={`https://i.ytimg.com/vi/${cam.embedId}/hqdefault.jpg`}
+              alt={cam.title}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={() => setImgError(true)}
+            />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}>
+                ▶
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -101,6 +112,7 @@ function FeaturedCard({ cam, onOpen }: { cam: FeaturedStream; onOpen: () => void
 
 function WebcamCard({ cam, onOpen }: { cam: Webcam; onOpen: () => void }) {
   const thumb = cam.images?.current?.preview || cam.images?.current?.thumbnail
+  const [imgError, setImgError] = useState(false)
   return (
     <div
       onClick={onOpen}
@@ -113,16 +125,17 @@ function WebcamCard({ cam, onOpen }: { cam: Webcam; onOpen: () => void }) {
         📍 {cam.location.city}{cam.location.country ? `, ${cam.location.country}` : ''} · 📸 SNAPSHOT
       </div>
       <div style={{ position: 'relative', height: 140, overflow: 'hidden', background: '#000' }}>
-        {thumb ? (
+        {thumb && !imgError ? (
           <img
             src={thumb}
             alt={cam.title}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            onError={() => setImgError(true)}
           />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="text-muted font-mono text-[10px]">NO PREVIEW</span>
+          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span style={{ fontSize: 18, opacity: 0.5 }}>📷</span>
+            <span className="text-muted font-mono text-[10px]">{imgError ? 'Feed unavailable' : 'NO PREVIEW'}</span>
           </div>
         )}
       </div>

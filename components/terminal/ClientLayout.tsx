@@ -12,8 +12,11 @@ const AlertChecker = dynamic(() => import('@/components/terminal/AlertChecker'),
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isGodMode = pathname === '/godmode'
+  // Auth pages render fully standalone — no TopBar/NavBar/ticker chrome — so a
+  // signed-out visitor sees ONLY the sign-in/register page (hard login gate).
+  const isAuthPage = pathname?.startsWith('/auth')
 
-  if (isGodMode) {
+  if (isGodMode || isAuthPage) {
     return <>{children}</>
   }
 

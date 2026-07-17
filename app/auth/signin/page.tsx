@@ -15,13 +15,24 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // After a successful sign-in, return the user to wherever the auth gate
+  // bounced them from (?callbackUrl=…), defaulting to the dashboard.
+  const gotoCallback = () => {
+    const params = new URLSearchParams(window.location.search);
+    const callbackUrl = params.get('callbackUrl') || '/';
+    // Only allow same-origin relative paths — never an attacker-supplied absolute URL.
+    const safe = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/';
+    router.push(safe);
+    router.refresh();
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError('');
     const res = await signIn('credentials', { email, password, redirect: false });
     setLoading(false);
     if (res?.error) { setError('Invalid email or password'); return; }
-    router.push('/');
+    gotoCallback();
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -38,7 +49,7 @@ export default function SignInPage() {
     setSuccess('Account created. Signing you in...');
     const signRes = await signIn('credentials', { email, password, redirect: false });
     if (signRes?.error) { setError('Login after register failed'); return; }
-    router.push('/');
+    gotoCallback();
   };
 
   const inputStyle: React.CSSProperties = {

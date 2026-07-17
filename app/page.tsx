@@ -73,14 +73,20 @@ const SPARKLINE_SYMBOL_MAP: Record<string, string> = {
 function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
   const isPos = m.changePct >= 0
   const cc = isPos ? 'var(--text-positive)' : 'var(--text-negative)'
+  // Currency symbol is driven ONLY by the explicit isIndia prop passed at the
+  // render site (USA cards never pass isIndia → always '$'). The 5 USA hero
+  // cards — S&P 500, NASDAQ, Bitcoin, Gold, USD Index — are always
+  // USD-denominated, so '$' is hardcoded here rather than routed through a
+  // shared/dynamic formatter that could ever resolve to '₹'.
+  const sym = isIndia ? '₹' : '$'
   const displayPrice = (() => {
     if (isIndia && m.price > 1000) {
       if (m.price >= 1_000_000) return '₹' + (m.price / 100_000).toFixed(0) + ' L'
       return '₹' + m.price.toFixed(2)
     }
-    if (m.price >= 10000) return formatCurrency(m.price, 0)
-    if (m.price >= 1) return (isIndia ? '₹' : '$') + m.price.toFixed(2)
-    return m.price.toFixed(4)
+    if (m.price >= 10000) return sym + m.price.toFixed(0)
+    if (m.price >= 1) return sym + m.price.toFixed(2)
+    return sym + m.price.toFixed(4)
   })()
   return (
     <div style={{ border: '1px solid var(--border-color)', borderTop: `2px solid ${m.accent}`, background: 'var(--bg-panel)', padding: '10px 14px', position: 'relative', overflow: 'hidden' }}>
