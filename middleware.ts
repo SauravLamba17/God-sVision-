@@ -1,43 +1,59 @@
-import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import type { NextRequest } from 'next/server';
 
 // Hard login gate: every route requires a signed-in session EXCEPT the auth
 // pages themselves, NextAuth's own API, the public Sheets API (own key auth),
 // the Stripe webhook (called by Stripe with no session), and static assets.
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
+//
+// This runs in the Edge Runtime, so it deliberately imports ONLY getToken()
+// from next-auth/jwt — a lightweight cookie read + JWT signature verify. It
+// must never import lib/auth.ts (which pulls in PrismaAdapter/bcryptjs) or
+// anything else Node-only, and never invoke the NextAuth callback chain.
+const publicPaths = [
+  '/auth/signin',
+  '/auth/register',
+  '/auth/error',
+  '/api/auth',            // NextAuth's own API routes (+ /api/auth/register)
+  '/api/public',          // Google Sheets public API (uses its own key auth)
+  '/api/stripe/webhook',  // Stripe calls this server-to-server, no session
+  '/sw.js',
+  '/favicon.svg',
+  '/favicon.ico',
+  '/manifest.json',
+];
 
-    // Public paths that never require auth
-    const publicPaths = [
-      '/auth/signin',
-      '/auth/register',
-      '/auth/error',
-      '/api/auth',            // NextAuth's own API routes (+ /api/auth/register)
-      '/api/public',          // Google Sheets public API (uses its own key auth)
-      '/api/stripe/webhook',  // Stripe calls this server-to-server, no session
-      '/sw.js',
-      '/favicon.svg',
-      '/favicon.ico',
-      '/manifest.json',
-    ];
+export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
 
-    const isPublicPath = publicPaths.some(p => path === p || path.startsWith(p + '/') || path.startsWith(p));
+  if (publicPaths.some(p => path.startsWith(p))) {
+    return NextResponse.next();
+  }
 
-    if (!token && !isPublicPath) {
+  try {
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (!token) {
       const signInUrl = new URL('/auth/signin', req.url);
       signInUrl.searchParams.set('callbackUrl', path);
       return NextResponse.redirect(signInUrl);
     }
 
     return NextResponse.next();
-  },
-  {
-    // Let the middleware function above own all redirect logic.
-    callbacks: { authorized: () => true },
+  } catch (e) {
+    // Never let a token-verification error take the whole site down with
+    // MIDDLEWARE_INVOCATION_FAILED — fail safe to the sign-in page instead.
+    // Most likely trigger: NEXTAUTH_SECRET missing/mismatched in the
+    // deployment environment.
+    console.error('[Middleware] Token verification error:', e);
+    const signInUrl = new URL('/auth/signin', req.url);
+    signInUrl.searchParams.set('callbackUrl', path);
+    return NextResponse.redirect(signInUrl);
   }
-);
+}
 
 export const config = {
   matcher: [

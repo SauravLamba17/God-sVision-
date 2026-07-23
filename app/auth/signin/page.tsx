@@ -1,12 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 const mono = 'IBM Plex Mono, monospace';
 
 export default function SignInPage() {
-  const router = useRouter();
   const [tab, setTab] = useState<'signin' | 'register'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,41 +13,60 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // After a successful sign-in, return the user to wherever the auth gate
+  // After a successful sign-in, send the user to wherever the auth gate
   // bounced them from (?callbackUrl=…), defaulting to the dashboard.
+  //
+  // Uses a HARD navigation (window.location.href), NOT router.push(): a full
+  // document load guarantees the browser sends the freshly-set NextAuth
+  // session cookie on the very next request, so the auth-gate middleware sees
+  // the session. A client-side router.push() can fire its RSC/middleware
+  // request before the just-written cookie is reliably readable, which bounces
+  // the user straight back to /auth/signin (the "registers fine but stays on
+  // the sign-in page" bug). We intentionally do NOT clear `loading` on this
+  // path — the page is already navigating away.
   const gotoCallback = () => {
     const params = new URLSearchParams(window.location.search);
     const callbackUrl = params.get('callbackUrl') || '/';
     // Only allow same-origin relative paths — never an attacker-supplied absolute URL.
     const safe = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/';
-    router.push(safe);
-    router.refresh();
+    window.location.href = safe;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError('');
-    const res = await signIn('credentials', { email, password, redirect: false });
-    setLoading(false);
-    if (res?.error) { setError('Invalid email or password'); return; }
-    gotoCallback();
+    try {
+      const res = await signIn('credentials', { email, password, redirect: false });
+      if (res?.error) { setError('Invalid email or password'); setLoading(false); return; }
+      if (res?.ok) { gotoCallback(); return; }
+      setError('Something went wrong. Please try again.'); setLoading(false);
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong'); setLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError('');
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) { setError(data.error || 'Registration failed'); return; }
-    setSuccess('Account created. Signing you in...');
-    const signRes = await signIn('credentials', { email, password, redirect: false });
-    if (signRes?.error) { setError('Login after register failed'); return; }
-    gotoCallback();
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Registration failed'); setLoading(false); return; }
+      // Registration succeeded — immediately establish a session with the same
+      // credentials, then hard-redirect (keeping the button in its loading
+      // state through the whole register → sign-in → redirect chain).
+      setSuccess('Account created. Signing you in...');
+      const signRes = await signIn('credentials', { email, password, redirect: false });
+      if (signRes?.error) { setError('Login after register failed: ' + signRes.error); setLoading(false); return; }
+      if (signRes?.ok) { gotoCallback(); return; }
+      setError('Account created, but automatic sign-in failed. Please sign in manually.'); setLoading(false);
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong'); setLoading(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {

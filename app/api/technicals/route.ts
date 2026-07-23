@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
-import { sma, ema, rsi, macd, bollingerBands, atr } from '@/lib/technicals'
+import { sma, ema, rsi, macd, bollingerBands, atr, type Candle } from '@/lib/utils/technicals'
 import { getChartData } from '@/lib/apis/yahoo'
 
 const YF_HEADERS = {
@@ -41,9 +41,11 @@ async function fetchChartDirect(ticker: string, period: string, interval: string
 
 function buildResult(quotes: any[], ticker: string, period: string, interval: string, source: string) {
   const closes  = quotes.map((q: any) => q.close as number)
-  const highs   = quotes.map((q: any) => q.high  as number)
-  const lows    = quotes.map((q: any) => q.low   as number)
   const times   = quotes.map((q: any) => Math.floor(new Date(q.date).getTime() / 1000))
+
+  const candles: Candle[] = quotes.map((q: any, i: number) => ({
+    time: times[i], open: q.open, high: q.high, low: q.low, close: q.close, volume: q.volume,
+  }))
 
   const sma20  = sma(closes, 20)
   const sma50  = sma(closes, 50)
@@ -52,19 +54,15 @@ function buildResult(quotes: any[], ticker: string, period: string, interval: st
   const ema26  = ema(closes, 26)
   const rsi14  = rsi(closes, 14)
   const bb     = bollingerBands(closes, 20, 2)
-  const atr14  = atr(highs, lows, closes, 14)
+  const atr14  = atr(candles, 14)
   const { macdLine, signalLine, histogram } = macd(closes, 12, 26, 9)
-
-  const candles = quotes.map((q: any, i: number) => ({
-    time: times[i], open: q.open, high: q.high, low: q.low, close: q.close, volume: q.volume,
-  }))
 
   const indicators = quotes.map((_: any, i: number) => ({
     time: times[i],
     sma20: sma20[i], sma50: sma50[i], sma200: sma200[i],
     ema12: ema12[i], ema26: ema26[i],
     rsi: rsi14[i],
-    bbUpper: bb[i].upper, bbMiddle: bb[i].middle, bbLower: bb[i].lower,
+    bbUpper: bb.upper[i], bbMiddle: bb.middle[i], bbLower: bb.lower[i],
     macd: macdLine[i], macdSignal: signalLine[i], macdHist: histogram[i],
     atr: atr14[i],
   }))
@@ -83,8 +81,8 @@ function buildResult(quotes: any[], ticker: string, period: string, interval: st
       macdSignal:  lastMACD !== null && lastSig !== null
                     ? (lastMACD > lastSig ? 'BULLISH CROSSOVER' : 'BEARISH CROSSOVER') : 'N/A',
       trendSignal: sma50[lastIdx] !== null && lastClose > (sma50[lastIdx] as number) ? 'ABOVE 50 SMA' : 'BELOW 50 SMA',
-      bbSignal:    bb[lastIdx].upper !== null
-                    ? (lastClose > (bb[lastIdx].upper as number) ? 'BB SQUEEZE HIGH' : lastClose < (bb[lastIdx].lower as number) ? 'BB SQUEEZE LOW' : 'WITHIN BB')
+      bbSignal:    bb.upper[lastIdx] !== null
+                    ? (lastClose > (bb.upper[lastIdx] as number) ? 'BB SQUEEZE HIGH' : lastClose < (bb.lower[lastIdx] as number) ? 'BB SQUEEZE LOW' : 'WITHIN BB')
                     : 'N/A',
       rsi: lastRSI, macdValue: lastMACD,
     },

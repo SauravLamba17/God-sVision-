@@ -1,57 +1,25 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useId, useMemo } from 'react';
 
 interface SparklineProps {
-  symbol: string;
+  data: number[] | null;
   isPositive: boolean;
   width?: number;
   height?: number;
-  currentPrice?: number;
+  loading?: boolean;
 }
 
-export function Sparkline({ symbol, isPositive, width = 70, height = 32, currentPrice }: SparklineProps) {
-  const [prices, setPrices] = useState<number[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/sparkline?symbol=${encodeURIComponent(symbol)}`);
-        const data = await res.json();
-        if (!mounted) return;
-        if (Array.isArray(data.prices) && data.prices.length >= 2) {
-          setPrices(data.prices);
-          setFailed(false);
-        } else {
-          setFailed(true);
-        }
-      } catch {
-        if (mounted) setFailed(true);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    fetchData();
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchData, 60000);
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [symbol]);
-
+export function Sparkline({ data, isPositive, width = 70, height = 32, loading }: SparklineProps) {
   const pathData = useMemo(() => {
-    if (prices.length < 2) return null;
+    if (!data || data.length < 2) return null;
 
-    const max = Math.max(...prices);
-    const min = Math.min(...prices);
+    const max = Math.max(...data);
+    const min = Math.min(...data);
     const range = max - min || 1;
     const padding = 3; // padding inside svg to avoid clipping stroke
 
-    const points = prices.map((p, i) => {
-      const x = padding + (i / (prices.length - 1)) * (width - padding * 2);
+    const points = data.map((p, i) => {
+      const x = padding + (i / (data.length - 1)) * (width - padding * 2);
       const y = padding + ((max - p) / range) * (height - padding * 2);
       return { x, y };
     });
@@ -71,10 +39,10 @@ export function Sparkline({ symbol, isPositive, width = 70, height = 32, current
     const fillD = `${d} L ${points[points.length - 1].x},${height} L ${points[0].x},${height} Z`;
 
     return { linePath: d, fillPath: fillD, lastPoint: points[points.length - 1] };
-  }, [prices, width, height]);
+  }, [data, width, height]);
 
   const color = isPositive ? '#00e676' : '#ff1744';
-  const gradientId = `spark-grad-${symbol.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const gradientId = useId();
 
   // Loading skeleton — subtle pulsing bar, doesn't break layout
   if (loading) {
@@ -98,7 +66,7 @@ export function Sparkline({ symbol, isPositive, width = 70, height = 32, current
 
   // Graceful fallback — flat line if data genuinely unavailable
   // (never breaks the card layout, never shows an error to the user)
-  if (failed || !pathData) {
+  if (!pathData) {
     return (
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <line

@@ -1,38 +1,31 @@
-interface CacheEntry {
-  data: unknown
-  expiresAt: number
-  source: 'live' | 'cached'
-}
+import NodeCache from 'node-cache'
 
-const memoryCache = new Map<string, CacheEntry>()
+// deleteOnExpire: false — callers rely on reading stale-but-present data as a fallback
+const store = new NodeCache({ checkperiod: 0, deleteOnExpire: false, useClones: false })
 
 export function setCache(key: string, data: unknown, ttlSeconds = 60): void {
-  memoryCache.set(key, {
-    data,
-    expiresAt: Date.now() + ttlSeconds * 1000,
-    source: 'live'
-  })
+  store.set(key, data, ttlSeconds)
 }
 
 export function getCache<T>(key: string): { data: T; stale: boolean } | null {
-  const entry = memoryCache.get(key)
-  if (!entry) return null
-  const stale = Date.now() > entry.expiresAt
-  return { data: entry.data as T, stale }
+  const data = store.get<T>(key)
+  if (data === undefined) return null
+  const ttl = store.getTtl(key)
+  const stale = ttl !== 0 && Date.now() > (ttl as number)
+  return { data, stale }
 }
 
 export function getCacheStatus(key: string): 'live' | 'stale' | 'missing' {
-  const entry = memoryCache.get(key)
-  if (!entry) return 'missing'
-  if (Date.now() > entry.expiresAt) return 'stale'
-  return 'live'
+  if (store.get(key) === undefined) return 'missing'
+  const ttl = store.getTtl(key)
+  return (ttl === 0 || Date.now() <= (ttl as number)) ? 'live' : 'stale'
 }
 
 export function clearCache(key?: string): void {
   if (key) {
-    memoryCache.delete(key)
+    store.del(key)
   } else {
-    memoryCache.clear()
+    store.flushAll()
   }
 }
 

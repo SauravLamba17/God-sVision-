@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { Sparkline } from '@/components/ui/Sparkline'
+import { useSparklineData } from '@/lib/hooks/useSparklineData'
 import { useMode } from '@/lib/context/ModeContext'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import TickerLink from '@/components/ui/TickerLink'
@@ -72,6 +73,7 @@ const SPARKLINE_SYMBOL_MAP: Record<string, string> = {
 /* ── Metric card ──────────────────────────────────────────────────────── */
 function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
   const isPos = m.changePct >= 0
+  const { data: sparkData, loading: sparkLoading } = useSparklineData(SPARKLINE_SYMBOL_MAP[m.label] ?? m.symbol)
   const cc = isPos ? 'var(--text-positive)' : 'var(--text-negative)'
   // Currency symbol is driven ONLY by the explicit isIndia prop passed at the
   // render site (USA cards never pass isIndia → always '$'). The 5 USA hero
@@ -102,7 +104,7 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
           </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-          <Sparkline symbol={SPARKLINE_SYMBOL_MAP[m.label] ?? m.symbol} isPositive={isPos} width={80} height={36} />
+          <Sparkline data={sparkData} loading={sparkLoading} isPositive={isPos} width={80} height={36} />
         </div>
       </div>
     </div>

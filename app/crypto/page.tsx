@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import AIButton from '@/components/terminal/AIButton'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
-import Sparkline from '@/components/charts/Sparkline'
+import { Sparkline } from '@/components/ui/Sparkline'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useBinanceStream } from '@/lib/hooks/useBinanceStream'
 import { useFlash } from '@/lib/hooks/useFlash'
@@ -117,8 +117,8 @@ function CoinRow({
       <td className="text-neutral">{formatNumber(coin.market_cap)}</td>
       <td>
         <Sparkline
-          data={coin.sparkline_in_7d?.price?.slice(-20) || []}
-          positive={liveChangePct >= 0}
+          data={coin.sparkline_in_7d?.price?.slice(-20) || null}
+          isPositive={liveChangePct >= 0}
           width={60}
           height={24}
         />

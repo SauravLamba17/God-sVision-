@@ -371,7 +371,7 @@ function MarketsInner() {
               { label:'FINANCIALS', href:`/financials?ticker=${quote.symbol}` },
               { label:'OPTIONS',    href:`/options?ticker=${quote.symbol}` },
               { label:'EARNINGS',   href:'/earnings' },
-              { label:'INSIDER',    href:'/insider' },
+              { label:'INSIDER',    href:'/insiders' },
             ].map(l => (
               <a key={l.label} href={l.href} style={{ display:'block', fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-accent)', padding:'3px 0', borderBottom:'1px solid rgba(30,41,59,0.3)', textDecoration:'none' }}
                 onMouseEnter={e => (e.currentTarget.style.color='var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color='var(--text-accent)')}>
