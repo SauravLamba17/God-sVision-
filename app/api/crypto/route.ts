@@ -11,55 +11,55 @@ export async function GET(request: NextRequest) {
   try {
     if (type === 'top100') {
       const key = 'crypto_top100'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getCryptoTop100()
-      setCache(key, data, 15)
+      await setCache(key, data, 15)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'trending') {
       const key = 'crypto_trending'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getCryptoTrending()
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'global') {
       const key = 'crypto_global'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getGlobalMarket()
-      setCache(key, data, 60)
+      await setCache(key, data, 60)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'chart') {
       const key = `crypto_chart_${coin}_${days}`
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getCoinChart(coin, days)
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'feargreed') {
       const key = 'fear_greed'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getFearGreed()
-      setCache(key, data, 3600)
+      await setCache(key, data, 3600)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'defi') {
       const key = 'defi_tvl'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getDeFiTVL()
-      setCache(key, data, 600)
+      await setCache(key, data, 600)
       return NextResponse.json({ data, source: 'live' })
     }
 

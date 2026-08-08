@@ -4,7 +4,7 @@ import { fetchMCXCommodities } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_commodities'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   let usdInr = 83.5
@@ -17,10 +17,10 @@ export async function GET() {
   try {
     const commodities = await fetchMCXCommodities(usdInr)
     const result = { commodities, usdInr, fetchedAt: Date.now() }
-    setCache(key, result, 30)
+    await setCache(key, result, 30)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
-    const fallback = getCache(key)
+    const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }

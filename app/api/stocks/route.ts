@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
 
   if (type === 'movers') {
     const cacheKey = 'market_movers'
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     try {
       const data = await getMarketMovers()
-      setCache(cacheKey, data, 60)
+      await setCache(cacheKey, data, 60)
       return json({ data, source: 'live' })
     } catch {
       if (cached) return json({ data: cached.data, source: 'stale' })
@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
 
   if (type === 'chart' && ticker) {
     const cacheKey = `chart_${ticker}_${period}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     try {
       const data = await getChartData(ticker, period)
-      setCache(cacheKey, data, 300)
+      await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
     } catch (err: any) {
       if (cached) return json({ data: cached.data, source: 'stale' })
@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
 
   if (type === 'summary' && ticker) {
     const cacheKey = `summary_${ticker}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     try {
       const data = await getQuoteSummary(ticker)
-      if (data) setCache(cacheKey, data, 300)
+      if (data) await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
     } catch {
       if (cached) return json({ data: cached.data, source: 'stale' })
@@ -62,11 +62,11 @@ export async function GET(request: NextRequest) {
 
   if (type === 'options' && ticker) {
     const cacheKey = `options_${ticker}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     try {
       const data = await getOptionsChain(ticker)
-      if (data) setCache(cacheKey, data, 300)
+      if (data) await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
     } catch {
       if (cached) return json({ data: cached.data, source: 'stale' })
@@ -78,11 +78,11 @@ export async function GET(request: NextRequest) {
   const tickerList = searchParams.get('tickers')?.split(',').filter(Boolean)
   if (tickerList && tickerList.length > 0) {
     const cacheKey = `quotes_${tickerList.join(',')}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     const data = await getQuotes(tickerList)
     if (data.length > 0) {
-      setCache(cacheKey, data, 300)
+      await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
     }
     // Empty — serve stale or empty
@@ -93,11 +93,11 @@ export async function GET(request: NextRequest) {
   // Single ticker via ?ticker=
   if (ticker) {
     const cacheKey = `quote_${ticker}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
     try {
       const data = await getQuote(ticker)
-      setCache(cacheKey, data, 300)
+      await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
     } catch {
       if (cached) return json({ data: cached.data, source: 'stale' })
@@ -107,11 +107,11 @@ export async function GET(request: NextRequest) {
 
   // Default: fetch DEFAULT_TICKERS
   const cacheKey = `quotes_${DEFAULT_TICKERS.join(',')}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return json({ data: cached.data, source: 'cache' })
   const data = await getQuotes(DEFAULT_TICKERS)
   if (data.length > 0) {
-    setCache(cacheKey, data, 300)
+    await setCache(cacheKey, data, 300)
     return json({ data, source: 'live' })
   }
   if (cached) return json({ data: cached.data, source: 'stale' })

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') || 'all'
 
   const key = `commodities_${type}`
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       return { name, ticker, price: null, change: null, changePct: null, currency: 'USD', unit: getUnit(name) }
     })
 
-    setCache(key, commodities, 300)
+    await setCache(key, commodities, 300)
     return NextResponse.json({ data: commodities, source: 'live' })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

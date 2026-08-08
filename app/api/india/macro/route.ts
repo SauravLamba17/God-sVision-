@@ -4,7 +4,7 @@ import { INDIA_MACRO, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS, FII_DII_DATA } from '
 
 export async function GET() {
   const key    = 'india_macro'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   // Live USD/INR
@@ -40,6 +40,6 @@ export async function GET() {
     fetchedAt: Date.now(),
   }
 
-  setCache(key, result, 3600)
+  await setCache(key, result, 3600)
   return NextResponse.json({ data: result, source: 'live' })
 }

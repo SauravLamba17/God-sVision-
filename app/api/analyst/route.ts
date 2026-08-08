@@ -169,7 +169,7 @@ function parseJson(text: string): any {
 export async function GET(req: NextRequest) {
   const market = (req.nextUrl.searchParams.get('market') || 'IN').toUpperCase() === 'US' ? 'US' : 'IN'
   const cacheKey = `analyst_${market}`
-  const cached = getCache<any>(cacheKey)
+  const cached = await getCache<any>(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -177,7 +177,7 @@ export async function GET(req: NextRequest) {
     const snapshots = await buildUniverseSnapshots(universe)
 
     if (snapshots.length === 0) {
-      const fallback = getCache<any>(cacheKey)
+      const fallback = await getCache<any>(cacheKey)
       if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
       return NextResponse.json({ error: 'No market data available', data: null, source: 'empty' })
     }
@@ -185,7 +185,7 @@ export async function GET(req: NextRequest) {
     let newsMap: Record<string, string> = {}
     if (market === 'IN') {
       try {
-        const newsCache = getCache<any>('india_news')
+        const newsCache = await getCache<any>('india_news')
         const articles: any[] = newsCache?.data?.articles || []
         for (const t of universe) {
           const matched = matchNewsForTicker(articles, t, 1)
@@ -217,10 +217,10 @@ export async function GET(req: NextRequest) {
     result.nextRefresh = Date.now() + 15 * 60 * 1000
     result.universeSize = snapshots.length
 
-    setCache(cacheKey, result, 900)
+    await setCache(cacheKey, result, 900)
     return NextResponse.json({ data: result, source })
   } catch (err) {
-    const fallback = getCache<any>(cacheKey)
+    const fallback = await getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err), data: null, source: 'empty' })
   }

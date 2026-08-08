@@ -70,7 +70,7 @@ const SECTOR_TICKERS = ['XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLY', 'XLP', 'XLU', 
 
 export async function GET() {
   const cacheKey = 'dashboard_overview_v2'
-  const cached   = getCache(cacheKey)
+  const cached   = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   const [indR, comR, glbR, secR] = await Promise.allSettled([
@@ -102,6 +102,6 @@ export async function GET() {
   const unchanged = Math.max(0, 500 - advancing - declining)
 
   const data = { indices, commodities, globalMarkets, breadth: { advancing, declining, unchanged }, fetchedAt: Date.now() }
-  setCache(cacheKey, data, 30)
+  await setCache(cacheKey, data, 30)
   return NextResponse.json({ data, source: 'live' })
 }

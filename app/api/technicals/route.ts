@@ -96,7 +96,7 @@ export async function GET(req: Request) {
   const interval = searchParams.get('interval') || '1d'
 
   const cacheKey = `technicals_${ticker}_${period}_${interval}`
-  const cached   = getCache(cacheKey)
+  const cached   = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: (cached.data as any)?.source || 'cached' })
 
   const ttl = period === '1d' ? 60 : 300
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
     const rows = await fetchChartDirect(ticker, period, interval)
     if (rows.length > 0) {
       const data = buildResult(rows, ticker, period, interval, 'live')
-      setCache(cacheKey, data, ttl)
+      await setCache(cacheKey, data, ttl)
       return NextResponse.json({ data, source: 'live' })
     }
   } catch { /* fall through */ }
@@ -117,7 +117,7 @@ export async function GET(req: Request) {
     const quotes = (chart.quotes || []).filter((q: any) => q.open && q.high && q.low && q.close)
     if (quotes.length > 0) {
       const data = buildResult(quotes, ticker, period, interval, 'live')
-      setCache(cacheKey, data, ttl)
+      await setCache(cacheKey, data, ttl)
       return NextResponse.json({ data, source: 'live' })
     }
   } catch { /* fall through */ }

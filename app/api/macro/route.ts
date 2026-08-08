@@ -9,27 +9,27 @@ export async function GET(request: NextRequest) {
   try {
     if (type === 'yield_curve') {
       const key = 'yield_curve'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getYieldCurve()
-      setCache(key, data, 3600)
+      await setCache(key, data, 3600)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'fed_balance') {
       const key = 'fed_balance_sheet'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getFedBalanceSheet()
-      setCache(key, data, 3600)
+      await setCache(key, data, 3600)
       return NextResponse.json({ data, source: 'live' })
     }
 
     const key = 'macro_indicators'
-    const cached = getCache(key)
+    const cached = await getCache(key)
     if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
     const data = await getMacroIndicators()
-    setCache(key, data, 3600)
+    await setCache(key, data, 3600)
     return NextResponse.json({ data, source: 'live' })
 
   } catch (error) {

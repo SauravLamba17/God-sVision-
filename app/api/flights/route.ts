@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const bounds = searchParams.get('bounds')
 
   const key = bounds ? `flights_${bounds}` : 'flights_all'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const aircraft = await getAllAircraft(parsedBounds)
     const counts = getRegionCounts(aircraft)
     const data = { aircraft, counts }
-    setCache(key, data, 10)
+    await setCache(key, data, 10)
     return NextResponse.json({ data, source: 'live' })
   } catch (error) {
     if (error instanceof OpenSkyRateLimitError) {

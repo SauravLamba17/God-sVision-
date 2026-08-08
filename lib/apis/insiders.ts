@@ -80,7 +80,7 @@ function estimateTxFromSummary(summary: string, link: string, updated: string, c
 
 export async function fetchInsiderTransactions(minValue = 100000): Promise<InsiderTx[]> {
   const cacheKey = `insiders_${minValue}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as InsiderTx[]
 
   try {
@@ -105,7 +105,7 @@ export async function fetchInsiderTransactions(minValue = 100000): Promise<Insid
       .filter(tx => tx.totalValue >= minValue)
       .slice(0, 50)
 
-    setCache(cacheKey, txs, 900)
+    await setCache(cacheKey, txs, 900)
     return txs
   } catch (err) {
     // Return empty on failure — no mock data; show real EDGAR error

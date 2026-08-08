@@ -62,7 +62,7 @@ function mapCurrency(country: string): string {
 
 export async function fetchCalendarEvents(week: 'this' | 'next' | 'prev' = 'this'): Promise<CalendarEvent[]> {
   const cacheKey = `calendar_events_${week}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CalendarEvent[]
 
   try {
@@ -96,7 +96,7 @@ export async function fetchCalendarEvents(week: 'this' | 'next' | 'prev' = 'this
       .filter((e: CalendarEvent) => e.date)
       .sort((a: CalendarEvent, b: CalendarEvent) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
 
-    setCache(cacheKey, events, 3600)
+    await setCache(cacheKey, events, 3600)
     return events
   } catch {
     // Return filtered fallback
@@ -111,7 +111,7 @@ export async function fetchCalendarEvents(week: 'this' | 'next' | 'prev' = 'this
       })
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
     const result = filtered.length > 0 ? filtered : FALLBACK_EVENTS
-    setCache(cacheKey, result, 1800)
+    await setCache(cacheKey, result, 1800)
     return result
   }
 }

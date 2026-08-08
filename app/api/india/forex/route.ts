@@ -4,7 +4,7 @@ import { fetchIndiaForex } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_forex'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   // Fetch live USD/INR first
@@ -18,10 +18,10 @@ export async function GET() {
   try {
     const pairs = await fetchIndiaForex(exchangeRate)
     const result = { pairs, usdInr: exchangeRate, fetchedAt: Date.now() }
-    setCache(key, result, 60)
+    await setCache(key, result, 60)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
-    const fallback = getCache(key)
+    const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }

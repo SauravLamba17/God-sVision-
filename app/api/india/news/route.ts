@@ -54,7 +54,7 @@ async function fetchFeed(feed: { name: string; url: string }): Promise<NewsItem[
 
 export async function GET() {
   const key    = 'india_news'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -75,10 +75,10 @@ export async function GET() {
     const articles = all.slice(0, 40)
 
     const result = { articles, total: articles.length, fetchedAt: Date.now() }
-    setCache(key, result, 300)
+    await setCache(key, result, 300)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
-    const fallback = getCache(key)
+    const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err), data: { articles: [], total: 0, fetchedAt: Date.now() }, source: 'empty' })
   }

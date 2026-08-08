@@ -11,7 +11,7 @@ interface NewsPayload {
 }
 
 export async function GET() {
-  const cached = getCache<NewsPayload>(CACHE_KEY)
+  const cached = await getCache<NewsPayload>(CACHE_KEY)
   if (cached && !cached.stale) {
     return NextResponse.json({ data: cached.data.items, source: 'cache', meta: cached.data.meta })
   }
@@ -45,7 +45,7 @@ export async function GET() {
       feedNames: getRSSFeedNames(),
     }
 
-    setCache(CACHE_KEY, { items: unique, meta }, CACHE_TTL)
+    await setCache(CACHE_KEY, { items: unique, meta }, CACHE_TTL)
     return NextResponse.json({ data: unique, source: 'live', meta })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

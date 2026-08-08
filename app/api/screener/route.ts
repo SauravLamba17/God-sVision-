@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const minMCap = parseFloat(searchParams.get('minMCap') || '0')
 
   const cacheKey = `screener_v2_${scrId}_${count}_${sector}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached', screeners: SCREENER_IDS })
 
   try {
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
     if (minMCap > 0) sorted = sorted.filter(q => q.marketCap >= minMCap * 1e9)
 
     const result = sorted.slice(0, count)
-    setCache(cacheKey, result, 120)
+    await setCache(cacheKey, result, 120)
     return NextResponse.json({ data: result, source: 'live', screeners: SCREENER_IDS })
   } catch (err: any) {
     if (cached) return NextResponse.json({ data: cached.data, source: 'stale', screeners: SCREENER_IDS })

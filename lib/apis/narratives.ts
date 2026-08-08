@@ -19,7 +19,7 @@ export interface NarrativeData {
 
 export async function detectNarratives(): Promise<NarrativeData> {
   const cacheKey = 'ai_narratives'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as NarrativeData
 
   const keyValid = !!process.env.GEMINI_API_KEY
@@ -59,7 +59,7 @@ export async function detectNarratives(): Promise<NarrativeData> {
       headlinesAnalyzed: headlines.length,
       keyConfigured: false,
     }
-    setCache(cacheKey, fallback, 900)
+    await setCache(cacheKey, fallback, 900)
     return fallback
   }
 
@@ -88,7 +88,7 @@ Order by importance/prevalence. Use ALL CAPS for titles. Respond ONLY with valid
     if (jsonMatch) {
       const narratives = JSON.parse(jsonMatch[0]) as Narrative[]
       const result: NarrativeData = { narratives: narratives.slice(0, 5), generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
-      setCache(cacheKey, result, 900)
+      await setCache(cacheKey, result, 900)
       return result
     }
   } catch (err) {
@@ -96,6 +96,6 @@ Order by importance/prevalence. Use ALL CAPS for titles. Respond ONLY with valid
   }
 
   const empty: NarrativeData = { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
-  setCache(cacheKey, empty, 300)
+  await setCache(cacheKey, empty, 300)
   return empty
 }

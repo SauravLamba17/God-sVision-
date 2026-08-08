@@ -111,7 +111,7 @@ async function fetchBankSpeeches(bank: typeof CENTRAL_BANKS[0]): Promise<Central
 
 export async function getCentralBankSpeeches(): Promise<CentralBankSpeech[]> {
   const cacheKey = 'cb_speeches'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CentralBankSpeech[]
 
   const results = await Promise.allSettled(CENTRAL_BANKS.map(fetchBankSpeeches))
@@ -121,6 +121,6 @@ export async function getCentralBankSpeeches(): Promise<CentralBankSpeech[]> {
   }
   const sorted = all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 40)
 
-  setCache(cacheKey, sorted, 3600) // 1 hour
+  await setCache(cacheKey, sorted, 3600) // 1 hour
   return sorted
 }

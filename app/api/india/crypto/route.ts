@@ -19,7 +19,7 @@ const INDIAN_PROJECTS: Record<string, boolean> = { 'matic-network': true }
 
 export async function GET() {
   const key    = 'india_crypto_inr'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -44,10 +44,10 @@ export async function GET() {
     })).filter(c => c.priceINR > 0)
 
     const result = { coins, fetchedAt: Date.now() }
-    setCache(key, result, 15)
+    await setCache(key, result, 15)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
-    const fallback = getCache(key)
+    const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }

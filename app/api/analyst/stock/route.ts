@@ -36,20 +36,20 @@ export async function GET(req: NextRequest) {
   if (!ticker) return NextResponse.json({ error: 'ticker is required' }, { status: 400 })
 
   const cacheKey = `analyst_stock_${ticker}`
-  const cached = getCache<any>(cacheKey)
+  const cached = await getCache<any>(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     const snapshot = await buildStockSnapshot(ticker, true)
     if (!snapshot) {
-      const fallback = getCache<any>(cacheKey)
+      const fallback = await getCache<any>(cacheKey)
       if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
       return NextResponse.json({ error: `No data available for ${ticker}` }, { status: 404 })
     }
 
     let news: { title: string; url: string; source: string; publishedAt: string }[] = []
     if (market === 'IN') {
-      const newsCache = getCache<any>('india_news')
+      const newsCache = await getCache<any>('india_news')
       const articles: any[] = newsCache?.data?.articles || []
       news = matchNewsForTicker(articles, ticker, 5)
     }
@@ -79,10 +79,10 @@ export async function GET(req: NextRequest) {
     }
 
     const result = { snapshot, news, optionsChain, fundamentals, ai, generatedAt: Date.now() }
-    setCache(cacheKey, result, 300)
+    await setCache(cacheKey, result, 300)
     return NextResponse.json({ data: result, source: KEY_VALID() ? 'live' : 'mock' })
   } catch (err) {
-    const fallback = getCache<any>(cacheKey)
+    const fallback = await getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }

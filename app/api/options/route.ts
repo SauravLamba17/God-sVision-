@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   const expiry = searchParams.get('expiry') || ''
 
   const cacheKey = `options_v2_${ticker}_${expiry}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
     const puts  = (opts.puts  || []).map((c: any) => enrichContract(c, 'put'))
 
     const data = { ticker, spotPrice, expiry: currentExpiry, expiryDates, daysToExpiry: Math.round(T * 365), calls, puts }
-    setCache(cacheKey, data, 300)
+    await setCache(cacheKey, data, 300)
     return NextResponse.json({ data, source: 'live' })
   } catch (err: any) {
     if (cached) return NextResponse.json({ data: cached.data, source: 'stale' })

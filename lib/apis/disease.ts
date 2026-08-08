@@ -29,7 +29,7 @@ export interface CountryStats {
 
 export async function fetchGlobalStats(): Promise<GlobalStats | null> {
   const cacheKey = 'disease_global'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as GlobalStats
 
   try {
@@ -37,7 +37,7 @@ export async function fetchGlobalStats(): Promise<GlobalStats | null> {
       signal: AbortSignal.timeout(8000),
     })
     const data = await res.json()
-    setCache(cacheKey, data, 3600)
+    await setCache(cacheKey, data, 3600)
     return data
   } catch {
     return null
@@ -46,7 +46,7 @@ export async function fetchGlobalStats(): Promise<GlobalStats | null> {
 
 export async function fetchCountryStats(limit = 50): Promise<CountryStats[]> {
   const cacheKey = `disease_countries_${limit}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CountryStats[]
 
   try {
@@ -55,7 +55,7 @@ export async function fetchCountryStats(limit = 50): Promise<CountryStats[]> {
     })
     const data = await res.json()
     const countries = Array.isArray(data) ? data.slice(0, limit) : []
-    setCache(cacheKey, countries, 3600)
+    await setCache(cacheKey, countries, 3600)
     return countries
   } catch {
     return []
@@ -64,7 +64,7 @@ export async function fetchCountryStats(limit = 50): Promise<CountryStats[]> {
 
 export async function fetchHistoricalGlobal(days = 90): Promise<{ date: string; cases: number }[]> {
   const cacheKey = `disease_history_${days}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as { date: string; cases: number }[]
 
   try {
@@ -77,7 +77,7 @@ export async function fetchHistoricalGlobal(days = 90): Promise<{ date: string; 
       date,
       cases: cases as number,
     }))
-    setCache(cacheKey, result, 7200)
+    await setCache(cacheKey, result, 7200)
     return result
   } catch {
     return []

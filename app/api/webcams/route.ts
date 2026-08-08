@@ -7,18 +7,18 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') || 'all'
 
   const key = `webcams_${type}`
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
     if (type === 'tfl') {
       const data = await getTfLCameras()
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
     const data = await getTopWebcams(20)
-    setCache(key, data, 1800)
+    await setCache(key, data, 1800)
     return NextResponse.json({ data, source: 'live' })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

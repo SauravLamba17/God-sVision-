@@ -111,7 +111,7 @@ function getLabel(score: number): string {
 
 export async function getFearRadarData(): Promise<FearRadarData> {
   const cacheKey = 'fear_radar'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as FearRadarData
 
   const [vix, btcFG, goldSPY, yieldSpread, dxy] = await Promise.allSettled([
@@ -141,6 +141,6 @@ export async function getFearRadarData(): Promise<FearRadarData> {
     timestamp: Date.now(),
   }
 
-  setCache(cacheKey, data, 300) // 5-min cache
+  await setCache(cacheKey, data, 300) // 5-min cache
   return data
 }

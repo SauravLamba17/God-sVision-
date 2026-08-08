@@ -3,7 +3,7 @@ import { getCache, setCache } from '@/lib/cache'
 import { fetchNifty50Quotes, getIndianMarketStatus } from '@/lib/apis/india'
 export async function GET() {
   const key    = 'india_stocks'
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -19,10 +19,10 @@ export async function GET() {
       marketStatus: status,
       fetchedAt: Date.now(),
     }
-    setCache(key, result, ttl)
+    await setCache(key, result, ttl)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
-    const fallback = getCache(key)
+    const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }

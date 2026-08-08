@@ -73,7 +73,7 @@ async function fetchReturns(symbol: string): Promise<number[]> {
 
 export async function getCorrelationMatrix(): Promise<CorrelationData> {
   const cacheKey = 'correlation_matrix'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CorrelationData
 
   const symbols = ASSETS.map(a => a.symbol)
@@ -91,6 +91,6 @@ export async function getCorrelationMatrix(): Promise<CorrelationData> {
   )
 
   const data: CorrelationData = { symbols, matrix, returns, period: 90, generatedAt: Date.now() }
-  setCache(cacheKey, data, 3600) // 1 hour
+  await setCache(cacheKey, data, 3600) // 1 hour
   return data
 }

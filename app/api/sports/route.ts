@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const league = searchParams.get('league') || '4328'
 
   const key = `sports_${type}_${league}`
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           ? (results[i].value.data?.events || []).slice(0, 5)
           : []
       }))
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         drivers: driversRes.status === 'fulfilled' ? driversRes.value.data?.slice(0, 20) : [],
         races: racesRes.status === 'fulfilled' ? racesRes.value.data?.slice(-5).reverse() : [],
       }
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
@@ -58,19 +58,19 @@ export async function GET(request: NextRequest) {
         games: data.events?.slice(0, 10) || [],
         date: data.day?.date || new Date().toDateString()
       }
-      setCache(key, result, 60)
+      await setCache(key, result, 60)
       return NextResponse.json({ data: result, source: 'live' })
     }
 
     if (type === 'cricket') {
       const { data } = await axios.get(`${SPORTSDB}/eventspastleague.php?id=4430`, { timeout: 8000 })
-      setCache(key, data?.events || [], 300)
+      await setCache(key, data?.events || [], 300)
       return NextResponse.json({ data: data?.events?.slice(0, 10) || [], source: 'live' })
     }
 
     if (type === 'tennis') {
       const { data } = await axios.get(`${SPORTSDB}/lookuptable.php?l=4424&s=2024`, { timeout: 8000 })
-      setCache(key, data?.table || [], 3600)
+      await setCache(key, data?.table || [], 3600)
       return NextResponse.json({ data: data?.table?.slice(0, 20) || [], source: 'live' })
     }
 

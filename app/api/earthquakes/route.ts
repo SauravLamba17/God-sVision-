@@ -8,14 +8,14 @@ export async function GET(request: NextRequest) {
   const minMag = parseFloat(searchParams.get('minMag') || '2.5')
 
   const key = `earthquakes_${type}_${minMag}`
-  const cached = getCache(key)
+  const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
     const data = type === 'significant'
       ? await getSignificantEarthquakes()
       : await getRecentEarthquakes(minMag)
-    setCache(key, data, 60)
+    await setCache(key, data, 60)
     return NextResponse.json({ data, source: 'live' })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

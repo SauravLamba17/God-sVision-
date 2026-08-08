@@ -18,7 +18,7 @@ const SECTORS = [
 
 export async function GET() {
   const cacheKey = 'heatmap_all'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -54,7 +54,7 @@ export async function GET() {
       })),
     }))
 
-    setCache(cacheKey, data, 120)
+    await setCache(cacheKey, data, 120)
     return NextResponse.json({ data, source: 'live' })
   } catch (err: any) {
     if (cached) return NextResponse.json({ data: cached.data, source: 'stale' })

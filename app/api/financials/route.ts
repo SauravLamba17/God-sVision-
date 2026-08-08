@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400 })
 
   const cacheKey = `financials:${ticker}:${period}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached) return NextResponse.json({ data: cached, source: 'cache' })
 
   const moduleArr = period === 'quarterly'
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     const keyMetrics = buildKeyMetrics(s.financialData || {}, s.defaultKeyStatistics || {}, s.summaryDetail || {})
     const data = { income, balance, cashflow, keyMetrics, ticker, period }
-    setCache(cacheKey, data, 3600)
+    await setCache(cacheKey, data, 3600)
     return NextResponse.json({ data, source: 'live' })
   } catch (parseErr: any) {
     return NextResponse.json({ error: parseErr?.message || 'Parse error' })

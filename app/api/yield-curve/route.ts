@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   const mode = searchParams.get('mode') || 'current'
 
   const cacheKey = `yield-curve:${mode}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached) return NextResponse.json({ data: cached, source: 'cache' })
 
   try {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       }
 
       const data = { curve, spreads }
-      setCache(cacheKey, data, 900)
+      await setCache(cacheKey, data, 900)
       return NextResponse.json({ data, source: 'live' })
     }
 
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
           ? +(dateMap10[date]! - dateMap3m[date]!).toFixed(3) : null,
       }))
 
-      setCache(cacheKey, history, 3600)
+      await setCache(cacheKey, history, 3600)
       return NextResponse.json({ data: history, source: 'live' })
     }
 

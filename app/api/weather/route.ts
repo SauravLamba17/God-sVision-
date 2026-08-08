@@ -13,34 +13,34 @@ export async function GET(request: NextRequest) {
   try {
     if (type === 'current') {
       const key = `weather_${city}`
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getWeather(lat, lon, city)
-      setCache(key, data, 600)
+      await setCache(key, data, 600)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'forecast') {
       const key = `forecast_${city}`
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getForecast(lat, lon)
-      setCache(key, data, 600)
+      await setCache(key, data, 600)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'noaa') {
       const key = 'noaa_alerts'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getNOAAAlerts()
-      setCache(key, data, 300)
+      await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
     }
 
     const cityList = region === 'india' ? INDIA_CITIES : WORLD_CITIES
     const key = region === 'india' ? 'weather_cities_india' : 'weather_cities'
-    const cached = getCache(key)
+    const cached = await getCache(key)
     if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
     const results = await Promise.allSettled(
       cityList.map(c => getWeather(c.lat, c.lon, c.name))
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof getWeather>>> => r.status === 'fulfilled')
       .map(r => r.value)
       .filter(Boolean)
-    setCache(key, data, 600)
+    await setCache(key, data, 600)
     return NextResponse.json({ data, source: 'live' })
 
   } catch (error) {

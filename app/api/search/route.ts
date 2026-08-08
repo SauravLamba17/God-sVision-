@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (!q || q.length < 1) return NextResponse.json({ data: [] })
 
   const cacheKey = `search:${q.toLowerCase()}`
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached) return NextResponse.json({ data: cached, source: 'cache' })
 
   try {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         sector:    q.sector || '',
       }))
 
-    setCache(cacheKey, quotes, 30)
+    await setCache(cacheKey, quotes, 30)
     return NextResponse.json({ data: quotes, source: 'live' })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Search failed'

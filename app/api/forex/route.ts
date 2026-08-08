@@ -9,21 +9,21 @@ export async function GET(request: NextRequest) {
   try {
     if (type === 'matrix') {
       const key = 'forex_matrix'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
       const data = await getForexMatrix()
-      setCache(key, data, 60)
+      await setCache(key, data, 60)
       return NextResponse.json({ data, source: 'live' })
     }
 
     if (type === 'pairs') {
       const key = 'forex_rates_usd'
-      const cached = getCache(key)
+      const cached = await getCache(key)
       if (cached && !cached.stale) {
         return NextResponse.json({ data: { rates: cached.data, pairs: MAJOR_PAIRS }, source: 'cache' })
       }
       const data = await getForexRates('USD')
-      setCache(key, data.rates, 60)
+      await setCache(key, data.rates, 60)
       return NextResponse.json({ data: { rates: data.rates, pairs: MAJOR_PAIRS }, source: 'live' })
     }
 
@@ -32,10 +32,10 @@ export async function GET(request: NextRequest) {
     }
 
     const key = 'forex_rates_usd'
-    const cached = getCache(key)
+    const cached = await getCache(key)
     if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
     const data = await getForexRates('USD')
-    setCache(key, data, 60)
+    await setCache(key, data, 60)
     return NextResponse.json({ data, source: 'live' })
 
   } catch (error) {

@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
   if (ticker) {
     const cacheKey = `earnings_ticker_v2_${ticker.toUpperCase()}`
-    const cached = getCache(cacheKey)
+    const cached = await getCache(cacheKey)
     if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
     // Get current price for context + look up upcoming date from our list
@@ -50,13 +50,13 @@ export async function GET(req: Request) {
       history: [], // live history requires quoteSummary (crumb auth) — not available
     }
 
-    setCache(cacheKey, data, 3600)
+    await setCache(cacheKey, data, 3600)
     return NextResponse.json({ data, source: 'live' })
   }
 
   // Upcoming earnings list — merge curated dates with live price data
   const cacheKey = 'earnings_upcoming_v2'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    setCache(cacheKey, data, 3600)
+    await setCache(cacheKey, data, 3600)
     return NextResponse.json({ data, source: 'live' })
   } catch (err: any) {
     if (cached) return NextResponse.json({ data: cached.data, source: 'stale' })

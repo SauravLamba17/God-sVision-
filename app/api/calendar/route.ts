@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { fetchCalendarEvents } from '@/lib/apis/calendar'
-import { getCache, setCache } from '@/lib/cache'
 
 interface CalendarEvent {
   date:        string

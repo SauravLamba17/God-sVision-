@@ -118,7 +118,7 @@ async function fetchSubreddit(sub: string, limit: number): Promise<RedditPost[]>
 
 export async function fetchRedditPosts(): Promise<RedditPost[]> {
   const cacheKey = 'reddit_posts_all'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as RedditPost[]
 
   const results = await Promise.allSettled([
@@ -135,17 +135,17 @@ export async function fetchRedditPosts(): Promise<RedditPost[]> {
   }
 
   if (allPosts.length === 0) {
-    setCache(cacheKey, [], 300) // short cache so we retry soon
+    await setCache(cacheKey, [], 300) // short cache so we retry soon
     return []
   }
 
-  setCache(cacheKey, allPosts, 900) // 15 min cache
+  await setCache(cacheKey, allPosts, 900) // 15 min cache
   return allPosts
 }
 
 export async function getTickerMentions(): Promise<TickerMention[]> {
   const cacheKey = 'reddit_ticker_mentions'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as TickerMention[]
 
   const posts = await fetchRedditPosts()
@@ -176,12 +176,12 @@ export async function getTickerMentions(): Promise<TickerMention[]> {
   }
 
   if (mentions.length === 0) {
-    setCache(cacheKey, MOCK_MENTIONS, 300)
+    await setCache(cacheKey, MOCK_MENTIONS, 300)
     return MOCK_MENTIONS
   }
 
   const result = mentions.sort((a, b) => b.mentions - a.mentions).slice(0, 30)
-  setCache(cacheKey, result, 900)
+  await setCache(cacheKey, result, 900)
   return result
 }
 

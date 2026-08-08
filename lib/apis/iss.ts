@@ -38,7 +38,7 @@ export async function fetchISSPosition(): Promise<ISSPosition> {
 
 export async function fetchAstronauts(): Promise<Astronaut[]> {
   const cacheKey = 'iss_astronauts'
-  const cached = getCache(cacheKey)
+  const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as Astronaut[]
 
   try {
@@ -47,7 +47,7 @@ export async function fetchAstronauts(): Promise<Astronaut[]> {
     })
     const data = await res.json()
     const astronauts: Astronaut[] = data.people || []
-    setCache(cacheKey, astronauts, 86400) // cache 24h
+    await setCache(cacheKey, astronauts, 86400) // cache 24h
     return astronauts
   } catch {
     return [
