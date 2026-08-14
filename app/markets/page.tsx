@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import CandlestickChart from '@/components/charts/CandlestickChart'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import AIButton from '@/components/terminal/AIButton'
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
+import { formatCurrency, formatNumber, formatPercent, getCurrencyForTicker } from '@/lib/utils'
 import { useAlpacaStream } from '@/lib/hooks/useAlpacaStream'
 import { useFlash } from '@/lib/hooks/useFlash'
 
@@ -70,6 +70,8 @@ function MarketsInner() {
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['SMA20','SMA50','RSI','MACD'])
 
   const liveTicker = alpacaTickers.get(selectedTicker ?? 'SPY')
+  // NSE/BSE tickers are priced in INR — see getCurrencyForTicker.
+  const cur = getCurrencyForTicker(selectedTicker ?? quote?.symbol)
   const displayPrice = liveTicker?.price || quote?.regularMarketPrice || 0
   const displayChangePct = liveTicker?.changePct || quote?.regularMarketChangePercent || 0
 
@@ -181,7 +183,7 @@ function MarketsInner() {
                     <td style={{ textAlign:'left' }}>
                       <span style={{ color: selectedTicker===q.symbol ? 'var(--text-accent)' : 'var(--text-primary)', fontWeight: selectedTicker===q.symbol ? 700 : 400 }}>{q.symbol}</span>
                     </td>
-                    <td style={{ fontSize:10 }}>{q.regularMarketPrice?.toFixed(2)}</td>
+                    <td style={{ fontSize:10 }}>{getCurrencyForTicker(q.symbol)}{q.regularMarketPrice?.toFixed(2)}</td>
                     <td style={{ fontSize:10, color: q.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                       {formatPercent(q.regularMarketChangePercent)}
                     </td>
@@ -210,7 +212,7 @@ function MarketsInner() {
                 transition: 'all 400ms ease',
                 padding: '2px 6px',
                 borderRadius: '3px',
-              }}>{formatCurrency(displayPrice)}</span>
+              }}>{formatCurrency(displayPrice, 2, cur)}</span>
               <div>
                 <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, fontWeight:700, color: displayChangePct>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                   {displayChangePct>=0 ? '▲' : '▼'} {formatPercent(displayChangePct)}
@@ -329,8 +331,8 @@ function MarketsInner() {
                 { label:'MKT CAP',    value: quote.marketCap ? formatNumber(quote.marketCap) : 'N/A' },
                 { label:'P/E RATIO',  value: (summary as any)?.summaryDetail?.trailingPE?.toFixed(1) || 'N/A' },
                 { label:'FWD P/E',    value: (summary as any)?.summaryDetail?.forwardPE?.toFixed(1) || 'N/A' },
-                { label:'52W HIGH',   value: formatCurrency(quote.fiftyTwoWeekHigh||0) },
-                { label:'52W LOW',    value: formatCurrency(quote.fiftyTwoWeekLow||0) },
+                { label:'52W HIGH',   value: formatCurrency(quote.fiftyTwoWeekHigh||0, 2, cur) },
+                { label:'52W LOW',    value: formatCurrency(quote.fiftyTwoWeekLow||0, 2, cur) },
                 { label:'VOLUME',     value: formatNumber(quote.regularMarketVolume||0) },
                 { label:'DIV YIELD',  value: quote.dividendYield ? `${(quote.dividendYield*100).toFixed(2)}%` : 'N/A' },
                 { label:'AVG RATING', value: quote.averageAnalystRating || 'N/A' },
@@ -358,8 +360,8 @@ function MarketsInner() {
               }} />
             </div>
             <div style={{ display:'flex', justifyContent:'space-between', marginTop:4 }}>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-negative)' }}>${quote.fiftyTwoWeekLow.toFixed(0)}</span>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-positive)' }}>${quote.fiftyTwoWeekHigh.toFixed(0)}</span>
+              <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-negative)' }}>{cur}{quote.fiftyTwoWeekLow.toFixed(0)}</span>
+              <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-positive)' }}>{cur}{quote.fiftyTwoWeekHigh.toFixed(0)}</span>
             </div>
           </div>
         )}

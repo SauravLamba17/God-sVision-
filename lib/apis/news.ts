@@ -47,24 +47,21 @@ const RSS_FEEDS: Feed[] = [
   { name: 'France 24', url: 'https://www.france24.com/en/rss', category: 'World', ttl: 150, limit: 10 },
 
   // ── FINANCIAL ──
-  { name: 'Reuters Business', url: 'https://feeds.reuters.com/reuters/businessNews', category: 'Business', ttl: 90, limit: 15 },
   { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', category: 'Business', ttl: 90, limit: 15 },
   { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories/', category: 'Business', ttl: 90, limit: 12 },
   { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', category: 'Business', ttl: 90, limit: 15 },
   { name: 'Seeking Alpha', url: 'https://seekingalpha.com/market_currents.xml', category: 'Business', ttl: 120, limit: 10 },
-  { name: 'Investopedia', url: 'https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_headline', category: 'Business', ttl: 180, limit: 8 },
-  { name: 'Forbes', url: 'https://www.forbes.com/feeds/forbesmagazine/index.rss', category: 'Business', ttl: 180, limit: 10 },
+  // Removed: Reuters Business/Energy (feeds.reuters.com no longer resolves),
+  // Forbes + Investopedia + Medical News Today (all HTTP 404).
 
   // ── ENERGY ──
   { name: 'OilPrice.com', url: 'https://oilprice.com/rss/main', category: 'Energy', ttl: 120, limit: 12 },
-  { name: 'Reuters Energy', url: 'https://feeds.reuters.com/reuters/energy', category: 'Energy', ttl: 120, limit: 10 },
 
   // ── TECH ──
   { name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'Tech', ttl: 90, limit: 15 },
   { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'Tech', ttl: 90, limit: 15 },
   { name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'Tech', ttl: 120, limit: 12 },
   { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: 'Tech', ttl: 90, limit: 12 },
-  { name: 'Engadget', url: 'https://www.engadget.com/rss.xml', category: 'Tech', ttl: 120, limit: 10 },
   { name: 'VentureBeat', url: 'https://venturebeat.com/feed/', category: 'Tech', ttl: 120, limit: 10 },
 
   // ── SCIENCE ──
@@ -73,11 +70,14 @@ const RSS_FEEDS: Feed[] = [
   { name: 'PhysOrg', url: 'https://phys.org/rss-feed/', category: 'Science', ttl: 300, limit: 10 },
 
   // ── HEALTH ──
+  // WHO publishes rarely (last item was ~6 months old at time of writing) but the
+  // feed is live — the recency filter drops its stale items automatically, so it
+  // stays here to catch genuine WHO announcements when they happen.
   { name: 'WHO', url: 'https://www.who.int/rss-feeds/news-english.xml', category: 'Health', ttl: 300, limit: 8 },
-  { name: 'Medical News Today', url: 'https://www.medicalnewstoday.com/rss', category: 'Health', ttl: 180, limit: 10 },
 
   // ── POLITICS ──
-  { name: 'Politico', url: 'https://www.politico.com/rss/politics08.xml', category: 'Politics', ttl: 90, limit: 12 },
+  // Removed: Engadget + Politico — both return HTTP 403 to this User-Agent, so
+  // they contributed nothing. Recoverable by changing the parser's User-Agent.
   { name: 'The Hill', url: 'https://thehill.com/rss/syndicator/19110', category: 'Politics', ttl: 90, limit: 12 },
 
   // ── INDIA ──
@@ -143,7 +143,9 @@ async function fetchFeedCached(feed: Feed): Promise<NewsItem[]> {
   try {
     const isGoogle = feed.name.startsWith('Google')
     const parsed = await parser.parseURL(feed.url)
-    const items: NewsItem[] = (parsed.items || []).slice(0, feed.limit || 15).map(item => {
+    const items: NewsItem[] = (parsed.items || [])
+      .slice(0, feed.limit || 15)
+      .map(item => {
       const rawTitle = item.title || ''
       let title = rawTitle
       let source = feed.name
@@ -157,17 +159,28 @@ async function fetchFeedCached(feed: Feed): Promise<NewsItem[]> {
       const raw = item.contentSnippet || item.content || item.summary || ''
       const description = stripHtml(raw).slice(0, 300)
 
+      // Prefer rss-parser's normalised isoDate; fall back to the raw pubDate.
+      // Never substitute "now" for a missing date — that fabricates freshness
+      // and floats undated items to the top of the newest-first sort.
+      const rawDate = item.isoDate || item.pubDate || ''
+      const parsedDate = rawDate ? new Date(rawDate) : null
+      const publishedAt = parsedDate && !isNaN(parsedDate.getTime())
+        ? parsedDate.toISOString()
+        : ''
+
       return {
-        id: item.guid || item.link || (title + (item.pubDate || '')),
+        id: item.guid || item.link || (title + rawDate),
         title: title || 'Untitled',
         description,
         url: item.link || '',
         source,
         category: feed.category,
-        publishedAt: item.pubDate || item.isoDate || new Date().toISOString(),
+        publishedAt,
         sentiment: detectSentiment(title + ' ' + description),
       }
     })
+      // Drop items we can't date — they can't be ordered or aged honestly.
+      .filter(item => item.publishedAt !== '')
 
     feedCache.set(feed.url, { data: items, expiresAt: Date.now() + feed.ttl * 1000 })
     return items

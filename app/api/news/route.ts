@@ -4,6 +4,10 @@ import { setCache, getCache } from '@/lib/cache'
 
 const CACHE_KEY = 'news_all'
 const CACHE_TTL = 90  // seconds — down from 300s so news refreshes every 1.5 min
+// Feeds publish at wildly different cadences, and a few (e.g. WHO) can sit
+// months behind. Without this, every stale item stays in the payload forever
+// and surfaces as "4-day-old news" once a category is filtered or scrolled.
+const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000
 
 interface NewsPayload {
   items: unknown[]
@@ -31,7 +35,13 @@ export async function GET() {
       ...(newsapi.status === 'fulfilled' ? newsapi.value : []),
     ]
 
-    const sorted = all.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    const cutoff = Date.now() - MAX_ARTICLE_AGE_MS
+    const recent = all.filter(item => {
+      const t = new Date(item.publishedAt).getTime()
+      return !isNaN(t) && t >= cutoff
+    })
+
+    const sorted = recent.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
     // Deduplicate on first 60 chars of title
     const unique = sorted.filter((item, idx, self) =>
       idx === self.findIndex(t => t.title.slice(0, 60) === item.title.slice(0, 60))

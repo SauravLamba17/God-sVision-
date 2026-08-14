@@ -130,7 +130,14 @@ export default function DiseasePage() {
                   {sorted.map(c => (
                     <tr key={c.country}>
                       <td style={{ textAlign:'left' }}>
-                        <span style={{ marginRight:4 }}>{c.countryInfo?.flag || ''}</span>
+                        {c.countryInfo?.flag && (
+                          <img
+                            src={c.countryInfo.flag}
+                            alt={c.country}
+                            style={{ width:16, height:12, marginRight:6, verticalAlign:'middle', objectFit:'cover' }}
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        )}
                         <span style={{ color:'var(--text-primary)' }}>{c.country}</span>
                       </td>
                       <td>{formatNumber(c.cases)}</td>

@@ -9,11 +9,12 @@ interface InsiderTx {
   company: string
   ticker: string
   insider: string
-  role: string
-  transactionType: 'BUY' | 'SELL' | 'GIFT' | 'AWARD'
-  shares: number
-  pricePerShare: number
-  totalValue: number
+  role: string | null
+  transactionType: 'BUY' | 'SELL' | 'GIFT' | 'AWARD' | null
+  // null when the EDGAR Atom summary doesn't disclose the figure.
+  shares: number | null
+  pricePerShare: number | null
+  totalValue: number | null
   filedDate: string
   link: string
 }
@@ -25,7 +26,8 @@ const TYPE_COLORS: Record<string, { color: string; bg: string }> = {
   GIFT: { color: 'var(--text-accent)', bg: 'rgba(56,189,248,0.1)' },
 }
 
-function TypeBadge({ type }: { type: string }) {
+function TypeBadge({ type }: { type: string | null }) {
+  if (!type) return <span style={{ color: 'var(--text-muted)' }}>—</span>
   const c = TYPE_COLORS[type] ?? { color: 'var(--text-secondary)', bg: 'rgba(148,163,184,0.1)' }
   return (
     <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color: c.color, background: c.bg, padding: '2px 6px', borderRadius: 2 }}>
@@ -34,7 +36,8 @@ function TypeBadge({ type }: { type: string }) {
   )
 }
 
-function formatValue(v: number): string {
+function formatValue(v: number | null): string {
+  if (v === null || isNaN(v)) return '—'
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`
@@ -72,7 +75,9 @@ export default function InsidersPage() {
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>SEC INSIDER TRANSACTIONS</div>
-          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>Form 4 Filings — EDGAR · Real-Time Feed</div>
+          <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
+            SEC Form 4 filings · Companies have up to 2 business days to report insider transactions · Dates shown are filing dates, not trade dates
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <AIButton panelName="Insider Transactions" panelData={txs.slice(0, 5)} context="Recent Form 4 insider transactions from SEC EDGAR. Look for clusters of insider buying/selling, big single transactions, and any notable corporate names. Provide market signal interpretation." />
@@ -130,18 +135,18 @@ export default function InsidersPage() {
                   <td style={{ padding: '6px 10px', color: 'var(--text-primary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.company}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{tx.ticker || '—'}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.insider}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>{tx.role}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>{tx.role ?? '—'}</td>
                   <td style={{ padding: '6px 10px' }}><TypeBadge type={tx.transactionType} /></td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-primary)', textAlign: 'right' }}>{tx.shares.toLocaleString()}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', textAlign: 'right' }}>${tx.pricePerShare.toFixed(2)}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-primary)', textAlign: 'right' }}>{tx.shares !== null ? tx.shares.toLocaleString() : '—'}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', textAlign: 'right' }}>{tx.pricePerShare !== null ? `$${tx.pricePerShare.toFixed(2)}` : '—'}</td>
                   <td style={{ padding: '6px 10px', fontWeight: 700, textAlign: 'right', color: tx.transactionType === 'BUY' ? 'var(--text-positive)' : tx.transactionType === 'SELL' ? 'var(--text-negative)' : 'var(--text-secondary)' }}>
                     {formatValue(tx.totalValue)}
                   </td>
                   <td style={{ padding: '6px 10px' }}>
-                    {tx.totalValue >= 1000000 && tx.transactionType === 'BUY' && (
+                    {tx.totalValue !== null && tx.totalValue >= 1000000 && tx.transactionType === 'BUY' && (
                       <span style={{ fontSize: 8, color: 'var(--text-positive)', background: 'rgba(34,197,94,0.1)', padding: '1px 5px', borderRadius: 2 }}>BULLISH</span>
                     )}
-                    {tx.totalValue >= 1000000 && tx.transactionType === 'SELL' && (
+                    {tx.totalValue !== null && tx.totalValue >= 1000000 && tx.transactionType === 'SELL' && (
                       <span style={{ fontSize: 8, color: 'var(--text-negative)', background: 'rgba(239,68,68,0.1)', padding: '1px 5px', borderRadius: 2 }}>BEARISH</span>
                     )}
                   </td>
@@ -156,8 +161,13 @@ export default function InsidersPage() {
                         <div>
                           <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 4 }}>FULL DETAILS</div>
                           <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-                            {tx.insider} ({tx.role}) filed Form 4 for {tx.company} on {tx.filedDate}.
-                            Transaction: {tx.transactionType} of {tx.shares.toLocaleString()} shares at ${tx.pricePerShare.toFixed(2)} each. Total: {formatValue(tx.totalValue)}.
+                            {tx.insider}{tx.role ? ` (${tx.role})` : ''} filed Form 4 for {tx.company} on {tx.filedDate}.
+                            {tx.transactionType ? ` Transaction: ${tx.transactionType}` : ' Transaction type not stated in the EDGAR feed.'}
+                            {tx.shares !== null ? ` of ${tx.shares.toLocaleString()} shares` : ''}
+                            {tx.pricePerShare !== null ? ` at $${tx.pricePerShare.toFixed(2)} each` : ''}
+                            {tx.totalValue !== null
+                              ? `. Total: ${formatValue(tx.totalValue)}.`
+                              : '. Share count and price are not disclosed in the EDGAR feed — open the filing for full details.'}
                           </div>
                           <a href={tx.link} target="_blank" rel="noreferrer" style={{ fontSize: 9, color: 'var(--text-accent)', display: 'inline-block', marginTop: 6 }}>
                             VIEW ON SEC EDGAR →
@@ -166,7 +176,7 @@ export default function InsidersPage() {
                         <AIButton
                           panelName="Insider Transaction"
                           panelData={tx}
-                          context={`Analyze this insider transaction: ${tx.insider} (${tx.role}) at ${tx.company} (${tx.ticker}) ${tx.transactionType === 'BUY' ? 'bought' : 'sold'} ${tx.shares.toLocaleString()} shares at $${tx.pricePerShare.toFixed(2)} for a total of ${formatValue(tx.totalValue)} on ${tx.filedDate}. Is this a significant signal? What should investors watch?`}
+                          context={`Analyze this SEC Form 4 filing: ${tx.insider}${tx.role ? ` (${tx.role})` : ''} at ${tx.company}${tx.ticker ? ` (${tx.ticker})` : ''}. ${tx.transactionType ? `Transaction type: ${tx.transactionType}.` : 'The EDGAR feed does not state the transaction type.'} ${tx.shares !== null ? `${tx.shares.toLocaleString()} shares` : 'Share count undisclosed'}${tx.pricePerShare !== null ? ` at $${tx.pricePerShare.toFixed(2)}` : ''}${tx.totalValue !== null ? ` for a total of ${formatValue(tx.totalValue)}` : ' (transaction value not disclosed in the EDGAR feed)'} on ${tx.filedDate}. Is this a significant signal? What should investors watch?`}
                           style={{ marginTop: 0 }}
                         />
                       </div>

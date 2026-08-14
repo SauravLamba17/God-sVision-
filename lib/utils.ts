@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Currency follows the exchange the ticker trades on, not the global mode
+// toggle — a US ticker viewed in India mode is still priced in USD, and an
+// NSE/BSE ticker is priced in INR regardless of the current mode.
+export function getCurrencyForTicker(ticker?: string): '₹' | '$' {
+  if (!ticker) return '$'
+  const t = ticker.toUpperCase()
+  return (t.endsWith('.NS') || t.endsWith('.BO')) ? '₹' : '$'
+}
+
 export function formatCurrency(value: number, decimals = 2, prefix = '$'): string {
   if (value === null || value === undefined || isNaN(value)) return 'N/A'
   if (Math.abs(value) >= 1e12) return `${prefix}${(value / 1e12).toFixed(2)}T`
