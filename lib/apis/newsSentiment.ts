@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import { geminiGenerate } from '@/lib/gemini'
+import { prisma } from '@/lib/prisma'
 
 export type SentimentLabel = 'BULLISH' | 'BEARISH' | 'NEUTRAL'
 
@@ -24,9 +25,10 @@ function sha256(text: string): string {
 }
 
 export async function scoreHeadlines(headlines: string[]): Promise<HeadlineSentiment[]> {
-  const { PrismaClient } = await import('@prisma/client')
-  const prisma = new PrismaClient()
-
+  // Uses the shared singleton from lib/prisma. This previously did
+  // `new PrismaClient()` per call — and this runs on every news poll from both
+  // the news page and the dashboard panel, so each concurrent request opened
+  // its own pool and exhausted Neon's connection ceiling.
   const results: HeadlineSentiment[] = []
   const toScore: string[] = []
   const hashMap: Map<string, string> = new Map()
@@ -97,7 +99,8 @@ Respond ONLY with a valid JSON array. No markdown, no explanation.`
     }
   }
 
-  await prisma.$disconnect()
+  // No $disconnect here: the client is the shared app-wide singleton, and
+  // disconnecting it would drop connections other in-flight requests are using.
   return results
 }
 
