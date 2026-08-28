@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiGenerate } from '@/lib/gemini';
 
+// Single Gemini generate behind a 1h in-process cache.
+export const maxDuration = 30
+
 const cache = new Map<string, { data: string; ts: number }>();
 const TTL = 60 * 60 * 1000; // 1 hour
 

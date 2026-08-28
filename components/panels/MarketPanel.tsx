@@ -52,7 +52,7 @@ export default function MarketPanel() {
 
   useEffect(() => {
     fetchData()
-    const id = setInterval(fetchData, 30000)
+    const id = setInterval(fetchData, 60000)
     return () => clearInterval(id)
   }, [])
 

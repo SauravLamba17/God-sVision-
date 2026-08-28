@@ -135,7 +135,7 @@ function MarketsInner() {
   useEffect(() => {
     fetchQuote(selectedTicker)
     fetchTechnicals(selectedTicker, period)
-    const id = setInterval(() => fetchQuote(selectedTicker), 30000)
+    const id = setInterval(() => fetchQuote(selectedTicker), 60000)
     return () => clearInterval(id)
   }, [selectedTicker, period])
 

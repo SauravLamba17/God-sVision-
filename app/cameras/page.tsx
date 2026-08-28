@@ -190,7 +190,7 @@ export default function CamerasPage() {
 
   useEffect(() => {
     fetchTfL()
-    const id = setInterval(fetchTfL, 30000)
+    const id = setInterval(fetchTfL, 60000)
     return () => clearInterval(id)
   }, [fetchTfL])
 

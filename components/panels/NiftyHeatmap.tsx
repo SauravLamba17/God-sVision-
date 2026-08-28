@@ -47,7 +47,7 @@ export default function NiftyHeatmap() {
       } finally { setLoading(false) }
     }
     load()
-    const id = setInterval(load, 30000)
+    const id = setInterval(load, 60000)
     return () => clearInterval(id)
   }, [])
 

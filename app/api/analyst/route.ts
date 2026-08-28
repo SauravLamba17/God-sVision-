@@ -7,6 +7,9 @@ import {
 } from '@/lib/apis/analyst-data'
 import { getIndianMarketStatus } from '@/lib/apis/india'
 
+// Builds the full universe snapshot then calls Gemini; cold path can run tens of seconds.
+export const maxDuration = 60
+
 const KEY_VALID = () => !!process.env.GEMINI_API_KEY
 
 const SECTOR_MAP_IN: Record<string, string> = {

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Fuse from 'fuse.js'
+import { isVercelProduction } from '@/lib/utils'
 
 type Category = 'PAGE' | 'STOCK' | 'CRYPTO' | 'FOREX' | 'ETF'
 
@@ -110,7 +111,13 @@ const FOREX: SearchItem[] = [
   href: `/forex?pair=${pair}`,
 }))
 
-const ALL_ITEMS: SearchItem[] = [...PAGES, ...STOCKS, ...ETFS, ...CRYPTO, ...FOREX]
+// CHAT is hidden on the Vercel production deployment only (see NavBar.tsx).
+// Filtering here covers both the Fuse search index and the default page list.
+const VISIBLE_PAGES: SearchItem[] = PAGES.filter(
+  page => page.href !== '/chat' || !isVercelProduction()
+)
+
+const ALL_ITEMS: SearchItem[] = [...VISIBLE_PAGES, ...STOCKS, ...ETFS, ...CRYPTO, ...FOREX]
 
 const CATEGORY_COLOR: Record<Category, string> = {
   PAGE:   'var(--text-accent)',
@@ -137,7 +144,7 @@ export default function CommandPalette() {
   const fuse = useMemo(() => new Fuse(ALL_ITEMS, fuseOptions), [])
 
   const results = useMemo<SearchItem[]>(() => {
-    if (!query.trim()) return PAGES.slice(0, 8)
+    if (!query.trim()) return VISIBLE_PAGES.slice(0, 8)
     return fuse.search(query).slice(0, 12).map(r => r.item)
   }, [query, fuse])
 

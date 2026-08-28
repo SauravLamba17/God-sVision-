@@ -59,7 +59,7 @@ export default function WatchlistsPage() {
   useEffect(() => {
     if (active?.items?.length) {
       loadQuotes(active.items)
-      const id = setInterval(() => loadQuotes(active.items), 30000)
+      const id = setInterval(() => loadQuotes(active.items), 60000)
       return () => clearInterval(id)
     }
   }, [active, loadQuotes])

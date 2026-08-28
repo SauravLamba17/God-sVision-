@@ -26,8 +26,8 @@ export default function AlertChecker() {
       } catch {}
     }
 
-    // Check every 30 seconds
-    checkRef.current = setInterval(check, 30000)
+    // Check every 60 seconds
+    checkRef.current = setInterval(check, 60000)
     return () => { if (checkRef.current) clearInterval(checkRef.current) }
   }, [])
 

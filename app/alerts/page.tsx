@@ -56,7 +56,7 @@ export default function AlertsPage() {
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(() => { loadAlerts(); checkPrices() }, 15000)
+    intervalRef.current = setInterval(() => { loadAlerts(); checkPrices() }, 60000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [loadAlerts, checkPrices])
 

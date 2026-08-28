@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server'
 import { geminiFlash } from '@/lib/gemini'
 import { getTickerSentiment } from '@/lib/apis/reddit'
 
+// SSE stream over Gemini; cap a hung stream well under the 300s platform default.
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
   const { ticker } = await req.json()
   const mention = await getTickerSentiment(ticker?.toUpperCase())

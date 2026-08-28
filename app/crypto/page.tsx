@@ -179,7 +179,7 @@ export default function CryptoPage() {
       setLoading(false)
     }
     fetchAll()
-    const id = setInterval(fetchAll, 15000)
+    const id = setInterval(fetchAll, 60000)
     return () => clearInterval(id)
   }, [])
 

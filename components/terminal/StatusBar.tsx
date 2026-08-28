@@ -53,7 +53,7 @@ export default function StatusBar() {
       })))
     }
     checkApis()
-    const id = setInterval(checkApis, 60000)
+    const id = setInterval(checkApis, 300000) // 5 min — 6 full payloads per tick, on every page; dots do not need 60s
     return () => clearInterval(id)
   }, [])
 

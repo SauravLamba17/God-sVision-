@@ -56,7 +56,7 @@ export default function FlightsPage() {
 
   useEffect(() => {
     fetchFlights()
-    const id = setInterval(fetchFlights, 10000)
+    const id = setInterval(fetchFlights, 60000)
     return () => clearInterval(id)
   }, [])
 

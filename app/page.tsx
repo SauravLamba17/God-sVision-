@@ -151,7 +151,7 @@ function IndiaMarketMovers() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchData(); const id = setInterval(fetchData, 30000); return () => clearInterval(id) }, [fetchData])
+  useEffect(() => { fetchData(); const id = setInterval(fetchData, 60000); return () => clearInterval(id) }, [fetchData])
 
   const rows = tab === 'gainers' ? gainers : tab === 'losers' ? losers : active
 
@@ -247,7 +247,7 @@ function MarketMovers() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchData(); const id = setInterval(fetchData, 30000); return () => clearInterval(id) }, [fetchData])
+  useEffect(() => { fetchData(); const id = setInterval(fetchData, 60000); return () => clearInterval(id) }, [fetchData])
 
   const rows = tab === 'gainers' ? gainers : tab === 'losers' ? losers : active
   const isOpen = (() => {
@@ -366,7 +366,7 @@ function IndiaCryptoMini() {
       } finally { setLoading(false) }
     }
     load()
-    const id = setInterval(load, 15000)
+    const id = setInterval(load, 60000)
     return () => clearInterval(id)
   }, [])
 
@@ -550,7 +550,7 @@ export default function DashboardPage() {
       } catch {}
     }
     fetchAll()
-    const id = setInterval(fetchAll, 30000)
+    const id = setInterval(fetchAll, 60000)
     return () => clearInterval(id)
   }, [isIndia])
 
@@ -591,7 +591,7 @@ export default function DashboardPage() {
       } catch {}
     }
     fetchIndia()
-    const id = setInterval(fetchIndia, 30000)
+    const id = setInterval(fetchIndia, 60000)
     return () => clearInterval(id)
   }, [isIndia])
 

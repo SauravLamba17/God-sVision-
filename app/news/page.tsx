@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { timeAgo } from '@/lib/utils'
 
 const CATEGORIES = ['All', 'Business', 'Tech', 'World', 'Science', 'Politics', 'Health', 'Sports', 'Energy', 'India']
-const REFRESH_INTERVAL = 90 // seconds
+const REFRESH_INTERVAL = 300 // seconds — each refresh also POSTs to /api/news/sentiment (Gemini + Prisma)
 
 const SENTIMENT_COLORS = { positive: 'var(--text-positive)', negative: 'var(--text-negative)', neutral: 'var(--text-muted)' } as const
 const SENTIMENT_LABELS = { positive: 'POS', negative: 'NEG', neutral: 'NEU' } as const

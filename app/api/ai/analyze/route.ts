@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiFlash } from '@/lib/gemini';
 
+// Streams Gemini output; cap a hung stream well under the 300s platform default.
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
   try {
     if (!geminiFlash) {

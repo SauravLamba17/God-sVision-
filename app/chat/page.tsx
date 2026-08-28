@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useChatSocket, CHAT_ROOMS, ChatRoom } from '@/lib/hooks/useChatSocket';
+import { isVercelProduction } from '@/lib/utils';
 
 const ROOM_LABELS: Record<ChatRoom, string> = {
   equities: '# equities',
@@ -12,7 +13,9 @@ const ROOM_LABELS: Record<ChatRoom, string> = {
   general: '# general',
 };
 
-export default function ChatPage() {
+// The full Socket.IO chat terminal — unchanged and fully functional under
+// `npm run dev`, where server.js provides the /api/socket backend.
+function ChatTerminal() {
   const { data: session } = useSession();
   const userId = (session?.user as any)?.id;
   const userName = session?.user?.name ?? session?.user?.email?.split('@')[0];
@@ -169,4 +172,33 @@ export default function ChatPage() {
       </div>
     </div>
   );
+}
+
+// Shown instead of ChatTerminal on the Vercel production deployment, where
+// server.js (and therefore /api/socket) never runs. Nothing above is removed —
+// it is waiting on a migration to a serverless real-time service.
+function ChatComingSoon() {
+  return (
+    <div style={{
+      minHeight: '60vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: '12px',
+      fontFamily: 'IBM Plex Mono, monospace', textAlign: 'center', padding: '40px',
+    }}>
+      <div style={{ fontSize: '32px' }}>&#128172;</div>
+      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+        GOD&apos;s Vision Chat
+      </div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '400px' }}>
+        Real-time chat is coming soon. We&apos;re upgrading the infrastructure
+        to support live conversations at scale.
+      </div>
+    </div>
+  );
+}
+
+// Branching here (rather than early-returning inside ChatTerminal) keeps every
+// hook in ChatTerminal from ever mounting in production, so there is no
+// conditional-hook violation and no socket connection is attempted.
+export default function ChatPage() {
+  return isVercelProduction() ? <ChatComingSoon /> : <ChatTerminal />;
 }

@@ -3,6 +3,12 @@ const webpack = require('webpack')
 
 const nextConfig = {
   poweredByHeader: false,
+  // Copies Vercel's build-time VERCEL_ENV into a NEXT_PUBLIC_ var so
+  // isVercelProduction() in lib/utils.ts works in client components too.
+  // Unset locally -> 'development', so gated features stay on in `npm run dev`.
+  env: {
+    NEXT_PUBLIC_DEPLOY_ENV: process.env.VERCEL_ENV ?? 'development',
+  },
   compress: true,
   swcMinify: true,
   typescript: {

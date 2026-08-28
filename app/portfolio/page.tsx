@@ -135,7 +135,7 @@ export default function PortfolioPage() {
     } catch {}
   }, [])
 
-  useEffect(() => { loadHoldings(); loadTxs(); const id = setInterval(loadHoldings, 30000); return () => clearInterval(id) }, [loadHoldings, loadTxs])
+  useEffect(() => { loadHoldings(); loadTxs(); const id = setInterval(loadHoldings, 60000); return () => clearInterval(id) }, [loadHoldings, loadTxs])
 
   const addTx = async (e: React.FormEvent) => {
     e.preventDefault()

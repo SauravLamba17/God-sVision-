@@ -26,7 +26,7 @@ export default function ISSTracker() {
       } catch { /* silent */ }
     }
     fetchISS()
-    const id = setInterval(fetchISS, 10000)
+    const id = setInterval(fetchISS, 60000)
     return () => clearInterval(id)
   }, [])
 

@@ -23,7 +23,7 @@ export function useSparklineData(symbol: string) {
       }
     };
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 300000); // server TTL is 15min (yahoo) / 1min (alpaca,cg); 60s polling was mostly cache hits
     return () => {
       mounted = false;
       clearInterval(interval);

@@ -31,7 +31,7 @@ export default function WatchlistSidebar() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 30000) // refresh prices every 30s
+    const id = setInterval(load, 60000) // refresh prices every 60s
     return () => clearInterval(id)
   }, [])
 

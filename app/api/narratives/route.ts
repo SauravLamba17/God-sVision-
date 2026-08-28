@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { detectNarratives } from '@/lib/apis/narratives'
 
+// Backstop only; the route already self-limits via withTimeout(12000).
+export const maxDuration = 30
+
 const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
   Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))])
 

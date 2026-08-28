@@ -5,6 +5,9 @@ import { getCache, setCache } from '@/lib/cache'
 import { buildStockSnapshot, matchNewsForTicker, generateSyntheticOptionsChain, StockSnapshot } from '@/lib/apis/analyst-data'
 import { getQuoteSummary } from '@/lib/apis/yahoo'
 
+// Per-ticker snapshot + Gemini; cold path can run tens of seconds.
+export const maxDuration = 60
+
 const KEY_VALID = () => !!process.env.GEMINI_API_KEY
 
 function simpleScore(s: StockSnapshot): number {

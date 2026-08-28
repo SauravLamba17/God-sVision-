@@ -40,7 +40,7 @@ export default function CryptoPanel() {
 
   useEffect(() => {
     fetchData()
-    const id = setInterval(fetchData, 15000)
+    const id = setInterval(fetchData, 60000)
     return () => clearInterval(id)
   }, [])
 

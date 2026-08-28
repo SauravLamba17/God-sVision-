@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiGenerate } from '@/lib/gemini';
 
+// Up to 10 Gemini calls in parallel.
+export const maxDuration = 30
+
 const cache = new Map<string, string>();
 
 export async function POST(req: NextRequest) {
