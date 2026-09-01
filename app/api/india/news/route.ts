@@ -75,7 +75,8 @@ export async function GET() {
     const articles = all.slice(0, 40)
 
     const result = { articles, total: articles.length, fetchedAt: Date.now() }
-    await setCache(key, result, 300)
+    // 60s stale grace, not the global 24h default — see app/api/news/route.ts
+    await setCache(key, result, 300, 60)
     return NextResponse.json({ data: result, source: 'live' })
   } catch (err) {
     const fallback = await getCache(key)

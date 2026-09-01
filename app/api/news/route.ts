@@ -4,6 +4,11 @@ import { setCache, getCache } from '@/lib/cache'
 
 const CACHE_KEY = 'news_all'
 const CACHE_TTL = 90  // seconds — down from 300s so news refreshes every 1.5 min
+// News is the one payload where serving a long-expired fallback is worse than
+// serving nothing: a stale entry may only outlive its TTL by a minute, just
+// enough to absorb a burst of concurrent requests during a refetch. The global
+// 24h default exists for rate-limited feeds (flights, webcams), not for this.
+const CACHE_STALE_GRACE = 60
 // Feeds publish at wildly different cadences, and a few (e.g. WHO) can sit
 // months behind. Without this, every stale item stays in the payload forever
 // and surfaces as "4-day-old news" once a category is filtered or scrolled.
@@ -55,7 +60,7 @@ export async function GET() {
       feedNames: getRSSFeedNames(),
     }
 
-    await setCache(CACHE_KEY, { items: unique, meta }, CACHE_TTL)
+    await setCache(CACHE_KEY, { items: unique, meta }, CACHE_TTL, CACHE_STALE_GRACE)
     return NextResponse.json({ data: unique, source: 'live', meta })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

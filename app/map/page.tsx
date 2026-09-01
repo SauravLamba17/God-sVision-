@@ -35,13 +35,12 @@ interface Aircraft {
 interface LayerState {
   earthquakes: boolean
   flights: boolean
-  weather: boolean
 }
 
 export default function MapPage() {
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
   const [aircraft, setAircraft] = useState<Aircraft[]>([])
-  const [layers, setLayers] = useState<LayerState>({ earthquakes: true, flights: false, weather: false })
+  const [layers, setLayers] = useState<LayerState>({ earthquakes: true, flights: false })
   const [selectedQuake, setSelectedQuake] = useState<Earthquake | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -168,7 +167,6 @@ export default function MapPage() {
           {[
             { key: 'earthquakes', label: '🌍 EARTHQUAKES', count: earthquakes.length },
             { key: 'flights', label: '✈ FLIGHTS', count: aircraft.length },
-            { key: 'weather', label: '🌧 WEATHER', count: 0 },
           ].map(layer => (
             <label key={layer.key} className="flex items-center gap-2 mb-1 cursor-pointer">
               <input
@@ -183,6 +181,18 @@ export default function MapPage() {
               )}
             </label>
           ))}
+          {/* No weather overlay exists on this map — there is no tile source or
+              fetch behind it. The control used to render as a live checkbox that
+              silently toggled nothing; showing it disabled is the honest state.
+              Wire a tile layer here and drop the `disabled` to enable it. */}
+          <label
+            className="flex items-center gap-2 mb-1"
+            title="Weather layer unavailable — no overlay source configured"
+          >
+            <input type="checkbox" checked={false} disabled readOnly />
+            <span className="font-mono text-[10px] text-muted">🌧 WEATHER</span>
+            <span className="font-mono text-[9px] text-muted">(unavailable)</span>
+          </label>
         </div>
 
         {/* Legend */}

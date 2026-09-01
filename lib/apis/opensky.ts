@@ -66,7 +66,13 @@ export async function getAllAircraft(bounds?: { minLat: number; maxLat: number; 
       }))
       .slice(0, 3000)
   } catch (err: any) {
-    if (err?.response?.status === 429 || err?.message?.includes('429')) {
+    // OpenSky does not always answer an exhausted anonymous quota with 429 — on
+    // shared datacenter egress (Vercel) it also returns 403 once the day's
+    // credits are spent. Both are the same condition to a caller, and only this
+    // branch produces the honest "rate limited, showing last known positions"
+    // state; anything else falls through to a bare "no data available".
+    const status = err?.response?.status
+    if (status === 429 || status === 403 || err?.message?.includes('429')) {
       throw new OpenSkyRateLimitError()
     }
     throw err
