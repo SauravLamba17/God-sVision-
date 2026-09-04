@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Fuse from 'fuse.js'
-import { isVercelProduction } from '@/lib/utils'
 
 type Category = 'PAGE' | 'STOCK' | 'CRYPTO' | 'FOREX' | 'ETF'
 
@@ -32,7 +31,6 @@ const PAGES: SearchItem[] = [
   { id: 'yield-curve', label: 'YIELD CURVE',  sublabel: 'Treasury yield curve',       category: 'PAGE', href: '/yield-curve' },
   { id: 'bonds',       label: 'BONDS',        sublabel: 'Fixed income / bonds',       category: 'PAGE', href: '/bonds' },
   { id: 'backtest',    label: 'BACKTEST',     sublabel: 'Backtesting engine',         category: 'PAGE', href: '/backtest' },
-  { id: 'chat',        label: 'CHAT',         sublabel: 'GOD\'s Vision live chat',    category: 'PAGE', href: '/chat' },
   { id: 'sheets',      label: 'SHEETS',       sublabel: 'Google Sheets add-on setup', category: 'PAGE', href: '/sheets' },
   { id: 'insiders',     label: 'INSIDERS',      sublabel: 'SEC Form 4 insider transactions', category: 'PAGE', href: '/insiders' },
   { id: 'centralbanks',label: 'CENTRAL BANKS', sublabel: 'Fed/ECB/BOE speeches & rates',   category: 'PAGE', href: '/centralbanks' },
@@ -111,13 +109,7 @@ const FOREX: SearchItem[] = [
   href: `/forex?pair=${pair}`,
 }))
 
-// CHAT is hidden on the Vercel production deployment only (see NavBar.tsx).
-// Filtering here covers both the Fuse search index and the default page list.
-const VISIBLE_PAGES: SearchItem[] = PAGES.filter(
-  page => page.href !== '/chat' || !isVercelProduction()
-)
-
-const ALL_ITEMS: SearchItem[] = [...VISIBLE_PAGES, ...STOCKS, ...ETFS, ...CRYPTO, ...FOREX]
+const ALL_ITEMS: SearchItem[] = [...PAGES, ...STOCKS, ...ETFS, ...CRYPTO, ...FOREX]
 
 const CATEGORY_COLOR: Record<Category, string> = {
   PAGE:   'var(--text-accent)',
@@ -144,7 +136,7 @@ export default function CommandPalette() {
   const fuse = useMemo(() => new Fuse(ALL_ITEMS, fuseOptions), [])
 
   const results = useMemo<SearchItem[]>(() => {
-    if (!query.trim()) return VISIBLE_PAGES.slice(0, 8)
+    if (!query.trim()) return PAGES.slice(0, 8)
     return fuse.search(query).slice(0, 12).map(r => r.item)
   }, [query, fuse])
 

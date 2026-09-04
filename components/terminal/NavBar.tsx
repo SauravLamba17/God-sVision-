@@ -4,7 +4,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useMode } from '@/lib/context/ModeContext'
-import { isVercelProduction } from '@/lib/utils'
 
 const SplitLayout          = dynamic(() => import('./SplitLayout'),          { ssr: false })
 const ModeToggle           = dynamic(() => import('./ModeToggle'),           { ssr: false })
@@ -30,7 +29,6 @@ const NAV_EXTRA = [
   { label: 'COMMODITIES', href: '/commodities' },
   { label: 'BONDS',       href: '/bonds' },
   { label: 'BACKTEST',    href: '/backtest' },
-  { label: 'CHAT',        href: '/chat' },
   { label: 'SHEETS',      href: '/sheets' },
   { label: 'PORTFOLIO',   href: '/portfolio' },
   { label: 'ALERTS',      href: '/alerts' },
@@ -46,14 +44,6 @@ const NAV_EXTRA = [
   { label: 'FINANCIALS',  href: '/financials' },
   { label: 'YIELD CURVE', href: '/yield-curve' },
 ]
-
-// CHAT is hidden on the Vercel production deployment only: its Socket.IO
-// backend lives in server.js, which Vercel never runs. The entry stays in
-// NAV_EXTRA above and the page works normally in local dev, pending a
-// migration to a serverless real-time service (Pusher/Ably).
-const NAV_EXTRA_VISIBLE = NAV_EXTRA.filter(
-  item => item.href !== '/chat' || !isVercelProduction()
-)
 
 export default function NavBar() {
   const pathname = usePathname()
@@ -221,7 +211,7 @@ export default function NavBar() {
           overflowX: 'auto', overflowY: 'hidden',
           padding: '0 8px', gap: 3,
         }} className="scrollbar-none">
-          {NAV_EXTRA_VISIBLE.map((item) => {
+          {NAV_EXTRA.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
             return (
               <Link key={item.href} href={item.href} style={extraItemStyle(isActive)}

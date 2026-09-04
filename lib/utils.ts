@@ -125,21 +125,3 @@ export function simpleSentiment(text: string): 'positive' | 'negative' | 'neutra
   return 'neutral'
 }
 
-/**
- * True ONLY on Vercel's production deployment.
- *
- * Vercel sets VERCEL_ENV ('production' | 'preview' | 'development') on its
- * build machines. next.config.js copies it into NEXT_PUBLIC_DEPLOY_ENV so this
- * same check works in server components, client components and route handlers
- * without prop-drilling. It is unset for a local `npm run dev` / `npm start`,
- * which falls back to 'development' — so production-gated features stay fully
- * usable locally.
- *
- * Caveat: NEXT_PUBLIC_* is inlined at BUILD time, not read at runtime. A
- * preview build later promoted to production via the Vercel dashboard keeps
- * its build-time value ('preview') and would not be gated. Redeploy from the
- * production branch rather than promoting if that matters.
- */
-export function isVercelProduction(): boolean {
-  return process.env.NEXT_PUBLIC_DEPLOY_ENV === 'production'
-}
