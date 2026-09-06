@@ -470,6 +470,57 @@ body::after {
 
 .leaflet-popup-tip { background: var(--bg-panel); }
 
+/* Leaflet tooltips default to a white box — match the terminal panels so the
+   hover card on /flights reads like every other popup in the app. */
+.leaflet-tooltip {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  padding: 6px 8px;
+}
+.leaflet-tooltip-top::before { border-top-color: var(--border-medium); }
+.leaflet-tooltip-bottom::before { border-bottom-color: var(--border-medium); }
+.leaflet-tooltip-left::before { border-left-color: var(--border-medium); }
+.leaflet-tooltip-right::before { border-right-color: var(--border-medium); }
+
+/* Esri's tile licence requires visible attribution, so the control is on — kept
+   small and dark so it reads as a footnote rather than a white browser chip. */
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.55) !important;
+  color: var(--text-muted) !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 8px !important;
+  padding: 1px 5px !important;
+}
+.leaflet-control-attribution a { color: var(--text-muted) !important; }
+
+/* Aircraft markers on /flights. The glyph is rotated to the aircraft's true
+   track; the wrapper stays unrotated so Leaflet's own positioning is untouched. */
+.flight-marker { background: none; border: none; }
+.flight-glyph {
+  width: 18px;
+  height: 18px;
+  line-height: 0;
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.9));
+}
+.flight-glyph-active { animation: flight-pulse 1.2s ease-in-out infinite; }
+
+/* Circle markers can't take a drop-shadow filter the way the glyph does, so the
+   searched aircraft pulses its stroke instead. */
+.flight-circle-active { animation: flight-ring 1.2s ease-in-out infinite; }
+
+@keyframes flight-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.9)); }
+  50%      { filter: drop-shadow(0 0 9px rgba(255,255,255,1)); }
+}
+
+@keyframes flight-ring {
+  0%, 100% { stroke-opacity: 1; stroke-width: 2; }
+  50%      { stroke-opacity: 0.35; stroke-width: 5; }
+}
+
 /* ═══════════════════════════════════════════
    MODAL
 ═══════════════════════════════════════════ */

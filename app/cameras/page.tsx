@@ -147,6 +147,7 @@ export default function CamerasPage() {
   const [webcams, setWebcams] = useState<Webcam[]>([])
   const [webcamsLoading, setWebcamsLoading] = useState(true)
   const [webcamsSource, setWebcamsSource] = useState('')
+  const [webcamsNotice, setWebcamsNotice] = useState('')
   const [tflCameras, setTflCameras] = useState<TfLCamera[]>([])
   const [tflImages, setTflImages] = useState<Record<string, string>>({})
   const [tflLastUpdated, setTflLastUpdated] = useState<number>(Date.now())
@@ -163,6 +164,8 @@ export default function CamerasPage() {
           setWebcams(json.data)
           setWebcamsSource(json.source || '')
         }
+        // Distinguish "key missing in this environment" from a real outage.
+        setWebcamsNotice(json.message || json.error || '')
       } catch { /* silent */ }
       finally { setWebcamsLoading(false) }
     }
@@ -250,7 +253,9 @@ export default function CamerasPage() {
               </div>
             ) : webcams.length === 0 ? (
               <div className="text-center py-8">
-                <span className="font-mono text-[11px] text-muted">No webcams available right now.</span>
+                <span className="font-mono text-[11px] text-muted">
+                  {webcamsNotice || 'No webcams available right now.'}
+                </span>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">

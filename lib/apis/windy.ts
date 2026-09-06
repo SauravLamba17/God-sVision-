@@ -12,50 +12,55 @@ export interface Webcam {
   player?: { day?: string; live?: string }
 }
 
-export async function getTopWebcams(limit = 20): Promise<Webcam[]> {
-  if (!KEY) return getStaticWebcams()
-  try {
-    const { data } = await axios.get(`${BASE}/webcams`, {
-      params: { lang: 'en', limit, offset: 0, orderby: 'popularity', include: 'images,player,location' },
-      headers: { 'x-windy-api-key': KEY },
-      timeout: 10000
-    })
-    const webcams = (data.webcams || []) as any[]
-    return webcams
-      .filter(w => w.status === 'active')
-      .map(w => ({
-        id: String(w.webcamId),
-        title: w.title,
-        status: w.status,
-        location: {
-          city: w.location?.city || '',
-          country: w.location?.country || '',
-          latitude: w.location?.latitude,
-          longitude: w.location?.longitude,
-        },
-        images: {
-          current: {
-            preview: w.images?.current?.preview || '',
-            thumbnail: w.images?.current?.thumbnail || '',
-          },
-        },
-        player: { day: w.player?.day, live: w.player?.live },
-      }))
-  } catch {
-    return getStaticWebcams()
+/** Thrown when WINDY_WEBCAM_KEY is absent, so the caller can say so honestly. */
+export class WindyNotConfiguredError extends Error {
+  constructor() {
+    super('WINDY_WEBCAM_KEY is not set')
+    this.name = 'WindyNotConfiguredError'
   }
 }
 
-function getStaticWebcams(): Webcam[] {
-  return [
-    { id: '1', title: 'Times Square NYC', status: 'active', location: { city: 'New York', country: 'USA', latitude: 40.758, longitude: -73.985 }, images: { current: { preview: '' } } },
-    { id: '2', title: 'Shibuya Crossing', status: 'active', location: { city: 'Tokyo', country: 'Japan', latitude: 35.659, longitude: 139.700 }, images: { current: { preview: '' } } },
-    { id: '3', title: 'Eiffel Tower', status: 'active', location: { city: 'Paris', country: 'France', latitude: 48.858, longitude: 2.294 }, images: { current: { preview: '' } } },
-    { id: '4', title: 'Dubai Skyline', status: 'active', location: { city: 'Dubai', country: 'UAE', latitude: 25.197, longitude: 55.274 }, images: { current: { preview: '' } } },
-    { id: '5', title: 'Sydney Harbour', status: 'active', location: { city: 'Sydney', country: 'Australia', latitude: -33.858, longitude: 151.214 }, images: { current: { preview: '' } } },
-    { id: '6', title: 'London Eye', status: 'active', location: { city: 'London', country: 'UK', latitude: 51.503, longitude: -0.119 }, images: { current: { preview: '' } } },
-  ]
+export async function getTopWebcams(limit = 20): Promise<Webcam[]> {
+  // Previously this fell back to six hardcoded entries ("Times Square NYC",
+  // "Shibuya Crossing", ...) that carried real coordinates but an empty image
+  // URL — they rendered as six grey "NO PREVIEW" tiles that looked like broken
+  // cameras rather than a missing key. They were fabricated data; the honest
+  // signal is to say the key is missing.
+  if (!KEY) throw new WindyNotConfiguredError()
+
+  // Errors propagate: a real upstream failure is not the same as an
+  // unconfigured key, and the route needs to tell them apart.
+  const { data } = await axios.get(`${BASE}/webcams`, {
+    params: { lang: 'en', limit, offset: 0, orderby: 'popularity', include: 'images,player,location' },
+    headers: { 'x-windy-api-key': KEY },
+    timeout: 10000
+  })
+
+  return ((data.webcams || []) as any[])
+    .filter(w => w.status === 'active')
+    // A tile with no image is indistinguishable from a broken camera, so drop
+    // them here rather than rendering an empty placeholder card.
+    .filter(w => w.images?.current?.preview || w.images?.current?.thumbnail)
+    .map(w => ({
+      id: String(w.webcamId),
+      title: w.title,
+      status: w.status,
+      location: {
+        city: w.location?.city || '',
+        country: w.location?.country || '',
+        latitude: w.location?.latitude,
+        longitude: w.location?.longitude,
+      },
+      images: {
+        current: {
+          preview: w.images?.current?.preview || '',
+          thumbnail: w.images?.current?.thumbnail || '',
+        },
+      },
+      player: { day: w.player?.day, live: w.player?.live },
+    }))
 }
+
 
 export async function getTfLCameras() {
   try {
