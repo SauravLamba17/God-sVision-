@@ -129,7 +129,12 @@ export default function SignInPage() {
               />
             </div>
             <div>
-              <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>PASSWORD</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.08em' }}>PASSWORD</div>
+                {tab === 'signin' && (
+                  <a href="/auth/forgot-password" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>Forgot password?</a>
+                )}
+              </div>
               <input
                 style={inputStyle}
                 type="password" value={password} placeholder={tab === 'register' ? 'Min 8 characters' : '••••••••'} required

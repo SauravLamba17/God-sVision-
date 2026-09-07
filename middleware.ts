@@ -11,9 +11,8 @@ import type { NextRequest } from 'next/server';
 // must never import lib/auth.ts (which pulls in PrismaAdapter/bcryptjs) or
 // anything else Node-only, and never invoke the NextAuth callback chain.
 const publicPaths = [
-  '/auth/signin',
-  '/auth/register',
-  '/auth/error',
+  '/auth',                // all auth pages: signin, register, error,
+                          // forgot-password, reset-password
   '/api/auth',            // NextAuth's own API routes (+ /api/auth/register)
   '/api/public',          // Google Sheets public API (uses its own key auth)
   '/api/stripe/webhook',  // Stripe calls this server-to-server, no session

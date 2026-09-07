@@ -175,3 +175,18 @@ model Transaction {
   notes     String   @default("")
   createdAt DateTime @default(now())
 }
+
+// Password reset tokens. Single-use, 1 hour expiry.
+// ponytail: expired/used rows accumulate forever — harmless (a few rows, no
+// functional impact). Add a scheduled cleanup job only if row count ever matters.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
