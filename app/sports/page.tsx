@@ -19,6 +19,7 @@ interface FootballEvent {
   strStatus: string
   dateEvent: string
   strTime: string
+  strLeague: string
 }
 
 interface F1Driver {
@@ -53,7 +54,9 @@ const TABS: { key: SportType; label: string; emoji: string }[] = [
 export default function SportsPage() {
   const [activeTab, setActiveTab] = useState<SportType>('football')
   const [footballData, setFootballData] = useState<FootballLeague[]>([])
-  const [f1Data, setF1Data] = useState<{ drivers: F1Driver[]; races: F1Race[] }>({ drivers: [], races: [] })
+  const [f1Data, setF1Data] = useState<{ drivers: F1Driver[]; races: F1Race[]; season: number }>({
+    drivers: [], races: [], season: new Date().getFullYear(),
+  })
   const [nbaData, setNbaData] = useState<{ games: NBAGame[]; date: string }>({ games: [], date: '' })
   const [cricketData, setCricketData] = useState<FootballEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,7 +67,7 @@ export default function SportsPage() {
       const res = await fetch(`/api/sports?type=${sport}`)
       const json = await res.json()
       if (sport === 'football') setFootballData(json.data || [])
-      else if (sport === 'f1') setF1Data(json.data || { drivers: [], races: [] })
+      else if (sport === 'f1') setF1Data({ drivers: [], races: [], season: new Date().getFullYear(), ...(json.data || {}) })
       else if (sport === 'nba') setNbaData(json.data || { games: [], date: '' })
       else if (sport === 'cricket') setCricketData(json.data || [])
     } catch { /* silent */ }
@@ -139,7 +142,7 @@ export default function SportsPage() {
       {/* F1 */}
       {activeTab === 'f1' && (
         <div className="grid grid-cols-2 gap-2">
-          <PanelWrapper title="F1 2024 DRIVERS" loading={loading}>
+          <PanelWrapper title={`F1 ${f1Data.season} DRIVERS`} loading={loading}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -164,7 +167,7 @@ export default function SportsPage() {
               </tbody>
             </table>
           </PanelWrapper>
-          <PanelWrapper title="F1 2024 RECENT RACES" loading={loading}>
+          <PanelWrapper title={`F1 ${f1Data.season} RECENT RACES`} loading={loading}>
             {f1Data.races.map((race, i) => (
               <div key={race.session_key || i} className="px-2 py-2" style={{ borderBottom: '1px solid #0d1f0d' }}>
                 <div className="flex items-center justify-between">
@@ -235,6 +238,7 @@ export default function SportsPage() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'left' }}>MATCH</th>
+                  <th style={{ textAlign: 'left' }}>LEAGUE</th>
                   <th>SCORE</th>
                   <th>DATE</th>
                   <th>STATUS</th>
@@ -248,6 +252,7 @@ export default function SportsPage() {
                       <span className="text-muted"> vs </span>
                       <span className="text-primary">{ev.strAwayTeam}</span>
                     </td>
+                    <td style={{ textAlign: 'left' }} className="text-muted text-[9px]">{ev.strLeague}</td>
                     <td className="font-mono text-accent">{ev.intHomeScore ?? 'TBD'} - {ev.intAwayScore ?? 'TBD'}</td>
                     <td className="text-muted text-[9px]">{ev.dateEvent}</td>
                     <td className="text-neutral text-[9px]">{ev.strStatus}</td>

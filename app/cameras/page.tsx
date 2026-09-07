@@ -16,14 +16,32 @@ interface FeaturedStream {
   location: string
   timezone: string
   embedId: string
+  /** YouTube query used by the "find live feed" fallback link when a stream goes dead. */
+  search: string
 }
 
-// Verified working YouTube live streams (checked against YouTube oembed) — kept small and
-// curated on purpose, since embed IDs for "live" streams go dead over time.
+// These YouTube live stream IDs may go offline periodically as streams end or channels
+// update. Last verified: 2026-09-06 (each ID checked live via playabilityStatus=OK +
+// liveBroadcastDetails.isLiveNow=true). If cameras appear blank, search YouTube for
+// "<category name> live stream" to find current active feeds and update the ID here —
+// the "find live feed" link on each card opens that search pre-filtered to live results.
+// Preference is for official operators (EarthCam, NASA, national broadcasters) because
+// their streams run for months rather than restarting with a new ID every few hours.
 const FEATURED_STREAMS: FeaturedStream[] = [
-  { id: 'times-square', title: 'TIMES SQUARE NYC (4K)', location: 'New York, USA', timezone: 'America/New_York', embedId: 'rnXIjl_Rzy4' },
-  { id: 'iss', title: 'ISS EARTH VIEW', location: 'Low Earth Orbit', timezone: 'UTC', embedId: 'H999s0P1Er0' },
-  { id: 'nasa-tv', title: 'NASA TV LIVE', location: 'NASA HQ', timezone: 'America/New_York', embedId: '21X5lGlDOfg' },
+  // EarthCam official — running since 2026-07-02
+  { id: 'times-square', title: 'TIMES SQUARE NYC (4K)', location: 'New York, USA', timezone: 'America/New_York', embedId: 'JQ_jwk_7OVE', search: 'EarthCam Times Square live' },
+  // NASA official — external HD Earth views from the ISS
+  { id: 'iss', title: 'ISS EARTH VIEW', location: 'Low Earth Orbit', timezone: 'UTC', embedId: 'awQzjn72bI0', search: 'NASA ISS live earth view' },
+  // NASA official — NASA no longer runs a permanent "NASA TV" 24/7 stream on YouTube;
+  // this is their continuous official live channel, which carries NASA TV coverage during events.
+  { id: 'nasa-live', title: 'NASA LIVE (OFFICIAL)', location: 'NASA / ISS', timezone: 'America/New_York', embedId: 'M3HKLzjvKPc', search: 'NASA TV live official stream' },
+  // ANNnewsCH (TV Asahi) — running since 2026-02-19
+  { id: 'shibuya', title: 'SHIBUYA CROSSING', location: 'Tokyo, Japan', timezone: 'Asia/Tokyo', embedId: '8H3nRCFVR6Y', search: 'Shibuya crossing live camera' },
+  // Vision-Environnement (pro webcam operator) — Palais d'Iéna, Eiffel Tower view, running since 2025-04-02
+  { id: 'eiffel', title: 'EIFFEL TOWER VIEW', location: 'Paris, France', timezone: 'Europe/Paris', embedId: 'OzYp4NRZlwQ', search: 'Eiffel Tower Paris live webcam' },
+  // Dubai has no durable YouTube live cam — every candidate found restarts with a new video
+  // ID every few hours. Substituted an EarthCam official Middle East feed instead.
+  { id: 'western-wall', title: 'WESTERN WALL', location: 'Jerusalem, Israel', timezone: 'Asia/Jerusalem', embedId: '77akujLn4k8', search: 'EarthCam Western Wall live' },
 ]
 
 interface TfLCamera {
@@ -81,8 +99,19 @@ function FeaturedCard({ cam, onOpen }: { cam: FeaturedStream; onOpen: () => void
         <span className="panel-header-title">{cam.title}</span>
         <LocalClock timezone={cam.timezone} />
       </div>
-      <div className="font-mono text-[10px] text-muted px-2 py-1 border-b" style={{ borderColor: 'var(--border-dim)' }}>
-        📍 {cam.location} · 📹 LIVE STREAM
+      <div className="font-mono text-[10px] text-muted px-2 py-1 border-b flex items-center justify-between gap-2" style={{ borderColor: 'var(--border-dim)' }}>
+        <span>📍 {cam.location} · 📹 LIVE STREAM</span>
+        {/* Stream dead? sp=EgJAAQ%3D%3D filters YouTube search to currently-live results. */}
+        <a
+          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(cam.search)}&sp=EgJAAQ%253D%253D`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          title="Feed unavailable? Find a current live stream"
+          className="text-[9px] text-neutral hover:text-positive shrink-0"
+        >
+          ↻ find live feed
+        </a>
       </div>
       <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', background: '#000' }}>
         {imgError ? (

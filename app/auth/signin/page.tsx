@@ -34,6 +34,7 @@ export default function SignInPage() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true); setError('');
     try {
       const res = await signIn('credentials', { email, password, redirect: false });
@@ -47,6 +48,7 @@ export default function SignInPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true); setError('');
     try {
       const res = await fetch('/api/auth/register', {
@@ -97,8 +99,8 @@ export default function SignInPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
-          <button style={tabStyle(tab === 'signin')} onClick={() => { setTab('signin'); setError(''); }}>SIGN IN</button>
-          <button style={tabStyle(tab === 'register')} onClick={() => { setTab('register'); setError(''); }}>REGISTER</button>
+          <button type="button" disabled={loading} style={{ ...tabStyle(tab === 'signin'), cursor: loading ? 'not-allowed' : 'pointer', opacity: loading && tab !== 'signin' ? 0.5 : 1 }} onClick={() => { setTab('signin'); setError(''); }}>SIGN IN</button>
+          <button type="button" disabled={loading} style={{ ...tabStyle(tab === 'register'), cursor: loading ? 'not-allowed' : 'pointer', opacity: loading && tab !== 'register' ? 0.5 : 1 }} onClick={() => { setTab('register'); setError(''); }}>REGISTER</button>
         </div>
 
         {/* Form */}
@@ -149,7 +151,7 @@ export default function SignInPage() {
             )}
 
             <button
-              type="submit" disabled={loading}
+              type="submit" disabled={loading} aria-busy={loading}
               style={{
                 width: '100%', padding: '10px 0',
                 background: loading ? '#1b2e1b' : '#ff6d00', color: loading ? '#607d8b' : '#000',
@@ -158,7 +160,12 @@ export default function SignInPage() {
                 borderRadius: 2, transition: 'all 0.15s',
               }}
             >
-              {loading ? '...' : tab === 'signin' ? 'SIGN IN →' : 'CREATE ACCOUNT →'}
+              {loading ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <span className="gv-spinner" aria-hidden="true" />
+                  {tab === 'signin' ? 'SIGNING IN…' : 'CREATING ACCOUNT…'}
+                </span>
+              ) : tab === 'signin' ? 'SIGN IN →' : 'CREATE ACCOUNT →'}
             </button>
           </div>
         </form>

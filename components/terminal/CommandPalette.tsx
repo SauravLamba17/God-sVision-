@@ -203,6 +203,9 @@ export default function CommandPalette() {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
       style={{
         position: 'fixed', inset: 0, zIndex: 500,
         background: 'rgba(0,0,0,0.88)',
@@ -232,7 +235,15 @@ export default function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search tickers, coins, pairs, pages..."
+            role="combobox"
+            aria-label="Search tickers, coins, pairs and pages"
+            aria-expanded={results.length > 0}
+            aria-controls={results.length > 0 ? 'gv-palette-listbox' : undefined}
+            aria-autocomplete="list"
+            aria-activedescendant={results.length > 0 ? `gv-palette-opt-${selected}` : undefined}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Search tickers, coins, pairs, pages…"
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
               fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 500,
@@ -246,17 +257,29 @@ export default function CommandPalette() {
         </div>
 
         {/* Results list */}
-        <div ref={listRef} style={{ maxHeight: 360, overflowY: 'auto' }}>
+        <div
+          ref={listRef}
+          id="gv-palette-listbox"
+          role="listbox"
+          aria-label="Command palette results"
+          style={{ maxHeight: 360, overflowY: 'auto' }}
+        >
           {results.length === 0 ? (
-            <div style={{ padding: '20px 14px', fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
+            <div role="status" aria-live="polite" style={{ padding: '20px 14px', fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
               NO RESULTS FOR &quot;{query}&quot;
             </div>
           ) : (
             results.map((item, i) => (
               <div
                 key={item.id}
+                id={`gv-palette-opt-${i}`}
+                role="option"
+                aria-selected={i === selected}
                 onClick={() => select(item)}
-                onMouseEnter={() => setSelected(i)}
+                // onMouseMove, not onMouseEnter: arrowing through results scrolls
+                // rows under a stationary cursor, and mouseenter would fire and
+                // yank the selection back to whatever row slid beneath it.
+                onMouseMove={() => setSelected(i)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '9px 14px',

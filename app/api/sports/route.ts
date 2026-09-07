@@ -40,13 +40,25 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'f1') {
+      const season = new Date().getFullYear()
       const [driversRes, racesRes] = await Promise.allSettled([
         axios.get(`${OPENF1}/drivers?session_key=latest`, { timeout: 8000 }),
-        axios.get(`${OPENF1}/sessions?year=2024&session_type=Race`, { timeout: 8000 }),
+        axios.get(`${OPENF1}/sessions?year=${season}&session_type=Race`, { timeout: 8000 }),
       ])
+      // The season endpoint returns the whole calendar, so the tail is next
+      // year's unraced rounds. Keep only sessions that have actually started,
+      // otherwise "RECENT RACES" lists races that haven't happened yet.
+      const now = new Date().toISOString()
+      const races = racesRes.status === 'fulfilled'
+        ? (racesRes.value.data ?? [])
+            .filter((r: any) => (r.date_start ?? '') <= now)
+            .slice(-5)
+            .reverse()
+        : []
       const data = {
         drivers: driversRes.status === 'fulfilled' ? driversRes.value.data?.slice(0, 20) : [],
-        races: racesRes.status === 'fulfilled' ? racesRes.value.data?.slice(-5).reverse() : [],
+        races,
+        season,
       }
       await setCache(key, data, 300)
       return NextResponse.json({ data, source: 'live' })
@@ -63,9 +75,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'cricket') {
-      const { data } = await axios.get(`${SPORTSDB}/eventspastleague.php?id=4430`, { timeout: 8000 })
-      await setCache(key, data?.events || [], 300)
-      return NextResponse.json({ data: data?.events?.slice(0, 10) || [], source: 'live' })
+      // 4430 was French Top 14 (rugby), not cricket. These three are real
+      // cricket leagues; their seasons barely overlap (CPL ~Aug-Sep, IPL
+      // ~Mar-May, Big Bash ~Dec-Jan), so query all of them and merge to keep
+      // the tab populated year-round instead of empty for nine months.
+      const leagues = ['5176', '4460', '4461']
+      const results = await Promise.allSettled(
+        leagues.map(id => axios.get(`${SPORTSDB}/eventspastleague.php?id=${id}`, { timeout: 8000 }))
+      )
+      const events = results
+        .flatMap(r => (r.status === 'fulfilled' ? (r.value.data?.events ?? []) : []))
+        .sort((a: any, b: any) => (b.dateEvent ?? '').localeCompare(a.dateEvent ?? ''))
+      await setCache(key, events, 300)
+      return NextResponse.json({ data: events.slice(0, 10), source: 'live' })
     }
 
     if (type === 'tennis') {
