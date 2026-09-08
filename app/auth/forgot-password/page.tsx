@@ -3,6 +3,15 @@ import { useState } from 'react';
 
 const mono = 'IBM Plex Mono, monospace';
 
+// "2400" -> "40 minutes". Rounds up so we never tell someone to retry early.
+function formatRetry(seconds: number): string {
+  if (seconds <= 60) return 'in less than a minute';
+  const mins = Math.ceil(seconds / 60);
+  if (mins < 60) return `in ${mins} minute${mins === 1 ? '' : 's'}`;
+  const hours = Math.ceil(mins / 60);
+  return `in ${hours} hour${hours === 1 ? '' : 's'}`;
+}
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,6 +29,12 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
+      if (res.status === 429) {
+        const when = typeof data.retryAfterSeconds === 'number' ? ` Try again ${formatRetry(data.retryAfterSeconds)}.` : '';
+        setError(`Too many reset requests for that email.${when}`);
+        setLoading(false);
+        return;
+      }
       if (!res.ok) { setError(data.error || 'Something went wrong'); setLoading(false); return; }
       setSent(true); setLoading(false);
     } catch (err: any) {
