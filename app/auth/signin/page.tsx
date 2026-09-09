@@ -1,11 +1,27 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
 const mono = 'IBM Plex Mono, monospace';
 
+// useSearchParams() opts the subtree into client-side rendering, so it needs a
+// Suspense boundary to keep `next build` from bailing on static generation.
 export default function SignInPage() {
-  const [tab, setTab] = useState<'signin' | 'register'>('signin');
+  return (
+    <Suspense fallback={null}>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
+  // The landing page's "Get started" links arrive at ?tab=register; anything
+  // else lands on the Sign In tab exactly as before.
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<'signin' | 'register'>(
+    searchParams.get('tab') === 'register' ? 'register' : 'signin'
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -26,9 +42,9 @@ export default function SignInPage() {
   // path — the page is already navigating away.
   const gotoCallback = () => {
     const params = new URLSearchParams(window.location.search);
-    const callbackUrl = params.get('callbackUrl') || '/';
+    const callbackUrl = params.get('callbackUrl') || '/dashboard';
     // Only allow same-origin relative paths — never an attacker-supplied absolute URL.
-    const safe = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/';
+    const safe = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/dashboard';
     window.location.href = safe;
   };
 
@@ -195,7 +211,7 @@ export default function SignInPage() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <a href="/" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to Terminal</a>
+          <a href="/dashboard" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to Terminal</a>
         </div>
       </div>
     </div>

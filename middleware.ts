@@ -2,14 +2,27 @@ import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import type { NextRequest } from 'next/server';
 
-// Hard login gate: every route requires a signed-in session EXCEPT the auth
-// pages themselves, NextAuth's own API, the public Sheets API (own key auth),
-// the Stripe webhook (called by Stripe with no session), and static assets.
+// Hard login gate: every route requires a signed-in session EXCEPT the public
+// landing page at '/', the auth pages themselves, NextAuth's own API, the
+// public Sheets API (own key auth), the Stripe webhook (called by Stripe with
+// no session), and static assets.
+//
+// This is deny-by-default: the matcher below runs on everything not excluded
+// there, and anything not matched by the two allow-lists needs a token. The
+// dashboard at '/dashboard' is therefore protected without an explicit entry,
+// exactly as '/' was before it moved.
 //
 // This runs in the Edge Runtime, so it deliberately imports ONLY getToken()
 // from next-auth/jwt — a lightweight cookie read + JWT signature verify. It
 // must never import lib/auth.ts (which pulls in PrismaAdapter/bcryptjs) or
 // anything else Node-only, and never invoke the NextAuth callback chain.
+// Paths that are public as an EXACT match only. '/' lives here and MUST NOT be
+// moved into publicPaths below: that list is matched with startsWith(), so a
+// '/' entry there would make every route in the app public.
+const publicExactPaths = new Set([
+  '/',                    // the marketing landing page
+]);
+
 const publicPaths = [
   '/auth',                // all auth pages: signin, register, error,
                           // forgot-password, reset-password
@@ -25,7 +38,7 @@ const publicPaths = [
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  if (publicPaths.some(p => path.startsWith(p))) {
+  if (publicExactPaths.has(path) || publicPaths.some(p => path.startsWith(p))) {
     return NextResponse.next();
   }
 

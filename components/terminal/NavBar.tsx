@@ -11,7 +11,7 @@ const ThemeSwitcher        = dynamic(() => import('./ThemeSwitcher'),        { s
 const BeginnerModeToggle   = dynamic(() => import('./BeginnerModeToggle'),   { ssr: false })
 
 const NAV_F_ITEMS = [
-  { key: 'F1',  label: 'DASH',     href: '/',          icon: '◈' },
+  { key: 'F1',  label: 'DASH',     href: '/dashboard', icon: '◈' },
   { key: 'F2',  label: 'MARKETS',  href: '/markets',   icon: '📈' },
   { key: 'F3',  label: 'CRYPTO',   href: '/crypto',    icon: '₿' },
   { key: 'F4',  label: 'FOREX',    href: '/forex',     icon: '💱' },

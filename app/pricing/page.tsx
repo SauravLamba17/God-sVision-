@@ -35,7 +35,7 @@ export default function PricingPage() {
           Bloomberg charges $32,000/year.<br />
           We will charge significantly less.
         </div>
-        <Link href="/" style={{
+        <Link href="/dashboard" style={{
           display: 'inline-block',
           padding: '10px 24px',
           background: 'var(--text-accent)',

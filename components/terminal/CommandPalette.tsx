@@ -14,7 +14,7 @@ interface SearchItem {
 }
 
 const PAGES: SearchItem[] = [
-  { id: 'dash',        label: 'DASHBOARD',    sublabel: 'Main overview',              category: 'PAGE', href: '/' },
+  { id: 'dash',        label: 'DASHBOARD',    sublabel: 'Main overview',              category: 'PAGE', href: '/dashboard' },
   { id: 'markets',     label: 'MARKETS',      sublabel: 'Equities & chart',           category: 'PAGE', href: '/markets' },
   { id: 'crypto',      label: 'CRYPTO',       sublabel: 'Top 100 coins & DeFi',       category: 'PAGE', href: '/crypto' },
   { id: 'forex',       label: 'FOREX',        sublabel: 'Currency pairs & rates',     category: 'PAGE', href: '/forex' },

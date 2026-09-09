@@ -1,0 +1,214 @@
+/* Landing page styles — ported from _landing-reference/GODs Vision Landing.dc.html.
+   Only the parts that cannot be expressed as inline style objects live here:
+   the @font-face import, the keyframes, the :hover/:focus-visible states that
+   the reference expressed as its own style-hover/style-focus pseudo-attributes,
+   and the overrides that undo globals.css's terminal-shell body styling. */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
+/* ── Undo the terminal shell ──────────────────────────────────────────────
+   globals.css pins html/body to a non-scrolling 100%-height terminal frame
+   (background-color and color are !important there) and app/layout.tsx sets
+   overflow/height inline on <body>. An inline style can only be beaten by
+   !important, hence the flags — they are scoped by :has() so no other route
+   is affected.
+
+   Only <html> may be the scroll container. This split matters: overflow-x on an
+   element forces its computed overflow-y to `auto`, so declaring overflow-x
+   here on <body> too would make <body> a second scroll container — one with
+   nothing to scroll (its height equals its content). Wheel events would land on
+   that dead container, and `overscroll-behavior-y: none` on the same element
+   would then forbid them chaining up to the real viewport scroller, swallowing
+   the scroll entirely. Dragging the scrollbar still worked because that drives
+   the viewport scroller directly, which is exactly the reported symptom.
+
+   The reference file avoided this by declaring overflow only on <body> and
+   leaving <html> alone: CSS then propagates body's overflow to the viewport and
+   leaves body itself `visible`. We cannot copy that here, because globals.css
+   sets overflow on BOTH html and body, so both need overriding — hence html
+   takes the scrolling role and body is forced back to `visible`. */
+html:has(.gv-landing) {
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  max-width: none !important;
+  background: #0a0b0d !important;
+  background-color: #0a0b0d !important;
+  color: #e8e6e1 !important;
+  font-size: 16px !important;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(201, 138, 75, .24);
+}
+
+/* Never a scroll container: no overflow-x, no overscroll-behavior here. */
+body:has(.gv-landing) {
+  overflow: visible !important;
+  height: auto !important;
+  max-width: none !important;
+  background: #0a0b0d !important;
+  background-color: #0a0b0d !important;
+  color: #e8e6e1 !important;
+  font-size: 16px !important;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(201, 138, 75, .24);
+}
+
+/* The terminal's grid overlay and radial glow are the wrong furniture here —
+   the landing draws its own scanline layer. */
+body:has(.gv-landing)::before,
+body:has(.gv-landing)::after {
+  display: none !important;
+}
+
+/* globals.css sets `#__next, main { height: 100% }` for the fixed terminal
+   layout; the landing's <main> is a normal flow element. */
+.gv-landing main {
+  height: auto;
+}
+
+.gv-landing {
+  font-family: Geist, "Helvetica Neue", system-ui, sans-serif;
+}
+
+.gv-landing button,
+.gv-landing a,
+.gv-landing summary {
+  touch-action: manipulation;
+}
+
+.gv-landing a {
+  color: #d99a5c;
+  text-decoration: none;
+}
+
+.gv-landing a:hover {
+  color: #eab887;
+}
+
+.gv-landing :focus-visible {
+  outline: 2px solid #d99a5c;
+  outline-offset: 3px;
+}
+
+.gv-landing ::selection {
+  background: #c98a4b;
+  color: #0a0b0d;
+}
+
+.gv-landing section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────────── */
+@keyframes gv-tape {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes gv-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes gv-rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes gv-live {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+.gv-landing [data-reveal] {
+  opacity: 1;
+  animation: gv-rise .7s cubic-bezier(.16, .84, .3, 1) both;
+}
+
+@supports (animation-timeline: view()) {
+  .gv-landing [data-reveal] {
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+}
+
+/* ── Interactive states ────────────────────────────────────────────────────
+   The reference carried these as style-hover="…" / style-focus="…" attributes,
+   which are a Claude Design authoring convention rather than real HTML. Each
+   becomes a real class here, applied via className in the ported JSX.
+
+   Every selector below is deliberately scoped under `.gv-landing`. In the
+   reference these were inline styles, which outrank any selector; as bare
+   classes they are NOT. `.gv-landing a` above has specificity (0,1,1) — one
+   class plus one type — which beats a lone class like `.gv-btn-primary`
+   (0,1,0), so the link colour won and every button rendered copper-on-copper.
+   Scoping brings these to (0,2,0), which outranks (0,1,1). Do not un-scope
+   them. */
+.gv-landing .gv-nav-link {
+  color: rgba(232, 230, 225, .62);
+  transition: color .15s ease;
+}
+.gv-landing .gv-nav-link:hover {
+  color: #e8e6e1;
+}
+
+.gv-landing .gv-link-quiet {
+  color: rgba(232, 230, 225, .86);
+  transition: color .15s ease;
+}
+.gv-landing .gv-link-quiet:hover {
+  color: #e8e6e1;
+}
+
+.gv-landing .gv-btn-primary {
+  background: #c98a4b;
+  color: #0a0b0d;
+  transition: background .15s ease;
+}
+.gv-landing .gv-btn-primary:hover {
+  background: #dda269;
+  color: #0a0b0d;
+}
+
+.gv-landing .gv-btn-ghost {
+  border: 1px solid rgba(232, 230, 225, .2);
+  color: rgba(232, 230, 225, .76);
+  transition: border-color .15s ease, color .15s ease;
+}
+.gv-landing .gv-btn-ghost:hover {
+  border-color: rgba(232, 230, 225, .5);
+  color: #e8e6e1;
+}
+
+.gv-landing .gv-skip {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 60;
+  background: #c98a4b;
+  color: #0a0b0d;
+  font: 600 13px/1 'Geist Mono', monospace;
+  padding: 14px 18px;
+}
+.gv-landing .gv-skip:focus {
+  left: 12px;
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html:has(.gv-landing) {
+    scroll-behavior: auto;
+  }
+  .gv-landing #gv-tape,
+  .gv-landing [data-pulse],
+  .gv-landing [data-reveal] {
+    animation: none !important;
+  }
+  .gv-landing [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}

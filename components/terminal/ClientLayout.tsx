@@ -15,8 +15,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // Auth pages render fully standalone — no TopBar/NavBar/ticker chrome — so a
   // signed-out visitor sees ONLY the sign-in/register page (hard login gate).
   const isAuthPage = pathname?.startsWith('/auth')
+  // The public marketing landing page at '/' renders fully standalone too —
+  // it has its own header, ticker and footer, and must not be wrapped in the
+  // authenticated terminal chrome (TopBar/NavBar/StatusBar + fixed <main>).
+  const isLanding = pathname === '/'
 
-  if (isGodMode || isAuthPage) {
+  if (isGodMode || isAuthPage || isLanding) {
     return <>{children}</>
   }
 
