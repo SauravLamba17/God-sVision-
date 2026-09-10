@@ -77,7 +77,7 @@ export default function ThemeSwitcher() {
       <div style={{
         padding: '6px 10px 5px',
         borderBottom: '1px solid var(--border-dim)',
-        fontSize: 8, fontWeight: 700, letterSpacing: '2px',
+        fontSize: 'var(--fs-meta)', fontWeight: 700, letterSpacing: '2px',
         color: 'var(--text-accent)',
         background: 'var(--bg-header)',
       }}>
@@ -103,12 +103,12 @@ export default function ThemeSwitcher() {
           >
             <span style={{ fontSize: 14, flexShrink: 0 }}>{opt.icon}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: isActive ? 'var(--text-accent)' : 'var(--text-primary)' }}>
+              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: isActive ? 'var(--text-accent)' : 'var(--text-primary)' }}>
                 {opt.label}
-                {isActive && <span style={{ marginLeft: 6, fontSize: 8, color: 'var(--text-accent)' }}>✓ ACTIVE</span>}
+                {isActive && <span style={{ marginLeft: 6, fontSize: 'var(--fs-meta)', color: 'var(--text-accent)' }}>✓ ACTIVE</span>}
               </div>
               {opt.desc && (
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>{opt.desc}</div>
+                <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 1 }}>{opt.desc}</div>
               )}
             </div>
             <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -120,7 +120,7 @@ export default function ThemeSwitcher() {
         );
       })}
 
-      <div style={{ padding: '5px 10px', fontSize: 8, color: 'var(--text-muted)', background: 'var(--bg-header)' }}>
+      <div style={{ padding: '5px 10px', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', background: 'var(--bg-header)' }}>
         Theme saved automatically
       </div>
     </div>,
@@ -137,7 +137,7 @@ export default function ThemeSwitcher() {
           background: open ? 'var(--bg-hover)' : 'transparent',
           border: `1px solid ${open ? 'var(--border-accent)' : 'var(--border-dim)'}`,
           borderRadius: 3, padding: '2px 8px',
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 'var(--fs-meta)',
           color: open ? 'var(--text-accent)' : 'var(--text-muted)',
           cursor: 'pointer', letterSpacing: '0.06em', whiteSpace: 'nowrap',
           transition: 'all 150ms ease',
@@ -145,7 +145,7 @@ export default function ThemeSwitcher() {
       >
         <span>{active.icon}</span>
         <span>THEME</span>
-        <span style={{ fontSize: 7 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ fontSize: 'var(--fs-meta)' }}>{open ? '▲' : '▼'}</span>
       </button>
       {dropdown}
     </>

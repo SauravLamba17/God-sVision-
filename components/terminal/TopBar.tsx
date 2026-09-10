@@ -57,10 +57,10 @@ function LiveClock({ tz, label }: { tz: string; label: string }) {
       padding: '2px 8px',
       minWidth: 70,
     }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.12em' }}>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.12em' }}>
         {label}
       </span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-secondary)', letterSpacing: '0.05em', lineHeight: 1.2 }}>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', letterSpacing: '0.05em', lineHeight: 1.2 }}>
         {time || '--:--:--'}
       </span>
     </div>
@@ -99,7 +99,7 @@ function MarketStatusBadge() {
     }}>
       {isOpen && <span className="live-dot" style={{ width: 5, height: 5 }} />}
       <span style={{
-        fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700,
+        fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700,
         color: c.color, letterSpacing: '0.08em',
       }}>
         {c.label}
@@ -134,7 +134,7 @@ export default function TopBar() {
             </span>
             <span style={{ fontSize: 13 }}>{isIndia ? '🇮🇳' : '🇺🇸'}</span>
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, letterSpacing: '0.15em', marginTop: 1, color: 'var(--text-muted)' }}>
+          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', letterSpacing: '0.15em', marginTop: 1, color: 'var(--text-muted)' }}>
             {isIndia ? 'INDIA MARKETS' : 'FINANCIAL INTELLIGENCE'}
           </div>
         </div>

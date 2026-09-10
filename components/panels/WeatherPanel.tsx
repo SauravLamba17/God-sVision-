@@ -66,8 +66,8 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
             color: tempUnit === u ? '#000' : 'var(--text-muted)',
             border: '1px solid var(--border-color)',
             borderRadius: '2px',
-            padding: '2px 8px',
-            fontSize: '10px',
+            padding: '2px 7px',
+            fontSize: 'var(--fs-meta)',
             fontWeight: 700,
             cursor: 'pointer',
             fontFamily: 'IBM Plex Mono, monospace',
@@ -84,12 +84,12 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
     background: 'var(--bg-header)',
     border: '1px solid var(--border-color)',
     borderRadius: '3px',
-    padding: '5px 6px',
+    padding: '7px 8px',
     minWidth: 0,
     overflow: 'hidden',
   }
   const nameStyle: React.CSSProperties = {
-    fontSize: '10px',
+    fontSize: 'var(--fs-body)',
     fontWeight: 700,
     color: 'var(--text-accent)',
     overflow: 'hidden',
@@ -98,13 +98,13 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
     fontFamily: 'IBM Plex Mono, monospace',
   }
   const tempStyle: React.CSSProperties = {
-    fontSize: '14px',
+    fontSize: 'var(--fs-lg)',
     fontWeight: 700,
     color: 'var(--text-primary)',
     fontFamily: 'IBM Plex Mono, monospace',
   }
   const conditionStyle: React.CSSProperties = {
-    fontSize: '10px',
+    fontSize: 'var(--fs-meta)',
     color: 'var(--text-muted)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',

@@ -131,7 +131,7 @@ export default function ForexPage() {
               {CENTRAL_BANK_RATES.map(cb => (
                 <tr key={cb.bank}>
                   <td style={{ textAlign: 'left' }}>
-                    <span className="text-primary text-[10px]">{cb.bank}</span>
+                    <span className="text-primary text-[13px]">{cb.bank}</span>
                   </td>
                   <td className="font-mono text-accent">{cb.rate.toFixed(2)}%</td>
                   <td className={cb.trend === 'hike' ? 'positive' : cb.trend === 'cut' ? 'negative' : 'neutral'}>
@@ -148,12 +148,12 @@ export default function ForexPage() {
           <div className="px-2 py-2 space-y-2">
             <div className="flex gap-2">
               <div className="flex-1">
-                <div className="font-mono text-[9px] text-muted mb-1">BORROW (LOW RATE)</div>
+                <div className="font-mono text-[11px] text-muted mb-1" style={{ minHeight: '2.6em', lineHeight: 1.3 }}>BORROW (LOW RATE)</div>
                 <select
                   value={carryBase}
                   onChange={e => setCarryBase(e.target.value)}
                   className="input-terminal w-full"
-                  style={{ padding: '4px 6px', fontSize: 11 }}
+                  style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}
                 >
                   {CENTRAL_BANK_RATES.map(r => (
                     <option key={r.currency} value={r.currency}>{r.currency} ({r.rate}%)</option>
@@ -161,12 +161,12 @@ export default function ForexPage() {
                 </select>
               </div>
               <div className="flex-1">
-                <div className="font-mono text-[9px] text-muted mb-1">INVEST (HIGH RATE)</div>
+                <div className="font-mono text-[11px] text-muted mb-1" style={{ minHeight: '2.6em', lineHeight: 1.3 }}>INVEST (HIGH RATE)</div>
                 <select
                   value={carryQuote}
                   onChange={e => setCarryQuote(e.target.value)}
                   className="input-terminal w-full"
-                  style={{ padding: '4px 6px', fontSize: 11 }}
+                  style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}
                 >
                   {CENTRAL_BANK_RATES.map(r => (
                     <option key={r.currency} value={r.currency}>{r.currency} ({r.rate}%)</option>
@@ -176,16 +176,16 @@ export default function ForexPage() {
             </div>
             <div className="space-y-1">
               <div className="flex justify-between">
-                <span className="font-mono text-[10px] text-muted">BORROW RATE</span>
-                <span className="font-mono text-[10px] text-negative">{cbRate(carryBase).toFixed(2)}%</span>
+                <span className="font-mono text-[11px] text-muted">BORROW RATE</span>
+                <span className="font-mono text-[13px] text-negative">{cbRate(carryBase).toFixed(2)}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-mono text-[10px] text-muted">INVEST RATE</span>
-                <span className="font-mono text-[10px] text-positive">{cbRate(carryQuote).toFixed(2)}%</span>
+                <span className="font-mono text-[11px] text-muted">INVEST RATE</span>
+                <span className="font-mono text-[13px] text-positive">{cbRate(carryQuote).toFixed(2)}%</span>
               </div>
               <div className="flex justify-between" style={{ borderTop: '1px solid #1b2e1b', paddingTop: 4 }}>
-                <span className="font-mono text-[10px] text-accent font-bold">CARRY RETURN</span>
-                <span className={`font-mono text-[12px] font-bold ${carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
+                <span className="font-mono text-[11px] text-accent font-bold">CARRY RETURN</span>
+                <span className={`font-mono text-[15px] font-bold ${carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
                   {carryReturn >= 0 ? '+' : ''}{carryReturn.toFixed(2)}%
                 </span>
               </div>

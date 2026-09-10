@@ -48,22 +48,22 @@ export default function EarthquakePanel({ limit = 5 }: { limit?: number }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span
-                  className="font-mono text-[12px] font-bold w-8 text-center"
+                  className="font-mono text-[15px] font-bold w-11 shrink-0 text-center"
                   style={{ color: magnitudeColor(q.magnitude) }}
                 >
                   M{q.magnitude.toFixed(1)}
                 </span>
                 <div>
-                  <p className="text-primary text-[11px] leading-tight">{q.place}</p>
+                  <p className="text-primary text-[13px] leading-tight">{q.place}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted text-[9px] font-mono">DEPTH: {q.depth.toFixed(0)}km</span>
+                    <span className="text-muted text-[11px] font-mono">DEPTH: {q.depth.toFixed(0)}km</span>
                     {q.tsunami === 1 && (
-                      <span className="text-negative text-[9px] font-mono animate-pulse">⚠ TSUNAMI</span>
+                      <span className="text-negative text-[11px] font-mono animate-pulse">⚠ TSUNAMI</span>
                     )}
                   </div>
                 </div>
               </div>
-              <span className="text-muted text-[9px] font-mono flex-shrink-0">{timeAgo(q.time)}</span>
+              <span className="text-muted text-[11px] font-mono flex-shrink-0">{timeAgo(q.time)}</span>
             </div>
           </div>
         ))}

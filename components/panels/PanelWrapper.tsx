@@ -71,20 +71,24 @@ export default function PanelWrapper({
         borderBottom: '1px solid #1e293b',
         padding: '5px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        // gap + wrap so a wider title (13px) plus badges/controls degrades by
+        // wrapping rather than overflowing the header box in narrow panels.
+        flexWrap: 'wrap', gap: '2px 8px',
         flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 8px', minWidth: 0, flexShrink: 0, maxWidth: '100%' }}>
           <span style={{
             color: accentColor,
-            fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-header)', fontWeight: 700,
+            letterSpacing: '0.02em', textTransform: 'uppercase',
             textShadow: `0 0 12px ${accentColor}60`,
+            minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {title}
           </span>
 
           {ageBadge && (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: ageBadge.color, letterSpacing: '0.06em' }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-badge)', color: ageBadge.color, letterSpacing: '0.06em' }}>
               {ageBadge.label}
             </span>
           )}
@@ -115,7 +119,7 @@ export default function PanelWrapper({
             </button>
           )}
           <span suppressHydrationWarning style={{
-            fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em',
+            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.04em',
           }}>
             {lastUpdated ? formatTimestamp(lastUpdated) : '------'}
           </span>
@@ -127,7 +131,7 @@ export default function PanelWrapper({
         {loading ? (
           <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
-              fontFamily: 'IBM Plex Mono', fontSize: 11,
+              fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)',
               color: accentColor,
               textShadow: `0 0 8px ${accentColor}80`,
             }}>
@@ -137,7 +141,7 @@ export default function PanelWrapper({
         ) : error ? (
           <div className="error-state">
             ⚠ {isCached ? 'CACHED DATA' : 'DATA UNAVAILABLE'}
-            {!isCached && <div style={{ marginTop: 4, fontSize: 9, color: 'var(--text-muted)' }}>{error}</div>}
+            {!isCached && <div style={{ marginTop: 4, fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{error}</div>}
           </div>
         ) : (
           children

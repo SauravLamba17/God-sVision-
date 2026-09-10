@@ -77,7 +77,7 @@ export default function StatusBar() {
               background: DOT_COLORS[s.status], flexShrink: 0,
             }} />
             <span style={{
-              fontFamily: 'IBM Plex Mono', fontSize: 9,
+              fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)',
               color: s.status === 'live' ? 'var(--text-muted)' : DOT_COLORS[s.status],
               letterSpacing: '0.05em',
             }}>
@@ -88,7 +88,7 @@ export default function StatusBar() {
       </div>
 
       {/* Center: feed health + refresh countdown */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)' }}>
         <span style={{
           color: liveCount === 6 ? 'var(--text-positive)' : liveCount >= 4 ? 'var(--text-warning)' : 'var(--text-negative)',
           letterSpacing: '0.06em',
@@ -102,7 +102,7 @@ export default function StatusBar() {
       </div>
 
       {/* Right: version + mode + sound */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)' }}>
         <span style={{ color: 'var(--text-accent)', letterSpacing: '0.06em' }}>GOD'S VISION</span>
         <span style={{ color: 'var(--border-color)' }}>v1.0</span>
         <span style={{ color: 'var(--border-bright)' }}>│</span>
@@ -124,7 +124,7 @@ export default function StatusBar() {
           </>
         )}
         <Link href="/glossary" style={{
-          fontFamily: 'IBM Plex Mono', fontSize: 9,
+          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)',
           color: 'var(--text-muted)', textDecoration: 'none',
           padding: '1px 6px',
           border: '1px solid var(--border-color)',

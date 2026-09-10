@@ -30,7 +30,7 @@ export default function TickerBroadcast() {
       background: 'var(--bg-panel)',
       border: '1px solid var(--text-accent)',
       padding: '4px 14px',
-      fontFamily: mono, fontSize: 10, fontWeight: 700,
+      fontFamily: mono, fontSize: 'var(--fs-body)', fontWeight: 700,
       color: 'var(--text-accent)', letterSpacing: '0.1em',
       animation: 'fadeInOut 1.5s ease forwards',
       whiteSpace: 'nowrap',

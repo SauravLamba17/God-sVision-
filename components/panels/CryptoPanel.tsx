@@ -63,7 +63,7 @@ export default function CryptoPanel() {
               <td style={{ textAlign: 'left' }} className="text-muted">{coin.market_cap_rank}</td>
               <td style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <span className="text-accent font-bold">{coin.symbol.toUpperCase()}</span>
-                <span className="text-muted ml-1 text-[9px]">{coin.name.slice(0, 10)}</span>
+                <span className="text-muted ml-1 text-[11px]">{coin.name.slice(0, 10)}</span>
               </td>
               <td className="font-mono">
                 {coin.current_price >= 1

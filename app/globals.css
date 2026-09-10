@@ -92,6 +92,28 @@
   --glow-green:     rgba(0,230,118,0.12);
   --glow-red:       rgba(255,23,68,0.12);
   --glow-gold:      rgba(245,158,11,0.12);
+
+  /* === TYPE SCALE ===
+     Readability floor for the terminal UI. These are MINIMUMS — the dashboard
+     was previously running 88% of its text at <=10px (bulk at 8-9px), which is
+     below comfortable reading size even for a dense product. Density is
+     intentional here, so the scale stays tight: five steps, no step below 10px,
+     and body/data text never below 13px.
+
+       badge   short fixed-width tags: LIVE, HIGH, BULLISH, WSB
+       meta    timestamps, sources, column labels, captions, units
+       body    headlines, prices, table rows, list items, descriptions
+       header  panel titles (always paired with font-weight 700)
+       lg      one prominent value per panel (temperature, magnitude)
+       display hero figures in the market strip
+
+     Prefer these over hard-coded px so the whole terminal moves together. */
+  --fs-badge:       10px;
+  --fs-meta:        11px;
+  --fs-body:        13px;
+  --fs-header:      13px;
+  --fs-lg:          15px;
+  --fs-display:     20px;
 }
 
 /* ═══════════════════════════════════════════
@@ -183,7 +205,7 @@ html, body {
   background-color: var(--bg-terminal) !important;
   color: var(--text-primary) !important;
   font-family: 'Inter', system-ui, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
-  font-size: 12px;
+  font-size: var(--fs-body);
   overflow: hidden;
   max-width: 100vw;
   height: 100%;
@@ -350,7 +372,7 @@ body::after {
 .panel-header-title {
   color: var(--text-accent);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: var(--fs-header);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -360,7 +382,7 @@ body::after {
 .panel-header-time {
   color: var(--text-muted);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+  font-size: var(--fs-meta);
   letter-spacing: 0.05em;
 }
 
@@ -371,17 +393,20 @@ body::after {
   width: 100%;
   border-collapse: collapse;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: var(--fs-body);
+  /* Pinned so the larger body size buys legibility, not row height — this is a
+     dense terminal table, and the rows should stay tight. */
+  line-height: 1.3;
 }
 
 .data-table th {
   background: var(--bg-header);
   color: var(--text-accent);
-  font-size: 9px;
+  font-size: var(--fs-meta);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 5px 8px;
+  padding: 5px 6px;
   text-align: right;
   border-bottom: 1px solid var(--border-medium);
   white-space: nowrap;
@@ -390,7 +415,7 @@ body::after {
 .data-table th:first-child { text-align: left; }
 
 .data-table td {
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-bottom: 1px solid var(--border-dim);
   color: var(--text-primary);
   text-align: right;
@@ -555,7 +580,7 @@ body::after {
   border: 1px solid var(--border-dim);
   color: var(--text-primary);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: var(--fs-body);
   padding: 6px 10px;
   outline: none;
   width: 100%;
@@ -573,7 +598,7 @@ body::after {
   border: 1px solid var(--border-medium);
   color: var(--text-primary);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: var(--fs-body);
   padding: 5px 14px;
   cursor: pointer;
   text-transform: uppercase;
@@ -638,7 +663,7 @@ body::after {
 .error-state {
   color: var(--text-gold);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: var(--fs-body);
   padding: 12px;
   text-align: center;
   letter-spacing: 0.04em;
@@ -681,10 +706,11 @@ body::after {
   border: 1px solid rgba(34,197,94,0.3);
   color: #22c55e;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+  font-size: var(--fs-badge);
   padding: 1px 6px;
   border-radius: 3px;
   letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .badge-cached {
@@ -695,7 +721,7 @@ body::after {
   border: 1px solid rgba(245,158,11,0.3);
   color: #f59e0b;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
+  font-size: var(--fs-badge);
   padding: 1px 6px;
   border-radius: 3px;
   letter-spacing: 0.06em;
@@ -771,4 +797,22 @@ body::after {
    so the loading state survives with the animation switched off. */
 @media (prefers-reduced-motion: reduce) {
   .gv-spinner { animation: none; opacity: 0.6; }
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD SCROLL COLUMN
+═══════════════════════════════════════════ */
+/* The dashboard stacks its rows in a height-bounded flex column that scrolls.
+   Flex items default to flex-shrink:1, so every row was being compressed down
+   to its inline min-height instead of taking its content height — rows with
+   overflow:visible then spilled their content over the row below (the ISS
+   panel colliding with the Narrative/News panels), and rows with
+   overflow:hidden silently clipped theirs (the Global Market Monitor strip
+   collapsed to 2px). Taller text made it visible, but the compression was
+   always there.
+
+   flex-shrink:0 restores what overflowY:auto on the column already implied:
+   rows keep their natural height and the column scrolls. */
+.gv-dash-scroll > * {
+  flex-shrink: 0;
 }

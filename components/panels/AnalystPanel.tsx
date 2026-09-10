@@ -61,11 +61,11 @@ function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: st
       background: 'rgba(245,158,11,0.06)',
       border: '1px solid rgba(245,158,11,0.2)',
       borderRadius: 3,
-      fontSize: 9,
+      fontSize: 'var(--fs-meta)',
       lineHeight: 1.7,
       color: 'var(--text-secondary)',
     }}>
-      <div style={{ fontWeight: 700, color: 'var(--text-warning)', marginBottom: 4, fontSize: 8, letterSpacing: '0.06em' }}>
+      <div style={{ fontWeight: 700, color: 'var(--text-warning)', marginBottom: 4, fontSize: 'var(--fs-meta)', letterSpacing: '0.06em' }}>
         📚 WHAT DOES THIS MEAN?
       </div>
       <div>
@@ -82,7 +82,7 @@ function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: st
           <div>• For every {currency}1 risked, you could gain <b style={{ color: 'var(--text-positive)' }}>{currency}{rr}</b></div>
         </div>
       </div>
-      <div style={{ marginTop: 5, padding: '4px 6px', background: 'rgba(239,68,68,0.08)', borderLeft: '2px solid #ef4444', fontSize: 8 }}>
+      <div style={{ marginTop: 5, padding: '4px 6px', background: 'rgba(239,68,68,0.08)', borderLeft: '2px solid #ef4444', fontSize: 'var(--fs-meta)' }}>
         ⚠ This is AI analysis, not financial advice. Never invest money you cannot afford to lose.
       </div>
     </div>
@@ -157,7 +157,7 @@ export default function AnalystPanel() {
 
   const statusColor = data?.marketStatus === 'OPEN' ? 'var(--text-positive)' : data?.marketStatus === 'PRE-OPEN' || data?.marketStatus === 'AFTER-HOURS' ? 'var(--text-warning)' : 'var(--text-negative)'
 
-  const sectionTitleStyle: React.CSSProperties = { fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '6px 10px 3px' }
+  const sectionTitleStyle: React.CSSProperties = { fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '6px 10px 3px' }
 
   return (
     <div style={{
@@ -168,36 +168,36 @@ export default function AnalystPanel() {
       {/* Sticky header */}
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: '0.08em' }}>🤖 GOD'S VISION ANALYST</span>
+          <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: accent, letterSpacing: '0.08em' }}>🤖 GOD'S VISION ANALYST</span>
           {data && (
-            <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 2, background: `${statusColor}20`, color: statusColor }}>
+            <span style={{ fontSize: 'var(--fs-meta)', padding: '1px 5px', borderRadius: 2, background: `${statusColor}20`, color: statusColor }}>
               ● {data.marketStatus}
             </span>
           )}
           {source && (
-            <span style={{ fontSize: 7, color: 'var(--text-muted)' }}>{source.toUpperCase()}</span>
+            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{source.toUpperCase()}</span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>Next: {refreshCountdown}</span>
+          <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Next: {refreshCountdown}</span>
           <button
             onClick={handleManualRefresh}
             disabled={!canManualRefresh}
             title={canManualRefresh ? 'Refresh now' : `Wait ${fmtCountdown(manualCooldownLeft)}`}
             style={{
               background: 'none', border: 'none', cursor: canManualRefresh ? 'pointer' : 'not-allowed',
-              color: canManualRefresh ? accent : 'var(--text-muted)', fontSize: 13,
+              color: canManualRefresh ? accent : 'var(--text-muted)', fontSize: 'var(--fs-body)',
             }}>
-            ↻{!canManualRefresh && <span style={{ fontSize: 7, marginLeft: 3 }}>{fmtCountdown(manualCooldownLeft)}</span>}
+            ↻{!canManualRefresh && <span style={{ fontSize: 'var(--fs-meta)', marginLeft: 3 }}>{fmtCountdown(manualCooldownLeft)}</span>}
           </button>
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading && !data ? (
-          <div style={{ padding: 14, fontSize: 10, color: accent }}>ANALYZING MARKET<span className="blink-cursor" /></div>
+          <div style={{ padding: 14, fontSize: 'var(--fs-body)', color: accent }}>ANALYZING MARKET<span className="blink-cursor" /></div>
         ) : error && !data ? (
-          <div style={{ padding: 14, fontSize: 10, color: 'var(--text-negative)' }}>{error}</div>
+          <div style={{ padding: 14, fontSize: 'var(--fs-body)', color: 'var(--text-negative)' }}>{error}</div>
         ) : data ? (
           <>
             {/* Beginner Warning Banner */}
@@ -208,11 +208,11 @@ export default function AnalystPanel() {
                 background: 'rgba(245,158,11,0.08)',
                 border: '1px solid rgba(245,158,11,0.3)',
                 borderRadius: 3,
-                fontSize: 9,
+                fontSize: 'var(--fs-meta)',
                 color: 'var(--text-warning)',
                 lineHeight: 1.6,
               }}>
-                <div style={{ fontWeight: 700, marginBottom: 3, fontSize: 8, letterSpacing: '0.06em' }}>
+                <div style={{ fontWeight: 700, marginBottom: 3, fontSize: 'var(--fs-meta)', letterSpacing: '0.06em' }}>
                   ⚠ FOR LEARNING ONLY — BEGINNER MODE ON
                 </div>
                 These are AI-generated trading suggestions, not financial advice.
@@ -224,18 +224,18 @@ export default function AnalystPanel() {
             {/* Market Outlook Bar */}
             <div style={{ margin: 8, padding: '8px 10px', border: '1px solid #1e293b', borderLeft: `2px solid ${biasColor(data.marketOutlook.bias)}`, background: 'var(--bg-panel)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: biasColor(data.marketOutlook.bias) }}>{data.marketOutlook.bias}</span>
-                <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{data.universeSize} names tracked</span>
+                <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: biasColor(data.marketOutlook.bias) }}>{data.marketOutlook.bias}</span>
+                <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{data.universeSize} names tracked</span>
               </div>
-              <div style={{ fontSize: 9, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{data.marketOutlook.summary}</div>
-              <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 4 }}>Key level: {data.marketOutlook.keyLevel}</div>
+              <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{data.marketOutlook.summary}</div>
+              <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 4 }}>Key level: {data.marketOutlook.keyLevel}</div>
             </div>
 
             {/* Top Picks */}
             <div style={sectionTitleStyle}>
               TOP PICKS
               {isBeginnerMode && (
-                <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
+                <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
                   — AI-suggested trades based on technical analysis
                 </span>
               )}
@@ -249,14 +249,14 @@ export default function AnalystPanel() {
                       onClick={() => setExpanded(isOpen ? null : p.ticker)}
                       style={{ padding: '6px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 2, background: `${actionColor(p.action)}20`, color: actionColor(p.action), fontWeight: 700 }}>{p.action}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-primary)' }}>{p.ticker.replace('.NS', '')}</span>
-                        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{p.name}</span>
+                        <span style={{ fontSize: 'var(--fs-meta)', padding: '1px 5px', borderRadius: 2, background: `${actionColor(p.action)}20`, color: actionColor(p.action), fontWeight: 700 }}>{p.action}</span>
+                        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-primary)' }}>{p.ticker.replace('.NS', '')}</span>
+                        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{p.name}</span>
                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: convictionColor(p.conviction) }} title={p.conviction} />
                       </div>
-                      <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{isOpen ? '▲' : '▼'}</span>
+                      <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)' }}>{isOpen ? '▲' : '▼'}</span>
                     </div>
-                    <div style={{ padding: '0 8px 6px', display: 'flex', gap: 12, fontSize: 8, color: 'var(--text-muted)' }}>
+                    <div style={{ padding: '0 8px 6px', display: 'flex', gap: 12, fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
                       <span>Entry <b style={{ color: 'var(--text-primary)' }}>{currency}{p.entry}</b></span>
                       <span>T1 <b style={{ color: 'var(--text-positive)' }}>{currency}{p.target1}</b></span>
                       <span>T2 <b style={{ color: 'var(--text-positive)' }}>{currency}{p.target2}</b></span>
@@ -274,7 +274,7 @@ export default function AnalystPanel() {
                       </span>
                     </div>
                     {isOpen && (
-                      <div style={{ padding: '6px 8px 8px', borderTop: '1px solid #1b2e1b', fontSize: 9, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      <div style={{ padding: '6px 8px 8px', borderTop: '1px solid #1b2e1b', fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         <div style={{ marginBottom: 4 }}>{p.technicalSummary}</div>
                         <div style={{ marginBottom: 4, color: 'var(--text-muted)' }}>📰 {p.newsCatalyst}</div>
                         <div style={{ marginBottom: 4, color: 'var(--text-muted)' }}>
@@ -287,7 +287,7 @@ export default function AnalystPanel() {
                         {isBeginnerMode && <BeginnerCardExplainer pick={p} currency={currency} />}
                         <button
                           onClick={() => setSelectedTicker(p.ticker)}
-                          style={{ fontSize: 8, padding: '3px 8px', background: `${accent}15`, color: accent, border: `1px solid ${accent}40`, borderRadius: 2, cursor: 'pointer', marginTop: 4 }}>
+                          style={{ fontSize: 'var(--fs-meta)', padding: '3px 8px', background: `${accent}15`, color: accent, border: `1px solid ${accent}40`, borderRadius: 2, cursor: 'pointer', marginTop: 4 }}>
                           DEEP DIVE →
                         </button>
                       </div>
@@ -303,7 +303,7 @@ export default function AnalystPanel() {
                 <div style={sectionTitleStyle}>AVOID LIST</div>
                 <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {data.avoidList.map(a => (
-                    <div key={a.ticker} style={{ padding: '5px 8px', border: '1px solid #2a1414', borderLeft: '2px solid #ef4444', background: '#1a0a0a', fontSize: 9 }}>
+                    <div key={a.ticker} style={{ padding: '5px 8px', border: '1px solid #2a1414', borderLeft: '2px solid #ef4444', background: '#1a0a0a', fontSize: 'var(--fs-meta)' }}>
                       <span style={{ fontWeight: 700, color: 'var(--text-negative)' }}>{a.ticker.replace('.NS', '')}</span>
                       <span style={{ color: 'var(--text-secondary)', marginLeft: 6 }}>{a.reason}</span>
                     </div>
@@ -318,10 +318,10 @@ export default function AnalystPanel() {
                 <div style={sectionTitleStyle}>INTRADAY SETUPS</div>
                 <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {data.dayTradingSetups.map(d => (
-                    <div key={d.ticker} style={{ padding: '5px 8px', border: '1px solid #1e293b', fontSize: 9 }}>
+                    <div key={d.ticker} style={{ padding: '5px 8px', border: '1px solid #1e293b', fontSize: 'var(--fs-meta)' }}>
                       <span style={{ fontWeight: 700, color: accent }}>{d.ticker.replace('.NS', '')}</span>
                       <div style={{ color: 'var(--text-secondary)', marginTop: 2 }}>{d.setup}</div>
-                      <div style={{ color: 'var(--text-muted)', marginTop: 1, fontSize: 8 }}>Trigger: {d.trigger}</div>
+                      <div style={{ color: 'var(--text-muted)', marginTop: 1, fontSize: 'var(--fs-meta)' }}>Trigger: {d.trigger}</div>
                     </div>
                   ))}
                 </div>
@@ -332,7 +332,7 @@ export default function AnalystPanel() {
             <div style={sectionTitleStyle}>
               <GlossaryTooltip term="CALL_OPTION" showIcon={isBeginnerMode}>OPTIONS</GlossaryTooltip> MARKET VIEW
             </div>
-            <div style={{ margin: '0 8px 8px', padding: '6px 8px', border: '1px solid #1e293b', fontSize: 9, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <div style={{ margin: '0 8px 8px', padding: '6px 8px', border: '1px solid #1e293b', fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               {data.optionsMarketView}
             </div>
 
@@ -340,21 +340,21 @@ export default function AnalystPanel() {
             <div style={sectionTitleStyle}>
               SECTOR ROTATION
               {isBeginnerMode && (
-                <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
+                <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
                   — which industries money is flowing into/out of
                 </span>
               )}
             </div>
             <div style={{ padding: '0 8px 8px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {data.sectorRotation.map(s => (
-                <span key={s.sector} style={{ fontSize: 8, padding: '2px 6px', borderRadius: 2, background: `${trendColor(s.trend)}15`, color: trendColor(s.trend), border: `1px solid ${trendColor(s.trend)}30` }}>
+                <span key={s.sector} style={{ fontSize: 'var(--fs-meta)', padding: '2px 6px', borderRadius: 2, background: `${trendColor(s.trend)}15`, color: trendColor(s.trend), border: `1px solid ${trendColor(s.trend)}30` }}>
                   {s.sector} {s.trend} ({s.avgChangePct >= 0 ? '+' : ''}{s.avgChangePct}%)
                 </span>
               ))}
             </div>
 
             {/* Risk Warnings */}
-            <div style={{ margin: '0 8px 8px', padding: '6px 8px', border: '1px solid #422006', background: '#1a1206', fontSize: 8, color: '#fbbf24' }}>
+            <div style={{ margin: '0 8px 8px', padding: '6px 8px', border: '1px solid #422006', background: '#1a1206', fontSize: 'var(--fs-meta)', color: '#fbbf24' }}>
               {data.riskWarnings.map((w, i) => <div key={i} style={{ marginBottom: i < data.riskWarnings.length - 1 ? 3 : 0 }}>⚠ {w}</div>)}
             </div>
           </>
@@ -362,7 +362,7 @@ export default function AnalystPanel() {
       </div>
 
       {/* Mandatory compliance disclaimer — always rendered */}
-      <div style={{ padding: '6px 10px', borderTop: '1px solid #1e293b', background: '#000', fontSize: 7, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+      <div style={{ padding: '6px 10px', borderTop: '1px solid #1e293b', background: '#000', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', lineHeight: 1.4 }}>
         ⚠ FOR INFORMATIONAL PURPOSES ONLY — NOT INVESTMENT ADVICE. Equity &amp; derivatives trading carries substantial risk of loss. AI-generated analysis may contain errors or omissions. Not a {isIndia ? 'SEBI' : 'SEC'}-registered investment advisor. Consult a licensed financial advisor before trading. Past performance does not guarantee future results.
       </div>
 

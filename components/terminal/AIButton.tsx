@@ -26,7 +26,7 @@ export default function AIButton({ panelData, panelName, context, style }: AIBut
           borderRadius: 2,
           padding: '2px 7px',
           cursor: 'pointer',
-          fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 600,
+          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', fontWeight: 600,
           color: 'var(--text-accent)',
           letterSpacing: '0.06em',
           transition: 'all 0.15s',

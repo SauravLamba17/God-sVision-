@@ -47,16 +47,16 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
         </div>
         {isIndia && (
           <>
-            <div style={{ fontSize: 11, color: 'var(--text-primary)', marginBottom: 6 }}>
+            <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)', marginBottom: 6 }}>
               1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>₹{rate.toFixed(2)}</span>
             </div>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated · {istTime} IST</div>
+            <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated · {istTime} IST</div>
           </>
         )}
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6 }}>
+        <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)', marginBottom: 6 }}>
           {exchange} Status: <span style={{ color: statusColor, fontWeight: 700 }}>{statusDot}</span>
         </div>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
           {isIndia ? `IST Time: ${istTime}` : `ET Time: ${etTime}`}
         </div>
         <div style={{ marginTop: 16, height: 2, background: `linear-gradient(90deg, ${accentColor} 0%, transparent 100%)`, borderRadius: 1 }} />
@@ -104,7 +104,7 @@ export default function ModeToggle() {
           background: bg,
           border: `1px solid ${borderColor}`,
           borderRadius: 3, padding: '3px 10px',
-          fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700,
+          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700,
           cursor: 'pointer', letterSpacing: '0.04em',
           transition: 'all 200ms ease',
           boxShadow: isIndia ? `0 0 12px rgba(255,153,51,0.25)` : 'none',
@@ -115,12 +115,12 @@ export default function ModeToggle() {
         {isIndia ? (
           <>
             <span style={{ color: textActive }}>🇮🇳 INDIA MODE</span>
-            <span style={{ color: textSecond, fontSize: 9 }}>→ 🇺🇸 USA</span>
+            <span style={{ color: textSecond, fontSize: 'var(--fs-meta)' }}>→ 🇺🇸 USA</span>
           </>
         ) : (
           <>
             <span style={{ color: 'var(--text-primary)' }}>🇺🇸 USA MODE</span>
-            <span style={{ color: textActive, fontSize: 9 }}>→ 🇮🇳 INDIA</span>
+            <span style={{ color: textActive, fontSize: 'var(--fs-meta)' }}>→ 🇮🇳 INDIA</span>
           </>
         )}
       </button>

@@ -64,7 +64,7 @@ export default function TickerTape() {
           <span key={idx} style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             marginRight: 20, whiteSpace: 'nowrap',
-            fontFamily: 'IBM Plex Mono', fontSize: 10,
+            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)',
           }}>
             <span style={{ color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '0.06em' }}>{item.symbol}</span>
             <span style={{ color: 'var(--text-primary)' }}>
@@ -72,13 +72,13 @@ export default function TickerTape() {
             </span>
             <span style={{
               color: item.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)',
-              fontSize: 9,
+              fontSize: 'var(--fs-meta)',
               background: item.changePct >= 0 ? 'var(--bg-live)' : 'var(--bg-sell)',
               padding: '0 4px', borderRadius: 2,
             }}>
               {item.changePct >= 0 ? '▲' : '▼'} {formatPercent(item.changePct)}
             </span>
-            <span style={{ color: 'var(--border-bright)', marginLeft: 8, fontSize: 10 }}>│</span>
+            <span style={{ color: 'var(--border-bright)', marginLeft: 8, fontSize: 'var(--fs-body)' }}>│</span>
           </span>
         ))}
       </div>

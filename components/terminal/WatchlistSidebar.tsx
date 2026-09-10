@@ -90,7 +90,7 @@ export default function WatchlistSidebar() {
           justifyContent: 'center',
           cursor: 'pointer',
           color: open ? 'var(--text-warning)' : 'var(--text-muted)',
-          fontSize: 12,
+          fontSize: 'var(--fs-body)',
           transition: 'right 0.25s ease, color 0.2s',
         }}
       >
@@ -115,8 +115,8 @@ export default function WatchlistSidebar() {
       }}>
         {/* Header */}
         <div style={{ padding: '8px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-warning)', fontWeight: 700, letterSpacing: '0.1em' }}>★ WATCHLIST</span>
-          <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{items.length} items · W to close</span>
+          <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-warning)', fontWeight: 700, letterSpacing: '0.1em' }}>★ WATCHLIST</span>
+          <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{items.length} items · W to close</span>
         </div>
 
         {/* Items */}
@@ -126,28 +126,28 @@ export default function WatchlistSidebar() {
             return (
               <div key={item.id} style={{ padding: '6px 10px', borderBottom: '1px solid #0d1526', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>{item.ticker}</div>
-                  <div style={{ fontSize: 8, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                  <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>{item.ticker}</div>
+                  <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {item.price != null ? (
                     <>
-                      <div style={{ fontSize: 11, color: 'var(--text-primary)' }}>${item.price.toFixed(2)}</div>
-                      <div style={{ fontSize: 9, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>${item.price.toFixed(2)}</div>
+                      <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                         {isPos ? '+' : ''}{(item.changePct ?? 0).toFixed(2)}%
                       </div>
                     </>
-                  ) : <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>—</div>}
+                  ) : <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>—</div>}
                 </div>
                 <button
                   onClick={() => removeTicker(item.ticker)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 10, padding: '0 2px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', padding: '0 2px' }}
                 >Ã—</button>
               </div>
             )
           })}
           {items.length === 0 && !adding && (
-            <div style={{ padding: '12px 10px', fontSize: 9, color: 'var(--text-muted)', textAlign: 'center' }}>
+            <div style={{ padding: '12px 10px', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', textAlign: 'center' }}>
               Add tickers to track prices.<br />Press + below.
             </div>
           )}
@@ -163,14 +163,14 @@ export default function WatchlistSidebar() {
               onKeyDown={e => { if (e.key === 'Enter') addTicker(); if (e.key === 'Escape') { setAdding(false); setNewTicker('') } }}
               placeholder="TICKER"
               autoFocus
-              style={{ flex: 1, fontFamily: 'IBM Plex Mono', fontSize: 10, background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '3px 6px', outline: 'none' }}
+              style={{ flex: 1, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '3px 6px', outline: 'none' }}
             />
-            <button onClick={addTicker} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, background: 'var(--border-color)', color: 'var(--text-positive)', border: 'none', padding: '3px 8px', cursor: 'pointer' }}>ADD</button>
+            <button onClick={addTicker} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', background: 'var(--border-color)', color: 'var(--text-positive)', border: 'none', padding: '3px 8px', cursor: 'pointer' }}>ADD</button>
           </div>
         ) : (
           <button
             onClick={() => setAdding(true)}
-            style={{ padding: '6px', borderTop: '1px solid #1b2e1b', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'IBM Plex Mono', fontSize: 10, width: '100%' }}
+            style={{ padding: '6px', borderTop: '1px solid #1b2e1b', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', width: '100%' }}
           >
             + ADD TICKER
           </button>
@@ -180,12 +180,12 @@ export default function WatchlistSidebar() {
         {items.length > 0 && (
           <div style={{ padding: '6px 10px', borderTop: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>TOTAL PRICES</span>
-              <span style={{ fontSize: 9, color: 'var(--text-primary)', fontWeight: 700 }}>${totalValue.toFixed(2)}</span>
+              <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>TOTAL PRICES</span>
+              <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-primary)', fontWeight: 700 }}>${totalValue.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-              <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>TOTAL CHANGE</span>
-              <span style={{ fontSize: 9, color: totalChange >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
+              <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>TOTAL CHANGE</span>
+              <span style={{ fontSize: 'var(--fs-meta)', color: totalChange >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
                 {totalChange >= 0 ? '+' : ''}${totalChange.toFixed(2)}
               </span>
             </div>

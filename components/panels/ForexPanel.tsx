@@ -35,7 +35,7 @@ export default function ForexPanel() {
   return (
     <PanelWrapper title="FX CROSS RATES" loading={loading} error={error} source={source} onRefresh={fetchData}>
       <div className="overflow-x-auto">
-        <table className="data-table text-[10px]">
+        <table className="data-table text-[11px]">
           <thead>
             <tr>
               <th style={{ textAlign: 'left', width: 40 }}>↓/→</th>

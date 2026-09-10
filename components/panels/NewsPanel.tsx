@@ -72,16 +72,16 @@ export default function NewsPanel({ limit = 10 }: { limit?: number }) {
           >
             <div className="flex items-start gap-2">
               <span
-                className="font-mono text-[8px] px-1 py-0.5 flex-shrink-0 mt-0.5"
+                className="font-mono text-[10px] px-1 py-0.5 flex-shrink-0 mt-0.5"
                 style={{ color: SENTIMENT_COLORS[item.sentiment], border: `1px solid ${SENTIMENT_COLORS[item.sentiment]}40` }}
               >
                 {SENTIMENT_LABELS[item.sentiment]}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-primary text-[11px] leading-tight line-clamp-2">{item.title}</p>
+                <p className="text-primary text-[13px] leading-tight line-clamp-2">{item.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-accent text-[9px] font-mono">{item.source}</span>
-                  <span className="text-muted text-[9px] font-mono">{timeAgo(item.publishedAt)}</span>
+                  <span className="text-accent text-[11px] font-mono">{item.source}</span>
+                  <span className="text-muted text-[11px] font-mono">{timeAgo(item.publishedAt)}</span>
                 </div>
               </div>
             </div>

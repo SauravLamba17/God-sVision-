@@ -54,18 +54,18 @@ function IndexCard({ q }: { q: QuoteTick }) {
       border: '1px solid #1b2e1b', borderLeftWidth: 3, borderLeftColor: 'var(--text-accent)',
       padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 3,
     }}>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
         {q.label}
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 18, fontWeight: 700, color: '#c8e6c9', lineHeight: 1 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-display)', fontWeight: 700, color: '#c8e6c9', lineHeight: 1 }}>
             {fmtPrice(q.price, q.unit || '')}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color: cc, marginTop: 2 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, marginTop: 2 }}>
             {pos ? '▲' : '▼'} {fmtPct(q.changePct)}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: cc }}>
+          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: cc }}>
             {q.change >= 0 ? '+' : ''}{q.change.toFixed(2)}
           </div>
         </div>
@@ -88,12 +88,12 @@ function CommodityStrip({ items }: { items: QuoteTick[] }) {
         return (
           <span key={q.symbol} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             {i > 0 && <span style={{ color: 'var(--border-color)', margin: '0 8px' }}>|</span>}
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-accent)' }}>{q.label}</span>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-primary)' }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)' }}>{q.label}</span>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>
               {q.unit === '%' ? '' : '$'}{fmtPrice(q.price, q.unit || '')}
-              {q.unit && q.unit !== '%' && <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>{q.unit}</span>}
+              {q.unit && q.unit !== '%' && <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{q.unit}</span>}
             </span>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: pos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: pos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
               {fmtPct(q.changePct)}
             </span>
           </span>
@@ -109,17 +109,17 @@ function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; reg
   if (!filtered.length) return null
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '3px 12px', borderTop: '1px solid #0d1a0d', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none' }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', marginRight: 10, flexShrink: 0, minWidth: 32 }}>{label}</span>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginRight: 10, flexShrink: 0, minWidth: 32 }}>{label}</span>
       {filtered.map((q, i) => {
         const pos = q.changePct >= 0
         return (
           <span key={q.symbol} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             {i > 0 && <span style={{ color: 'var(--border-color)', margin: '0 6px' }}>·</span>}
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-secondary)' }}>{q.label}</span>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: pos ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
-              {fmtPrice(q.price, '')} <span style={{ fontSize: 8 }}>{fmtPct(q.changePct)}</span>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-secondary)' }}>{q.label}</span>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: pos ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
+              {fmtPrice(q.price, '')} <span style={{ fontSize: 'var(--fs-meta)' }}>{fmtPct(q.changePct)}</span>
             </span>
-            {(q as any).failed && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 7, color: 'var(--text-muted)', background: 'var(--border-color)', padding: '0 3px', borderRadius: 2 }}>DELAYED</span>}
+            {(q as any).failed && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', background: 'var(--border-color)', padding: '0 3px', borderRadius: 2 }}>DELAYED</span>}
           </span>
         )
       })}
@@ -135,7 +135,7 @@ function BreadthBar({ breadth }: { breadth: Breadth }) {
   const unchPct = (breadth.unchanged / total) * 100
   return (
     <div style={{ padding: '6px 10px' }}>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>S&P 500 BREADTH (SECTOR APPROX)</div>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>S&P 500 BREADTH (SECTOR APPROX)</div>
       {/* Stacked bar */}
       <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
         <div style={{ width: `${advPct}%`, background: 'var(--text-positive)' }} />
@@ -143,15 +143,15 @@ function BreadthBar({ breadth }: { breadth: Breadth }) {
         <div style={{ width: `${decPct}%`, background: 'var(--text-negative)' }} />
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)' }}>
           <span style={{ color: 'var(--text-positive)', fontWeight: 700 }}>▲ {breadth.advancing}</span>
           <span style={{ color: 'var(--text-muted)', marginLeft: 2 }}>ADV</span>
         </span>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)' }}>
           <span style={{ color: 'var(--text-negative)', fontWeight: 700 }}>▼ {breadth.declining}</span>
           <span style={{ color: 'var(--text-muted)', marginLeft: 2 }}>DEC</span>
         </span>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9 }}>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)' }}>
           <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{breadth.unchanged}</span>
           <span style={{ color: 'var(--text-muted)', marginLeft: 2 }}>UNCH</span>
         </span>
@@ -189,27 +189,27 @@ export default function MarketOverviewStrip() {
         borderBottom: '1px solid #1b2e1b', padding: '4px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>
           ▸ GLOBAL MARKET MONITOR
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {source === 'live' && (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 3 }}>
               <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', display: 'inline-block' }} />LIVE
             </span>
           )}
-          <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>{etStr} ET</span>
-          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12, lineHeight: 1 }}
+          <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{etStr} ET</span>
+          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', lineHeight: 1 }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: '16px 12px', fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-accent)' }}>
+        <div style={{ padding: '16px 12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-accent)' }}>
           LOADING MARKET DATA<span className="blink-cursor" />
         </div>
       ) : !data ? (
-        <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>Market data unavailable</div>
+        <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>Market data unavailable</div>
       ) : (
         <>
           {/* Section A — 5 index cards */}
@@ -220,7 +220,7 @@ export default function MarketOverviewStrip() {
               </div>
             ))}
             {data.indices.length === 0 && (
-              <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>Index data loading...</div>
+              <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Index data loading...</div>
             )}
           </div>
 
@@ -242,7 +242,7 @@ export default function MarketOverviewStrip() {
               <BreadthBar breadth={data.breadth} />
             </div>
             <div style={{ padding: '6px 10px' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>MARKET CLOCK</div>
+              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>MARKET CLOCK</div>
               <MarketClock />
             </div>
           </div>
@@ -282,11 +282,11 @@ function MarketClock() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 700, color: statusColor[status] || 'var(--text-muted)' }}>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-lg)', fontWeight: 700, color: statusColor[status] || 'var(--text-muted)' }}>
         {status || '---'}
       </div>
-      <div suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{time}</div>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>NYSE · NASDAQ · CME</div>
+      <div suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{time}</div>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>NYSE · NASDAQ · CME</div>
     </div>
   )
 }

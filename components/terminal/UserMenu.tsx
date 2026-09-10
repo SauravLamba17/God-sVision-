@@ -44,7 +44,7 @@ export default function UserMenu() {
       <Link href="/auth/signin" style={{
         display: 'flex', alignItems: 'center', gap: 4, padding: '2px 10px',
         background: 'transparent', border: '1px solid var(--border-color)',
-        color: 'var(--text-muted)', fontFamily: mono, fontSize: 9,
+        color: 'var(--text-muted)', fontFamily: mono, fontSize: 'var(--fs-meta)',
         letterSpacing: '0.06em', textDecoration: 'none', borderRadius: 2,
         transition: 'all 0.15s',
       }}
@@ -66,8 +66,8 @@ export default function UserMenu() {
     }}>
       {/* User info */}
       <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-dim)' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{session.user?.name}</div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>{session.user?.email}</div>
+        <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--text-primary)' }}>{session.user?.name}</div>
+        <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 2 }}>{session.user?.email}</div>
       </div>
 
       {/* Menu items */}
@@ -79,7 +79,7 @@ export default function UserMenu() {
         <Link key={item.href} href={item.href}
           onClick={() => setOpen(false)}
           style={{
-            display: 'block', padding: '7px 12px', fontSize: 10,
+            display: 'block', padding: '7px 12px', fontSize: 'var(--fs-body)',
             color: 'var(--text-muted)', textDecoration: 'none',
             borderBottom: '1px solid var(--border-dim)',
             letterSpacing: '0.06em', transition: 'all 0.1s',
@@ -93,7 +93,7 @@ export default function UserMenu() {
 
       <button onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }} style={{
         display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left',
-        fontSize: 10, color: 'var(--text-muted)', background: 'none', border: 'none',
+        fontSize: 'var(--fs-body)', color: 'var(--text-muted)', background: 'none', border: 'none',
         cursor: 'pointer', fontFamily: mono, letterSpacing: '0.06em', transition: 'all 0.1s',
       }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-negative)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
@@ -116,7 +116,7 @@ export default function UserMenu() {
           background: 'var(--bg-hover)',
           border: '1px solid var(--border-color)',
           color: 'var(--text-muted)',
-          fontFamily: mono, fontSize: 9, fontWeight: 700,
+          fontFamily: mono, fontSize: 'var(--fs-meta)', fontWeight: 700,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           letterSpacing: 0, flexShrink: 0,
         }}

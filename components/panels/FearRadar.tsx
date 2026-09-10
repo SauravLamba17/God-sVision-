@@ -113,7 +113,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: compact ? 8 : 16, fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-accent)' }}>
+    <div style={{ padding: compact ? 8 : 16, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-accent)' }}>
       LOADING FEAR INDEX...
     </div>
   )
@@ -127,12 +127,12 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
     <div style={{ fontFamily: 'IBM Plex Mono' }}>
       {!compact && (
         <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>FEAR RADAR — 5-SIGNAL INDEX</span>
-          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{new Date(data.timestamp).toLocaleTimeString()}</span>
+          <span style={{ fontSize: 'var(--fs-header)', color: 'var(--text-muted)', letterSpacing: '0.03em', fontWeight: 700 }}>FEAR RADAR — 5-SIGNAL INDEX</span>
+          <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{new Date(data.timestamp).toLocaleTimeString()}</span>
         </div>
       )}
       <div style={{ display: 'flex', alignItems: compact ? 'center' : 'flex-start', gap: 8, padding: compact ? 4 : 0 }}>
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: compact ? W : 175, height: 'auto', flexShrink: 0 }}>
           <GaugeArc cx={cx} cy={cy} r={r} score={data.score} />
           <Needle cx={cx} cy={cy} r={r} score={data.score} />
           {/* Zone labels */}
@@ -140,7 +140,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
             const midAngle = GAUGE_START + ((z.from + z.to) / 2 / 100) * TOTAL_ARC
             const pos = polarToXY(midAngle, r + 22, cx, cy)
             return (
-              <text key={z.label} x={pos.x} y={pos.y} textAnchor="middle" fontSize={7} fill={z.color} opacity={0.7}
+              <text key={z.label} x={pos.x} y={pos.y} textAnchor="middle" fontSize={11} fill={z.color} opacity={0.7}
                 transform={`rotate(${midAngle}, ${pos.x}, ${pos.y})`}>
                 {z.from}
               </text>
@@ -151,24 +151,24 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
             fill={getColor(data.score)} fontFamily="IBM Plex Mono">
             {data.score}
           </text>
-          <text x={cx} y={cy + (compact ? 44 : 50)} textAnchor="middle" fontSize={compact ? 7 : 8}
+          <text x={cx} y={cy + (compact ? 44 : 50)} textAnchor="middle" fontSize={11}
             fill={getColor(data.score)} fontFamily="IBM Plex Mono" letterSpacing="0.1em">
             {data.label}
           </text>
         </svg>
         {!compact && (
-          <div style={{ flex: 1, paddingTop: 8 }}>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.1em' }}>SIGNAL BREAKDOWN</div>
+          <div style={{ flex: 1, minWidth: 0, paddingTop: 8, paddingRight: 8 }}>
+            <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.04em' }}>SIGNAL BREAKDOWN</div>
             {data.signals.map(sig => (
               <div key={sig.name} style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{sig.name}</span>
-                  <span style={{ fontSize: 9, color: getColor(sig.score) }}>{sig.label}</span>
+                  <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)', lineHeight: 1.25 }}>{sig.name}</span>
+                  <span style={{ fontSize: 'var(--fs-body)', color: getColor(sig.score), whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>{sig.label}</span>
                 </div>
                 <div style={{ height: 3, background: 'var(--border-color)', borderRadius: 2, position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${sig.score}%`, background: getColor(sig.score), borderRadius: 2, transition: 'width 1s ease' }} />
                 </div>
-                <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 1 }}>{Math.round(sig.weight * 100)}% weight · score {sig.score}</div>
+                <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 1 }}>{Math.round(sig.weight * 100)}% weight · score {sig.score}</div>
               </div>
             ))}
           </div>

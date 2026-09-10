@@ -46,8 +46,8 @@ export default function ISSTracker() {
           { label:'CREW',      value: `${crew.length} aboard` },
         ].map(item => (
           <div key={item.label}>
-            <div style={{ fontSize:8, color:'var(--text-muted)', letterSpacing:'0.08em' }}>{item.label}</div>
-            <div style={{ fontSize:11, color:'var(--text-primary)', marginTop:1 }}>{item.value}</div>
+            <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', letterSpacing:'0.08em' }}>{item.label}</div>
+            <div style={{ fontSize:'var(--fs-body)', color:'var(--text-primary)', marginTop:1 }}>{item.value}</div>
           </div>
         ))}
       </div>
@@ -90,14 +90,14 @@ export default function ISSTracker() {
       </div>
 
       {/* Crew list */}
-      <div style={{ fontSize:9, color:'var(--text-muted)', marginBottom:3 }}>CREW ABOARD ISS:</div>
+      <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', marginBottom:3 }}>CREW ABOARD ISS:</div>
       {crew.slice(0, 6).map(a => (
-        <div key={a.name} style={{ fontSize:9, color:'var(--text-secondary)', lineHeight:1.6 }}>• {a.name}</div>
+        <div key={a.name} style={{ fontSize:'var(--fs-body)', color:'var(--text-secondary)', lineHeight:1.6 }}>• {a.name}</div>
       ))}
-      {crew.length > 6 && <div style={{ fontSize:9, color:'var(--text-muted)' }}>+{crew.length - 6} more</div>}
+      {crew.length > 6 && <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>+{crew.length - 6} more</div>}
 
       {lastUpdate && (
-        <div style={{ fontSize:8, color:'var(--text-muted)', marginTop:6 }}>
+        <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', marginTop:6 }}>
           Updated {lastUpdate.toLocaleTimeString()}
         </div>
       )}

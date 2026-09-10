@@ -58,7 +58,7 @@ function FearGreedGauge({ value }: { value: number }) {
           <span className="font-mono text-[20px] font-bold" style={{ color: getColor(value) }}>{value}</span>
         </div>
       </div>
-      <span className="font-mono text-[11px] font-bold mt-1" style={{ color: getColor(value) }}>
+      <span className="font-mono text-[13px] font-bold mt-1" style={{ color: getColor(value) }}>
         {getLabel(value)}
       </span>
     </div>
@@ -96,7 +96,7 @@ function CoinRow({
         <span className={`font-bold ${isSelected ? 'text-accent' : 'text-primary'}`}>
           {coin.symbol.toUpperCase()}
         </span>
-        <span className="text-muted ml-1 text-[9px]">{coin.name.slice(0, 12)}</span>
+        <span className="text-muted ml-1 text-[11px]">{coin.name.slice(0, 12)}</span>
       </td>
       <td
         className="font-mono"
@@ -237,12 +237,12 @@ export default function CryptoPage() {
           {/* Panel header with Binance status and AI button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: '1px solid #0d1f0d' }}>
             {binanceTickers.size > 0 ? (
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 1.5s ease-in-out infinite' }} />
                 BINANCE LIVE · {binanceTickers.size} PAIRS
               </span>
             ) : (
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
                 CONNECTING TO BINANCE...
               </span>
             )}
@@ -289,7 +289,7 @@ export default function CryptoPage() {
             <div className="panel-header">
               <span className="panel-header-title">{selectedCoin.name} ({selectedCoin.symbol.toUpperCase()}) — 30D OHLC</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={selectedCoin.price_change_percentage_24h >= 0 ? 'positive font-mono text-[11px]' : 'negative font-mono text-[11px]'}>
+                <span className={selectedCoin.price_change_percentage_24h >= 0 ? 'positive font-mono text-[13px]' : 'negative font-mono text-[13px]'}>
                   {formatCurrency(binanceTickers.get(selectedCoin.symbol.toUpperCase() + 'USDT')?.price ?? selectedCoin.current_price)}{' '}
                   {formatPercent(binanceTickers.get(selectedCoin.symbol.toUpperCase() + 'USDT')?.changePct ?? selectedCoin.price_change_percentage_24h)}
                 </span>
@@ -311,15 +311,15 @@ export default function CryptoPage() {
             </div>
             <div className="flex items-center gap-4 p-2">
               <div>
-                <div className="font-mono text-[10px] text-muted">TOTAL MKT CAP</div>
+                <div className="font-mono text-[11px] text-muted">TOTAL MKT CAP</div>
                 <div className="font-mono text-[14px] text-primary">{formatNumber(globalData.total_market_cap?.usd || 0)}</div>
               </div>
               <div>
-                <div className="font-mono text-[10px] text-muted">BTC DOMINANCE</div>
+                <div className="font-mono text-[11px] text-muted">BTC DOMINANCE</div>
                 <div className="font-mono text-[14px] text-accent">{globalData.market_cap_percentage?.btc?.toFixed(1)}%</div>
               </div>
               <div>
-                <div className="font-mono text-[10px] text-muted">ETH DOMINANCE</div>
+                <div className="font-mono text-[11px] text-muted">ETH DOMINANCE</div>
                 <div className="font-mono text-[14px] text-neutral">{globalData.market_cap_percentage?.eth?.toFixed(1)}%</div>
               </div>
               {dominanceData.length > 0 && (
@@ -330,7 +330,7 @@ export default function CryptoPage() {
                       <Cell fill="#607d8b" />
                       <Cell fill="#1b2e1b" />
                     </Pie>
-                    <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', fontFamily: 'IBM Plex Mono', fontSize: 10 }} />
+                    <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -358,7 +358,7 @@ export default function CryptoPage() {
             {[{ v: halving.days, l: 'DAYS' }, { v: halving.hours, l: 'HRS' }, { v: halving.minutes, l: 'MIN' }].map(item => (
               <div key={item.l} className="text-center">
                 <div className="font-mono text-[18px] text-accent font-bold">{item.v}</div>
-                <div className="font-mono text-[9px] text-muted">{item.l}</div>
+                <div className="font-mono text-[11px] text-muted">{item.l}</div>
               </div>
             ))}
           </div>
@@ -371,9 +371,9 @@ export default function CryptoPage() {
           </div>
           {trending.map((t, i) => (
             <div key={i} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: '1px solid #0d1f0d' }}>
-              <span className="font-mono text-[9px] text-muted">{i + 1}</span>
-              <span className="font-bold text-[10px] text-accent">{t.item.symbol}</span>
-              <span className="text-muted text-[9px]">{t.item.name.slice(0, 12)}</span>
+              <span className="font-mono text-[11px] text-muted">{i + 1}</span>
+              <span className="font-bold text-[13px] text-accent">{t.item.symbol}</span>
+              <span className="text-muted text-[11px]">{t.item.name.slice(0, 12)}</span>
             </div>
           ))}
         </div>
@@ -385,8 +385,8 @@ export default function CryptoPage() {
           </div>
           {defi.map(d => (
             <div key={d.name} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: '1px solid #0d1f0d' }}>
-              <span className="font-bold text-[10px] text-accent">{d.symbol}</span>
-              <span className="font-mono text-[10px] text-primary">${formatNumber(d.tvl)}</span>
+              <span className="font-bold text-[13px] text-accent">{d.symbol}</span>
+              <span className="font-mono text-[13px] text-primary">${formatNumber(d.tvl)}</span>
             </div>
           ))}
         </div>

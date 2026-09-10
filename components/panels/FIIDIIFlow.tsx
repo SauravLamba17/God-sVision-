@@ -21,8 +21,8 @@ function FlowBar({ value, label }: { value: number; label: string }) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{label}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, color }}>
+        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{label}</span>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color }}>
           {arrow} {isPos ? '+' : '-'}{dispVal}
         </span>
       </div>
@@ -54,7 +54,7 @@ export default function FIIDIIFlow() {
     return () => clearInterval(id)
   }, [])
 
-  if (loading) return <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 10, color: '#FF9933' }}>LOADING FII/DII DATA...</div>
+  if (loading) return <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING FII/DII DATA...</div>
   if (!data) return null
 
   const fiiSentiment = data.fiiNetEquity > 0 ? 'BUYING (Bullish)' : 'SELLING (Bearish)'
@@ -63,8 +63,8 @@ export default function FIIDIIFlow() {
   return (
     <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
-        <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>NSE Data · {data.lastUpdated}</span>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
+        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>NSE Data · {data.lastUpdated}</span>
       </div>
 
       <div style={{ padding: '10px 12px' }}>
@@ -73,23 +73,23 @@ export default function FIIDIIFlow() {
         <FlowBar value={data.fiiNetDebt}    label="FII Net Debt (Today)" />
 
         <div style={{ borderTop: '1px solid #1b2e1b', marginTop: 8, paddingTop: 8 }}>
-          <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.08em' }}>YTD ACCUMULATION</div>
+          <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.08em' }}>YTD ACCUMULATION</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>FII YTD</span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: data.fiiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>FII YTD</span>
+            <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: data.fiiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
               {data.fiiYTDEquity > 0 ? '+' : ''}₹{(data.fiiYTDEquity / 100).toFixed(0)} Cr
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>DII YTD</span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: data.diiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>DII YTD</span>
+            <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: data.diiYTDEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
               {data.diiYTDEquity > 0 ? '+' : ''}₹{(data.diiYTDEquity / 100).toFixed(0)} Cr
             </span>
           </div>
         </div>
 
         <div style={{ marginTop: 8, padding: '4px 6px', background: `${fiiColor}10`, border: `1px solid ${fiiColor}30`, borderRadius: 3 }}>
-          <span style={{ fontSize: 8, color: fiiColor }}>FII {fiiSentiment} — {data.fiiNetEquity > 0 ? 'bullish for Nifty' : 'bearish pressure on Nifty'}</span>
+          <span style={{ fontSize: 'var(--fs-meta)', color: fiiColor }}>FII {fiiSentiment} — {data.fiiNetEquity > 0 ? 'bullish for Nifty' : 'bearish pressure on Nifty'}</span>
         </div>
       </div>
     </div>

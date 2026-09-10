@@ -52,7 +52,7 @@ export default function NiftyHeatmap() {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 10, color: '#FF9933' }}>
+    <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>
       LOADING NIFTY HEATMAP...
     </div>
   )
@@ -60,8 +60,8 @@ export default function NiftyHeatmap() {
   return (
     <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'linear-gradient(180deg,#0a0f1e,#060d1a)' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: '#0d1526', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
-        <div style={{ display: 'flex', gap: 6, fontSize: 7 }}>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
+        <div style={{ display: 'flex', gap: 6, fontSize: 'var(--fs-meta)' }}>
           {[['STRONG UP', '#14532d'], ['UP', '#166534'], ['DOWN', '#991b1b'], ['STRONG DN', '#450a0a']].map(([l, c]) => (
             <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)' }}>
               <span style={{ width: 8, height: 8, background: c as string, borderRadius: 1, display: 'inline-block' }} />
@@ -74,7 +74,7 @@ export default function NiftyHeatmap() {
       <div style={{ padding: 8 }}>
         {Object.entries(SECTOR_MAP).map(([sector, tickers]) => (
           <div key={sector} style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 7, color: '#607d8b', letterSpacing: '0.1em', marginBottom: 3 }}>{sector}</div>
+            <div style={{ fontSize: 'var(--fs-meta)', color: '#607d8b', letterSpacing: '0.1em', marginBottom: 3 }}>{sector}</div>
             <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               {tickers.map(t => {
                 const s = stocks[t]
@@ -91,8 +91,8 @@ export default function NiftyHeatmap() {
                       borderRadius: 3, padding: '4px 6px',
                       cursor: 'pointer', minWidth: 52, textAlign: 'center',
                     }}>
-                    <div style={{ fontSize: 8, fontWeight: 700, color: 'var(--text-primary)' }}>{displayName.slice(0, 8)}</div>
-                    <div style={{ fontSize: 7, color: isPos ? '#86efac' : '#fca5a5', marginTop: 1 }}>
+                    <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: 'var(--text-primary)' }}>{displayName.slice(0, 8)}</div>
+                    <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? '#86efac' : '#fca5a5', marginTop: 1 }}>
                       {isPos ? '+' : ''}{s.changePct?.toFixed(1)}%
                     </div>
                   </div>

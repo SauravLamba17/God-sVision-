@@ -104,7 +104,7 @@ export default function NavBar() {
   const navItemStyle = (isActive: boolean) => ({
     display: 'flex', alignItems: 'center', gap: 5,
     height: 34, padding: '0 8px',
-    fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: isActive ? 600 : 400,
+    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: isActive ? 600 : 400,
     textDecoration: 'none', whiteSpace: 'nowrap' as const,
     color: isActive ? activeAccent : 'var(--text-muted)',
     background: isActive ? activeAccentBg : 'transparent',
@@ -117,7 +117,7 @@ export default function NavBar() {
   const extraItemStyle = (isActive: boolean) => ({
     display: 'flex', alignItems: 'center',
     height: 20, padding: '0 6px',
-    fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: isActive ? 600 : 400,
+    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', fontWeight: isActive ? 600 : 400,
     textDecoration: 'none', whiteSpace: 'nowrap' as const,
     color: isActive ? 'var(--text-accent)' : 'var(--text-muted)',
     background: isActive ? 'rgba(255,109,0,0.08)' : 'transparent',
@@ -151,8 +151,8 @@ export default function NavBar() {
                   onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)' } }}
                   onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' } }}
                 >
-                  <span style={{ fontSize: 8, color: isActive ? (isIndia ? 'rgba(255,153,51,0.31)' : 'rgba(255,109,0,0.31)') : 'var(--border-bright)', fontWeight: 400 }}>{item.key}</span>
-                  <span style={{ fontSize: 10, letterSpacing: '0.06em' }}>{item.label}</span>
+                  <span style={{ fontSize: 'var(--fs-meta)', color: isActive ? (isIndia ? 'rgba(255,153,51,0.31)' : 'rgba(255,109,0,0.31)') : 'var(--border-bright)', fontWeight: 400 }}>{item.key}</span>
+                  <span style={{ fontSize: 'var(--fs-body)', letterSpacing: '0.06em' }}>{item.label}</span>
                 </Link>
               )
             })}
@@ -184,7 +184,7 @@ export default function NavBar() {
                 background: splitMode ? 'rgba(255,109,0,0.12)' : 'transparent',
                 border: `1px solid ${splitMode ? 'var(--text-accent)' : 'var(--border-color)'}`,
                 borderRadius: 3, padding: '2px 8px',
-                fontFamily: 'IBM Plex Mono', fontSize: 9, color: splitMode ? 'var(--text-accent)' : 'var(--text-muted)',
+                fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: splitMode ? 'var(--text-accent)' : 'var(--text-muted)',
                 cursor: 'pointer', letterSpacing: '0.06em',
               }}
             >
@@ -197,7 +197,7 @@ export default function NavBar() {
               background: 'rgba(255,109,0,0.9)',
               border: '1px solid #ff6d00',
               borderRadius: 3, padding: '2px 10px',
-              fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color: '#000',
+              fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', fontWeight: 700, color: '#000',
               textDecoration: 'none', letterSpacing: '0.08em',
             }}>
               ⚡ GOD

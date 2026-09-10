@@ -72,14 +72,14 @@ export default function DailyBrief() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
-            fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600,
+            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600,
             color: 'var(--text-warning)', letterSpacing: '0.08em',
             textShadow: '0 0 12px rgba(245,158,11,0.4)',
           }}>
             ⚡ AI MORNING BRIEF — {dateStr.toUpperCase()}
           </span>
           {loading && (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 1s infinite' }} />
               GENERATING
             </span>
@@ -90,7 +90,7 @@ export default function DailyBrief() {
           disabled={loading}
           style={{
             background: 'none', border: '1px solid #f59e0b40', cursor: loading ? 'default' : 'pointer',
-            color: loading ? 'var(--text-muted)' : 'var(--text-warning)', fontSize: 9,
+            color: loading ? 'var(--text-muted)' : 'var(--text-warning)', fontSize: 'var(--fs-meta)',
             fontFamily: 'IBM Plex Mono', padding: '2px 8px', borderRadius: 2,
             letterSpacing: '0.06em',
           }}
@@ -104,7 +104,7 @@ export default function DailyBrief() {
         ref={containerRef}
         style={{
           padding: '12px 14px',
-          fontFamily: 'IBM Plex Mono', fontSize: 11, lineHeight: 1.9,
+          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', lineHeight: 1.9,
           color: 'var(--text-secondary)',
           whiteSpace: 'pre-wrap',
           maxHeight: 180,
@@ -126,7 +126,7 @@ export default function DailyBrief() {
       </div>
 
       {done && (
-        <div style={{ borderTop: '1px solid #1e293b', padding: '3px 10px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+        <div style={{ borderTop: '1px solid #1e293b', padding: '3px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
           Powered by Gemini · GOD's Vision AI · {new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })} ET
         </div>
       )}
