@@ -40,7 +40,6 @@ const NAV_EXTRA = [
   { label: 'CORRELATION', href: '/correlation' },
   { label: 'HEALTH',      href: '/disease' },
   { label: 'BANKS',       href: '/centralbanks' },
-  { label: 'WATCHLISTS',  href: '/watchlists' },
   { label: 'FINANCIALS',  href: '/financials' },
   { label: 'YIELD CURVE', href: '/yield-curve' },
 ]

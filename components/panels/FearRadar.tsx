@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { PanelEmpty } from '@/components/ui/Panel'
 
 interface FearSignal {
   name: string
@@ -118,7 +119,8 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
     </div>
   )
 
-  if (!data) return null
+  // Returning null here left a blank 340px grid cell on the USA dashboard.
+  if (!data) return <PanelEmpty title="FEAR RADAR" message="Fear index temporarily unavailable" />
 
   const cx = 120, cy = 110, r = 80
   const W = 240, H = compact ? 150 : 210

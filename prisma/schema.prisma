@@ -9,23 +9,23 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  password       String?   @db.Text
-  plan           String    @default("free")
-  stripeCustomerId String?  @unique
-  accounts       Account[]
-  sessions       Session[]
-  watchlists     Watchlist[]
+  id                String             @id @default(cuid())
+  name              String?
+  email             String?            @unique
+  emailVerified     DateTime?
+  image             String?
+  password          String?            @db.Text
+  plan              String             @default("free")
+  stripeCustomerId  String?            @unique
+  accounts          Account[]
+  sessions          Session[]
+  watchlists        Watchlist[]
   portfolioHoldings PortfolioHolding[]
-  priceAlerts    PriceAlert[]
-  newsAlerts     NewsAlert[]
+  priceAlerts       PriceAlert[]
+  newsAlerts        NewsAlert[]
   pushSubscriptions PushSubscription[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Account {
@@ -62,24 +62,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model WatchlistGroup {
-  id        Int             @id @default(autoincrement())
-  name      String          @unique
-  createdAt DateTime        @default(now())
-  items     WatchlistItem[]
-}
-
-model WatchlistItem {
-  id        Int            @id @default(autoincrement())
-  groupId   Int
-  ticker    String
-  notes     String         @default("")
-  addedAt   DateTime       @default(now())
-  group     WatchlistGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, ticker])
-}
-
 model PortfolioHolding {
   id        Int      @id @default(autoincrement())
   userId    String?
@@ -94,27 +76,27 @@ model PortfolioHolding {
 }
 
 model PriceAlert {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   userId      String?
   ticker      String
   condition   String
   targetPrice Float
-  triggered   Boolean  @default(false)
-  active      Boolean  @default(true)
-  notified    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  triggered   Boolean   @default(false)
+  active      Boolean   @default(true)
+  notified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
   triggeredAt DateTime?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model NewsAlert {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   userId        String?
   keyword       String
   lastTriggered DateTime?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model EarthquakeAlert {

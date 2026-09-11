@@ -6,6 +6,7 @@ import { Sparkline } from '@/components/ui/Sparkline'
 import { useSparklineData } from '@/lib/hooks/useSparklineData'
 import { useMode } from '@/lib/context/ModeContext'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { PanelEmpty } from '@/components/ui/Panel'
 import TickerLink from '@/components/ui/TickerLink'
 
 const MarketOverviewStrip = dynamic(() => import('@/components/panels/MarketOverviewStrip'), { ssr: false })
@@ -34,12 +35,16 @@ interface MoverRow {
 }
 
 /* ── Default metric cards ─────────────────────────────────────────────── */
+// These three cards price off an ETF, not the index/metal they're named after —
+// SPY is ~543 while the S&P 500 is ~5400, GLD is ~232 while gold is ~2400/oz.
+// The label names the instrument so the number can't be read as a second,
+// contradictory quote for what the market monitor and commodity strip show.
 const DEFAULT_METRICS: Metric[] = [
-  { label: 'S&P 500',   symbol: 'SPY',      price: 543.27,  change: 2.14,   changePct: 0.39,  sparkline: [], accent: 'var(--text-accent)' },
-  { label: 'NASDAQ',    symbol: 'QQQ',      price: 466.18,  change: 3.22,   changePct: 0.69,  sparkline: [], accent: '#a78bfa' },
-  { label: 'BITCOIN',   symbol: 'BTC',      price: 67234.5, change: 892.3,  changePct: 1.34,  sparkline: [], accent: 'var(--text-warning)' },
-  { label: 'GOLD',      symbol: 'GLD',      price: 232.41,  change: -0.87,  changePct: -0.37, sparkline: [], accent: '#fde68a' },
-  { label: 'USD INDEX', symbol: 'DX-Y.NYB', price: 104.22,  change: -0.12,  changePct: -0.11, sparkline: [], accent: '#34d399' },
+  { label: 'S&P 500 · SPY', symbol: 'SPY',      price: 543.27,  change: 2.14,   changePct: 0.39,  sparkline: [], accent: 'var(--text-accent)' },
+  { label: 'NASDAQ · QQQ',  symbol: 'QQQ',      price: 466.18,  change: 3.22,   changePct: 0.69,  sparkline: [], accent: '#a78bfa' },
+  { label: 'BITCOIN',       symbol: 'BTC',      price: 67234.5, change: 892.3,  changePct: 1.34,  sparkline: [], accent: 'var(--text-warning)' },
+  { label: 'GOLD · GLD',    symbol: 'GLD',      price: 232.41,  change: -0.87,  changePct: -0.37, sparkline: [], accent: '#fde68a' },
+  { label: 'USD INDEX',     symbol: 'DX-Y.NYB', price: 104.22,  change: -0.12,  changePct: -0.11, sparkline: [], accent: '#34d399' },
 ]
 
 const DEFAULT_INDIA_METRICS: Metric[] = [
@@ -114,8 +119,14 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
 /* ── Market Movers (three-tab) ─────────────────────────────────────────── */
 type MoverTab = 'gainers' | 'losers' | 'active'
 
+// A quote field the upstream didn't return should read as "not available right
+// now", not as a red error. Both movers tables route their price/change/volume
+// cells through DASH + hasNum rather than the 'N/A' the shared formatters emit.
+const DASH = '—'
+const hasNum = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+
 function formatVol(n: number, isIndia = false): string {
-  if (!n) return 'N/A'
+  if (!n) return DASH
   if (isIndia) {
     if (n >= 10_000_000) return `${(n / 10_000_000).toFixed(1)} Cr`
     if (n >= 100_000)    return `${(n / 100_000).toFixed(1)} L`
@@ -199,17 +210,18 @@ function IndiaMarketMovers() {
           </thead>
           <tbody>
             {rows.slice(0, 10).map((q, i) => {
-              const pos = q.regularMarketChangePercent >= 0
-              const cc  = pos ? 'var(--text-positive)' : 'var(--text-negative)'
+              const hasPct = hasNum(q.regularMarketChangePercent)
+              const pos = hasPct && q.regularMarketChangePercent >= 0
+              const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
               return (
                 <tr key={q.symbol + i} style={{ borderBottom: '1px solid #0d1a0d', cursor: 'pointer' }}
                   onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: '#FF9933' }}>{displaySymbol(q.symbol)}</TickerLink></td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || '—'}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>₹{q.regularMarketPrice?.toFixed(2)}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{formatPercent(q.regularMarketChangePercent)}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
                   <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume, true)}</td>
                 </tr>
               )
@@ -305,17 +317,18 @@ function MarketMovers() {
           </thead>
           <tbody>
             {rows.slice(0, 10).map((q, i) => {
-              const pos = q.regularMarketChangePercent >= 0
-              const cc  = pos ? 'var(--text-positive)' : 'var(--text-negative)'
+              const hasPct = hasNum(q.regularMarketChangePercent)
+              const pos = hasPct && q.regularMarketChangePercent >= 0
+              const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
               return (
                 <tr key={q.symbol + i} style={{ borderBottom: '1px solid #0d1a0d', cursor: 'pointer' }}
                   onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)', padding: '3px 6px', width: 60 }}>{q.symbol}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || '—'}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{formatCurrency(q.regularMarketPrice)}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{formatPercent(q.regularMarketChangePercent)}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? formatCurrency(q.regularMarketPrice) : DASH}</td>
+                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
                   <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume)}</td>
                 </tr>
               )
@@ -357,18 +370,20 @@ function IndiaCryptoMini() {
   const [coins, setCoins] = useState<Array<{ id: string; symbol: string; priceINR: number; change24h: number; isIndianProject?: boolean }>>([])
   const [loading, setLoading] = useState(true)
 
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/india/crypto')
+      const j   = await res.json()
+      if (j.data?.coins) setCoins(j.data.coins.slice(0, 10))
+    } catch { /* falls through to the unavailable state below */ }
+    finally { setLoading(false) }
+  }, [])
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/india/crypto')
-        const j   = await res.json()
-        if (j.data?.coins) setCoins(j.data.coins.slice(0, 10))
-      } finally { setLoading(false) }
-    }
     load()
     const id = setInterval(load, 60000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
 
   const fmtINR = (n: number) => {
     if (n >= 10_000_000) return '₹' + (n / 10_000_000).toFixed(2) + ' Cr'
@@ -385,6 +400,11 @@ function IndiaCryptoMini() {
       </div>
       {loading ? (
         <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING<span className="blink-cursor" /></div>
+      ) : coins.length === 0 ? (
+        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+          <span>INR crypto prices temporarily unavailable</span>
+          <button onClick={load} style={{ background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '2px 8px', borderRadius: 2, cursor: 'pointer' }}>↻ RETRY</button>
+        </div>
       ) : (
         <>
           <div style={{ padding: '4px 8px', fontSize: 'var(--fs-meta)', fontFamily: 'IBM Plex Mono', color: 'var(--text-muted)', borderBottom: '1px solid #0d1a0d' }}>
@@ -431,20 +451,24 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
   const [articles, setArticles] = useState<Array<{ title: string; source: string; url: string; publishedAt: string }>>([])
   const [loading,  setLoading]  = useState(true)
 
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/india/news')
+      const j   = await res.json()
+      if (j.data?.articles) setArticles(j.data.articles.slice(0, limit))
+    } catch { /* falls through to the unavailable state below */ }
+    finally { setLoading(false) }
+  }, [limit])
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/india/news')
-        const j   = await res.json()
-        if (j.data?.articles) setArticles(j.data.articles.slice(0, limit))
-      } finally { setLoading(false) }
-    }
     load()
     const id = setInterval(load, 300_000)
     return () => clearInterval(id)
-  }, [limit])
+  }, [load])
 
-  if (loading) return <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING INDIA NEWS...</div>
+  if (loading) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="#FF9933" message="Loading India news…" />
+  // Previously rendered the header above an empty 320px scroll area.
+  if (articles.length === 0) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="#FF9933" message="India market headlines temporarily unavailable" onRetry={load} />
 
   return (
     <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
@@ -614,7 +638,7 @@ export default function DashboardPage() {
 
           {/* Row 2: Daily Brief + RBI Policy — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6, alignItems: 'start' }}>
               <ErrorBoundary name="Daily Brief"><DailyBrief /></ErrorBoundary>
               <ErrorBoundary name="RBI Policy Tracker"><RBIPolicyTracker /></ErrorBoundary>
             </div>
@@ -622,7 +646,7 @@ export default function DashboardPage() {
 
           {/* Row 3: Nifty Movers + India Crypto — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
               <ErrorBoundary name="India Market Movers"><IndiaMarketMovers /></ErrorBoundary>
               <ErrorBoundary name="India Crypto"><IndiaCryptoMini /></ErrorBoundary>
             </div>
@@ -649,7 +673,7 @@ export default function DashboardPage() {
 
           {/* Row 5: FII/DII + Narrative + India News — 1500ms */}
           {phase >= 3 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 280px) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 280px) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
               <ErrorBoundary name="FII/DII Flow"><FIIDIIFlow /></ErrorBoundary>
               <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
                 <ErrorBoundary name="Narrative Detector"><NarrativeDetector /></ErrorBoundary>
@@ -660,7 +684,7 @@ export default function DashboardPage() {
 
           {/* Row 6: ISS + Earthquake + Weather — 2000ms */}
           {phase >= 4 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, width: '100%', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, width: '100%', overflow: 'hidden', alignItems: 'start' }}>
               <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
                 <ErrorBoundary name="ISS Tracker"><ISSTracker /></ErrorBoundary>
               </div>
@@ -697,7 +721,7 @@ export default function DashboardPage() {
 
         {/* Row 3: Market Movers + Crypto — 500ms */}
         {phase >= 1 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
             <ErrorBoundary name="Market Movers"><MarketMovers /></ErrorBoundary>
             <ErrorBoundary name="Crypto Panel"><CryptoPanel /></ErrorBoundary>
           </div>
@@ -715,7 +739,7 @@ export default function DashboardPage() {
 
         {/* Row 5: Reddit + ISS + Earthquake + Weather — 1500ms */}
         {phase >= 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 180px', gap: 6, minHeight: 200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 180px', gap: 6, minHeight: 200, alignItems: 'start' }}>
             <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
               <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
                 <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>REDDIT SENTIMENT</span>

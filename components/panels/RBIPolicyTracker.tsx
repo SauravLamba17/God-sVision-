@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { PanelEmpty } from '@/components/ui/Panel'
 
 interface MacroData {
   repoRate: number
@@ -17,25 +18,27 @@ export default function RBIPolicyTracker() {
   const [data, setData] = useState<MacroData | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/india/macro')
+      const j = await res.json()
+      if (j.data) setData(j.data)
+    } catch { /* falls through to the unavailable state below */ }
+    finally { setLoading(false) }
+  }, [])
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/india/macro')
-        const j = await res.json()
-        if (j.data) setData(j.data)
-      } finally { setLoading(false) }
-    }
     load()
     const id = setInterval(load, 3_600_000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
 
-  if (loading) return (
-    <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>
-      LOADING RBI DATA...
-    </div>
-  )
-  if (!data) return null
+  if (loading) return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="Loading RBI data…" />
+  // rateHistory/nextMPC are read unguarded below, so a partial payload is as
+  // unusable as no payload at all.
+  if (!data?.rateHistory?.length || !data.nextMPC) {
+    return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="RBI policy data temporarily unavailable" onRetry={load} />
+  }
 
   const stanceColor = data.rbiStance === 'HAWKISH' ? 'var(--text-negative)' : data.rbiStance === 'DOVISH' ? 'var(--text-positive)' : 'var(--text-warning)'
   const minRate = Math.min(...data.rateHistory.map(r => r.rate))

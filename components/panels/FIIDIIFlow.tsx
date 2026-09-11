@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { PanelEmpty } from '@/components/ui/Panel'
 
 interface FlowData {
   fiiNetEquity: number
@@ -41,21 +42,24 @@ export default function FIIDIIFlow() {
   const [data, setData] = useState<FlowData | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/india/macro')
+      const j = await res.json()
+      if (j.data?.fiiDii) setData(j.data.fiiDii)
+    } catch { /* falls through to the unavailable state below */ }
+    finally { setLoading(false) }
+  }, [])
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/india/macro')
-        const j = await res.json()
-        if (j.data?.fiiDii) setData(j.data.fiiDii)
-      } finally { setLoading(false) }
-    }
     load()
     const id = setInterval(load, 3_600_000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
 
-  if (loading) return <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING FII/DII DATA...</div>
-  if (!data) return null
+  if (loading) return <PanelEmpty title="📊 FII / DII FLOWS" accent="#FF9933" message="Loading FII/DII data…" />
+  if (!data) return <PanelEmpty title="📊 FII / DII FLOWS" accent="#FF9933" message="FII/DII flow data temporarily unavailable" onRetry={load} />
+
 
   const fiiSentiment = data.fiiNetEquity > 0 ? 'BUYING (Bullish)' : 'SELLING (Bearish)'
   const fiiColor     = data.fiiNetEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)'

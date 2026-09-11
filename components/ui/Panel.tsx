@@ -78,6 +78,47 @@ export function Panel({ title, subtitle, live, timestamp, children, action, noPa
   );
 }
 
+/**
+ * Honest stand-in for a panel that has no data to show.
+ *
+ * A panel that returns null still occupies its grid cell, so the dashboard
+ * renders a solid black rectangle with no header and no explanation. Every
+ * panel whose fetch can come back empty renders this instead, so a cell is
+ * never blank: it says which panel it is and why it has nothing.
+ */
+export function PanelEmpty({
+  title, message = 'Data temporarily unavailable', accent = 'var(--text-muted)', onRetry,
+}: { title: string; message?: string; accent?: string; onRetry?: () => void }) {
+  return (
+    <div style={{
+      border: '1px solid var(--border-color)', borderLeft: `2px solid ${accent}`,
+      background: 'var(--bg-panel)', height: '100%', minHeight: 80,
+      display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+    }}>
+      <div style={{ padding: '5px 10px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-header)' }}>
+        <span style={{
+          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600,
+          color: accent, letterSpacing: '0.08em',
+        }}>{title}</span>
+      </div>
+      <div style={{
+        flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column',
+        alignItems: 'flex-start', justifyContent: 'center', gap: 6,
+        fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)',
+      }}>
+        <span>{message}</span>
+        {onRetry && (
+          <button onClick={onRetry} style={{
+            background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-muted)',
+            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '2px 8px',
+            borderRadius: 2, cursor: 'pointer',
+          }}>↻ RETRY</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function PanelHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div style={{

@@ -1,5 +1,14 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useMode } from '@/lib/context/ModeContext'
+
+// The USA hero cards directly above this strip already carry S&P 500 and NASDAQ
+// (priced off SPY/QQQ). Repeating them here as ^GSPC/^IXIC put two different
+// numbers for the same index on screen inches apart. Section A drops them in
+// USA mode and keeps only what the hero row doesn't have — Dow, VIX, Russell.
+// India mode keeps all five: its hero row is Nifty/Sensex/Bank Nifty/VIX/USDINR,
+// so the US indices here are the only global context on the page.
+const HERO_DUPLICATES = new Set(['^GSPC', '^IXIC'])
 
 /* ── Tiny inline sparkline SVG ─────────────────────────────────────────── */
 function Spark({ data, positive, w = 64, h = 28 }: { data: number[]; positive: boolean; w?: number; h?: number }) {
@@ -162,6 +171,7 @@ function BreadthBar({ breadth }: { breadth: Breadth }) {
 
 /* ── Main component ─────────────────────────────────────────────────────── */
 export default function MarketOverviewStrip() {
+  const { isIndia } = useMode()
   const [data,    setData]    = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [source,  setSource]  = useState('live')
@@ -178,8 +188,7 @@ export default function MarketOverviewStrip() {
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, 60000); return () => clearInterval(id) }, [fetchData])
 
-  const now  = new Date()
-  const etStr = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  const indices = (data?.indices ?? []).filter(q => isIndia || !HERO_DUPLICATES.has(q.symbol))
 
   return (
     <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)', overflow: 'hidden' }}>
@@ -198,7 +207,9 @@ export default function MarketOverviewStrip() {
               <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', display: 'inline-block' }} />LIVE
             </span>
           )}
-          <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{etStr} ET</span>
+          {/* The ET clock that used to sit here is the same time the MARKET
+              CLOCK panel shows in Section D, and the TopBar carries the
+              OPEN/CLOSED badge. Three copies of one clock, so this one goes. */}
           <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', lineHeight: 1 }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
         </div>
@@ -212,15 +223,15 @@ export default function MarketOverviewStrip() {
         <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>Market data unavailable</div>
       ) : (
         <>
-          {/* Section A — 5 index cards */}
+          {/* Section A — index cards the hero row doesn't already show */}
           <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1b2e1b' }}>
-            {data.indices.map((q, i) => (
-              <div key={q.symbol} style={{ flex: 1, borderRight: i < data.indices.length - 1 ? '1px solid #1b2e1b' : 'none' }}>
+            {indices.map((q, i) => (
+              <div key={q.symbol} style={{ flex: 1, borderRight: i < indices.length - 1 ? '1px solid #1b2e1b' : 'none' }}>
                 <IndexCard q={q} />
               </div>
             ))}
-            {data.indices.length === 0 && (
-              <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Index data loading...</div>
+            {indices.length === 0 && (
+              <div style={{ padding: '12px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Index data temporarily unavailable</div>
             )}
           </div>
 

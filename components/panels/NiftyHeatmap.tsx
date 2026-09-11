@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { PanelEmpty } from '@/components/ui/Panel'
 
 interface Stock {
   symbol: string
@@ -13,7 +14,7 @@ const SECTOR_MAP: Record<string, string[]> = {
   'IT':         ['TCS.NS','INFY.NS','WIPRO.NS','HCLTECH.NS','TECHM.NS'],
   'BANKING':    ['HDFCBANK.NS','ICICIBANK.NS','KOTAKBANK.NS','SBIN.NS','AXISBANK.NS','INDUSINDBK.NS','BAJFINANCE.NS'],
   'ENERGY':     ['RELIANCE.NS','ONGC.NS','BPCL.NS','NTPC.NS','POWERGRID.NS'],
-  'AUTO':       ['MARUTI.NS','TATAMOTORS.NS','BAJAJ-AUTO.NS','EICHERMOT.NS','HEROMOTOCO.NS','M&M.NS'],
+  'AUTO':       ['MARUTI.NS','TMPV.NS','BAJAJ-AUTO.NS','EICHERMOT.NS','HEROMOTOCO.NS','M&M.NS'],
   'PHARMA':     ['SUNPHARMA.NS','DRREDDY.NS','CIPLA.NS','DIVISLAB.NS','APOLLOHOSP.NS'],
   'FMCG':       ['HINDUNILVR.NS','ITC.NS','NESTLEIND.NS','BRITANNIA.NS','TATACONSUM.NS'],
   'INFRA':      ['LT.NS','ADANIENT.NS','ADANIPORTS.NS','ULTRACEMCO.NS','SHREECEM.NS'],
@@ -34,32 +35,43 @@ export default function NiftyHeatmap() {
   const [stocks, setStocks] = useState<Record<string, Stock>>({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/india/stocks')
-        const j   = await res.json()
-        if (j.data?.quotes) {
-          const map: Record<string, Stock> = {}
-          for (const q of j.data.quotes) map[q.symbol] = q
-          setStocks(map)
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/india/stocks')
+      const j   = await res.json()
+      if (j.data?.quotes) {
+        const map: Record<string, Stock> = {}
+        // A quote with no changePct colours every tile the "strong down" red,
+        // so drop it here rather than paint a false signal.
+        for (const q of j.data.quotes) {
+          if (Number.isFinite(q?.changePct)) map[q.symbol] = q
         }
-      } finally { setLoading(false) }
-    }
+        setStocks(map)
+      }
+    } catch { /* falls through to the unavailable state below */ }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => {
     load()
     const id = setInterval(load, 60000)
     return () => clearInterval(id)
-  }, [])
+  }, [load])
 
-  if (loading) return (
-    <div style={{ padding: 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>
-      LOADING NIFTY HEATMAP...
-    </div>
-  )
+  // Both of these previously rendered bare unbordered text (or nine sector
+  // labels with no tiles under them), which read as a blank panel in the
+  // 380px-wide, 520px-tall grid cell this sits in.
+  if (loading) return <PanelEmpty title="NIFTY 50 HEATMAP" accent="#FF9933" message="Loading Nifty heatmap…" />
+  if (Object.keys(stocks).length === 0) {
+    return <PanelEmpty title="NIFTY 50 HEATMAP" accent="#FF9933" message="Nifty constituent prices temporarily unavailable" onRetry={load} />
+  }
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'linear-gradient(180deg,#0a0f1e,#060d1a)' }}>
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: '#0d1526', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    // height:100% + a scrolling body makes the panel fill its grid cell. Left
+    // auto-height, the cell's remaining space rendered as bare page background
+    // — a black rectangle under the heatmap.
+    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'linear-gradient(180deg,#0a0f1e,#060d1a)', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: '#0d1526', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
         <div style={{ display: 'flex', gap: 6, fontSize: 'var(--fs-meta)' }}>
           {[['STRONG UP', '#14532d'], ['UP', '#166534'], ['DOWN', '#991b1b'], ['STRONG DN', '#450a0a']].map(([l, c]) => (
@@ -71,7 +83,7 @@ export default function NiftyHeatmap() {
         </div>
       </div>
 
-      <div style={{ padding: 8 }}>
+      <div style={{ padding: 8, flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {Object.entries(SECTOR_MAP).map(([sector, tickers]) => (
           <div key={sector} style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 'var(--fs-meta)', color: '#607d8b', letterSpacing: '0.1em', marginBottom: 3 }}>{sector}</div>

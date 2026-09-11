@@ -71,7 +71,10 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
           </span>
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 0 : 1 }}>
+      {/* Capped + scrollable: unbounded this list grew to ~900px and, via the
+          grid's default align-items:stretch, stretched its short row siblings
+          (FII/DII) into a mostly-empty panel. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 0 : 1, maxHeight: compact ? undefined : 420, overflowY: compact ? undefined : 'auto' }}>
         {data.narratives.map((n, i) => (
           <div key={i} style={{
             padding: compact ? '6px 8px' : '8px 10px',
