@@ -209,7 +209,12 @@ export async function fetchMCXCommodities(exchangeRate: number) {
     let priceINR = d.price * exchangeRate
     let unit = '₹/unit'
     if (name === 'GOLD') {
-      priceINR = d.price * 31.1035 * exchangeRate / 10 // per 10g
+      // Spot is USD per TROY OUNCE, and 1 oz = 31.1035 g, so USD/10g divides by
+      // 31.1035 and multiplies by 10 — the reverse of both was giving a figure
+      // ~9.7x too high (₹13.2 lakh/10g against MCX's real ~₹1.3 lakh/10g).
+      // Silver (x32.1507 oz-per-kg) and copper (x2.20462 lb-per-kg) below scale
+      // the correct way round already.
+      priceINR = d.price * exchangeRate * 10 / 31.1035 // per 10g
       unit = '₹/10g'
     } else if (name === 'SILVER') {
       priceINR = d.price * 32.1507 * exchangeRate // per kg

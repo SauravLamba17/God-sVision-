@@ -13,6 +13,10 @@ interface PanelWrapperProps {
   fullHeight?: boolean
   accentColor?: string
   headerExtra?: ReactNode
+  /** Suppress the auto age badge (LIVE/RECENT/DELAYED). For panels whose data is
+   *  historical by nature — the badge measures fetch age, not data recency, so on
+   *  a stale-by-design feed it reads as a claim the numbers are current. */
+  hideAgeBadge?: boolean
 }
 
 export default function PanelWrapper({
@@ -26,6 +30,7 @@ export default function PanelWrapper({
   fullHeight = false,
   accentColor = 'var(--text-accent)',
   headerExtra,
+  hideAgeBadge = false,
 }: PanelWrapperProps) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
@@ -38,7 +43,7 @@ export default function PanelWrapper({
 
   // Compute data age badge
   const ageMs   = lastUpdated ? Date.now() - lastUpdated.getTime() : null
-  const ageBadge = ageMs === null ? null
+  const ageBadge = (ageMs === null || hideAgeBadge) ? null
     : ageMs < 5 * 60_000  ? { label: '● LIVE',    color: 'var(--text-positive)' }
     : ageMs < 30 * 60_000 ? { label: '● RECENT',  color: 'var(--text-warning)' }
     : { label: '⚠ DELAYED', color: 'var(--text-accent)' }
@@ -92,7 +97,7 @@ export default function PanelWrapper({
               {ageBadge.label}
             </span>
           )}
-          {!ageBadge && isLive && (
+          {!ageBadge && !hideAgeBadge && isLive && (
             <span className="badge-live">
               <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 2s ease-in-out infinite' }} />
               LIVE

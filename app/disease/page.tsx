@@ -9,6 +9,7 @@ interface GlobalStats {
   cases: number; deaths: number; recovered: number; active: number
   todayCases: number; todayDeaths: number; critical: number
   casesPerMillion: number; deathsPerMillion: number
+  affectedCountries: number
 }
 
 interface CountryStats {
@@ -16,10 +17,10 @@ interface CountryStats {
   countryInfo: { iso2: string; flag: string }
   cases: number; deaths: number; active: number
   todayCases: number; todayDeaths: number
-  casesPerMillion: number; deathPerMillion: number
+  casesPerOneMillion: number; deathsPerOneMillion: number
 }
 
-type SortKey = 'cases'|'active'|'todayCases'|'deaths'|'todayDeaths'|'casesPerMillion'
+type SortKey = 'cases'|'active'|'todayCases'|'deaths'|'todayDeaths'|'casesPerOneMillion'
 
 function KpiCard({ label, value, sub, color='var(--text-primary)' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
@@ -28,6 +29,92 @@ function KpiCard({ label, value, sub, color='var(--text-primary)' }: { label: st
       <div style={{ fontFamily:'IBM Plex Mono', fontSize:18, fontWeight:700, color }}>{value}</div>
       {sub && <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginTop:2 }}>{sub}</div>}
     </div>
+  )
+}
+
+
+/* ── WHO Disease Outbreak News ─────────────────────────────────────────── */
+interface Outbreak { title: string; link: string; date: string; summary: string }
+
+// WHO titles read "Disease - Country", e.g. "Nipah virus disease - India".
+// Split so the disease can carry the visual weight and the location sit beside
+// it, the way BREAKING NEWS separates headline from source.
+function splitOutbreakTitle(title: string): [string, string] {
+  const m = title.match(/^(.*?)\s+[-–—]\s+(.*)$/)
+  return m ? [m[1], m[2]] : [title, '']
+}
+
+function fmtOutbreakDate(iso: string): string {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function OutbreakPanel() {
+  const [items, setItems] = useState<Outbreak[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/health/outbreaks?limit=10')
+      const json = await res.json()
+      if (Array.isArray(json.data) && json.data.length) {
+        setItems(json.data)
+        setError(null)
+      } else {
+        setError('Outbreak alerts temporarily unavailable')
+      }
+    } catch {
+      setError('Outbreak alerts temporarily unavailable')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchData(); const id = setInterval(fetchData, 3600000); return () => clearInterval(id) }, [fetchData])
+
+  return (
+    <PanelWrapper
+      title="CURRENT OUTBREAK ALERTS"
+      loading={loading}
+      error={error}
+      source="live"
+      onRefresh={fetchData}
+      accentColor="var(--text-negative)"
+      fullHeight
+    >
+      <div className="divide-y" style={{ borderColor: 'var(--border-dim)' }}>
+        {items.map(o => {
+          const [disease, place] = splitOutbreakTitle(o.title)
+          return (
+            <a
+              key={o.link}
+              href={o.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-2 py-1.5 hover:bg-header transition-colors"
+            >
+              <div className="flex items-start gap-2">
+                <span
+                  className="font-mono text-[10px] px-1 py-0.5 flex-shrink-0 mt-0.5"
+                  style={{ color: 'var(--text-negative)', border: '1px solid var(--text-negative)' }}
+                >
+                  DON
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-primary text-[13px] leading-tight line-clamp-2">{disease}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {place && <span className="text-accent text-[11px] font-mono truncate">{place}</span>}
+                    <span className="text-muted text-[11px] font-mono flex-shrink-0">{fmtOutbreakDate(o.date)}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+    </PanelWrapper>
   )
 }
 
@@ -62,7 +149,7 @@ export default function DiseasePage() {
 
   const sorted = [...countries].sort((a, b) => {
     const av = a[sortKey] || 0, bv = b[sortKey] || 0
-    return (bv - av) * sortDir
+    return (av - bv) * sortDir
   })
 
   const toggleSort = (key: SortKey) => {
@@ -76,7 +163,10 @@ export default function DiseasePage() {
     whiteSpace:'nowrap',
   })
 
-  const todayCasesColor = (n: number) => n > 10000 ? 'var(--text-negative)' : n > 1000 ? 'var(--text-warning)' : 'var(--text-secondary)'
+  // TODAY / DTH-PER-DAY are structurally 0 now that daily reporting has stopped.
+  // They stay in the table as a historical column but are rendered at a third of
+  // the visual weight of the cumulative columns so they can't read as live counts.
+  const staleCell: React.CSSProperties = { color: 'var(--text-muted)', opacity: 0.45 }
 
   return (
     <div className="p-2 flex flex-col gap-2 h-full">
@@ -86,8 +176,12 @@ export default function DiseasePage() {
           <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, fontWeight:700, color:'var(--text-accent)', letterSpacing:'0.08em' }}>
             GLOBAL HEALTH INTELLIGENCE
           </div>
+          <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-warning)', marginTop:3, maxWidth:680, lineHeight:1.5 }}>
+            Historical &amp; cumulative COVID-19 data — daily reporting has been discontinued by most
+            countries since 2023, so per-day counts are structurally zero and are shown greyed out.
+          </div>
           <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginTop:2 }}>
-            Source: disease.sh · Data refreshes hourly
+            Source: disease.sh (JHU/Worldometers archive) · cumulative totals only
           </div>
         </div>
         {global_ && <AIButton
@@ -100,18 +194,22 @@ export default function DiseasePage() {
       {/* KPI cards */}
       {global_ && (
         <div style={{ display:'flex', gap:8 }}>
-          <KpiCard label="TOTAL CASES WORLDWIDE" value={formatNumber(global_.cases)} color="#94a3b8" />
-          <KpiCard label="ACTIVE CASES" value={formatNumber(global_.active)} color="#f59e0b" />
-          <KpiCard label="DEATHS TODAY" value={formatNumber(global_.todayDeaths)} color="#ef4444" />
-          <KpiCard label="CASES TODAY" value={formatNumber(global_.todayCases)} color="#ff6d00" />
-          <KpiCard label="CRITICAL" value={formatNumber(global_.critical)} color="#ef4444" />
+          <KpiCard label="TOTAL CASES WORLDWIDE" value={formatNumber(global_.cases)} sub="cumulative since 2020" color="#94a3b8" />
+          <KpiCard label="TOTAL DEATHS WORLDWIDE" value={formatNumber(global_.deaths)} sub="cumulative since 2020" color="#ef4444" />
+          <KpiCard
+            label="GLOBAL CASE FATALITY RATE"
+            value={global_.cases > 0 ? ((global_.deaths / global_.cases) * 100).toFixed(2) + '%' : '—'}
+            sub="deaths ÷ confirmed cases"
+            color="#f59e0b"
+          />
+          <KpiCard label="COUNTRIES TRACKED" value={String(global_.affectedCountries ?? '—')} sub="reporting territories" color="var(--text-accent)" />
         </div>
       )}
 
       <div className="flex gap-2 flex-1 min-h-0">
         {/* Main table */}
         <div className="flex-1 flex flex-col min-w-0">
-          <PanelWrapper title="COUNTRY BREAKDOWN" loading={loading} fullHeight>
+          <PanelWrapper title="COUNTRY BREAKDOWN (CUMULATIVE)" loading={loading} fullHeight hideAgeBadge>
             <div style={{ overflowY:'auto', maxHeight:'calc(100vh - 280px)' }}>
               <table className="data-table" style={{ width:'100%' }}>
                 <thead style={{ position:'sticky', top:0, zIndex:1 }}>
@@ -120,9 +218,9 @@ export default function DiseasePage() {
                     <th onClick={() => toggleSort('cases')} style={thStyle('cases')}>TOTAL CASES{sortKey==='cases'?sortDir===-1?'↓':'↑':''}</th>
                     <th onClick={() => toggleSort('active')} style={thStyle('active')}>ACTIVE{sortKey==='active'?sortDir===-1?'↓':'↑':''}</th>
                     <th onClick={() => toggleSort('deaths')} style={thStyle('deaths')}>DEATHS{sortKey==='deaths'?sortDir===-1?'↓':'↑':''}</th>
-                    <th onClick={() => toggleSort('todayCases')} style={thStyle('todayCases')}>TODAY{sortKey==='todayCases'?sortDir===-1?'↓':'↑':''}</th>
-                    <th onClick={() => toggleSort('todayDeaths')} style={thStyle('todayDeaths')}>DTH/DAY{sortKey==='todayDeaths'?sortDir===-1?'↓':'↑':''}</th>
-                    <th onClick={() => toggleSort('casesPerMillion')} style={thStyle('casesPerMillion')}>CASES/1M{sortKey==='casesPerMillion'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('todayCases')} style={{ ...thStyle('todayCases'), ...staleCell }} title="Daily reporting discontinued — no longer updated">TODAY ⓘ{sortKey==='todayCases'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('todayDeaths')} style={{ ...thStyle('todayDeaths'), ...staleCell }} title="Daily reporting discontinued — no longer updated">DTH/DAY ⓘ{sortKey==='todayDeaths'?sortDir===-1?'↓':'↑':''}</th>
+                    <th onClick={() => toggleSort('casesPerOneMillion')} style={thStyle('casesPerOneMillion')}>CASES/1M{sortKey==='casesPerOneMillion'?sortDir===-1?'↓':'↑':''}</th>
                     <th>DEATH RATE</th>
                   </tr>
                 </thead>
@@ -143,9 +241,9 @@ export default function DiseasePage() {
                       <td>{formatNumber(c.cases)}</td>
                       <td style={{ color:'var(--text-warning)' }}>{formatNumber(c.active)}</td>
                       <td style={{ color:'var(--text-negative)' }}>{formatNumber(c.deaths)}</td>
-                      <td style={{ color:todayCasesColor(c.todayCases) }}>{formatNumber(c.todayCases)}</td>
-                      <td style={{ color:c.todayDeaths > 100 ? 'var(--text-negative)' : 'var(--text-secondary)' }}>{formatNumber(c.todayDeaths)}</td>
-                      <td>{c.casesPerMillion?.toFixed(0) || '—'}</td>
+                      <td style={staleCell}>{formatNumber(c.todayCases)}</td>
+                      <td style={staleCell}>{formatNumber(c.todayDeaths)}</td>
+                      <td>{c.casesPerOneMillion?.toFixed(0) ?? '—'}</td>
                       <td style={{ color: c.deaths/c.cases > 0.02 ? 'var(--text-negative)' : 'var(--text-secondary)' }}>
                         {c.cases > 0 ? ((c.deaths/c.cases)*100).toFixed(2) + '%' : '—'}
                       </td>
@@ -157,10 +255,14 @@ export default function DiseasePage() {
           </PanelWrapper>
         </div>
 
-        {/* Right: trend chart */}
-        {history.length > 0 && (
-          <div style={{ width:280, flexShrink:0 }}>
-            <PanelWrapper title="GLOBAL DAILY CASES (90D)" fullHeight>
+        {/* Right: live WHO outbreak alerts above the historical trend chart */}
+        <div style={{ width:320, flexShrink:0, display:'flex', flexDirection:'column', gap:8, minHeight:0 }}>
+          <div style={{ flex:1, minHeight:220 }}>
+            <OutbreakPanel />
+          </div>
+          {history.length > 0 && (
+          <div style={{ height:220, flexShrink:0 }}>
+            <PanelWrapper title="GLOBAL DAILY CASES (90D)" fullHeight hideAgeBadge>
               <div style={{ padding:8, height:'calc(100% - 30px)' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={history} margin={{ top:4, right:4, left:0, bottom:4 }}>
@@ -176,7 +278,8 @@ export default function DiseasePage() {
               </div>
             </PanelWrapper>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

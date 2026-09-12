@@ -46,6 +46,8 @@ interface QuoteTick {
   symbol: string; label: string; price: number; change: number
   changePct: number; sparkline: number[]; unit?: string
   region?: string; failed?: boolean
+  // Set only by the India-mode MCX overlay below. Absent → the USD default.
+  currency?: string
 }
 interface Breadth { advancing: number; declining: number; unchanged: number }
 interface OverviewData {
@@ -99,7 +101,7 @@ function CommodityStrip({ items }: { items: QuoteTick[] }) {
             {i > 0 && <span style={{ color: 'var(--border-color)', margin: '0 8px' }}>|</span>}
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)' }}>{q.label}</span>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>
-              {q.unit === '%' ? '' : '$'}{fmtPrice(q.price, q.unit || '')}
+              {q.unit === '%' ? '' : (q.currency ?? '$')}{fmtPrice(q.price, q.unit || '')}
               {q.unit && q.unit !== '%' && <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{q.unit}</span>}
             </span>
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: pos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
@@ -176,6 +178,8 @@ export default function MarketOverviewStrip() {
   const [loading, setLoading] = useState(true)
   const [source,  setSource]  = useState('live')
   const [lastAt,  setLastAt]  = useState<number | null>(null)
+  // India-mode MCX overlay, keyed by the Yahoo ticker the overview route uses.
+  const [mcx, setMcx] = useState<Record<string, { price: number; unit: string }>>({})
 
   const fetchData = useCallback(async () => {
     try {
@@ -187,6 +191,40 @@ export default function MarketOverviewStrip() {
   }, [])
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, 60000); return () => clearInterval(id) }, [fetchData])
+
+  // Gold/silver/crude/gas/copper are quoted globally in USD, but an Indian user
+  // trades them on MCX, where they're quoted in INR per MCX's own units
+  // (₹/10g, ₹/kg, ₹/bbl) — not as a naive USD→INR multiply of the spot price.
+  // /api/india/commodities already does exactly that conversion for the
+  // COMMODITIES page, so India mode reuses it here rather than growing a second
+  // conversion path. Brent has no MCX contract and stays USD; the two treasury
+  // yields are percentages and never get a currency symbol in either mode.
+  useEffect(() => {
+    if (!isIndia) { setMcx({}); return }
+    const loadMcx = async () => {
+      try {
+        const res = await fetch('/api/india/commodities')
+        const j   = await res.json()
+        const rows: any[] = j.data?.commodities ?? []
+        setMcx(Object.fromEntries(
+          rows
+            .filter(c => c?.ticker && Number.isFinite(c.priceINR))
+            // The API's unit already carries the ₹; strip it so the symbol is
+            // rendered once, before the number, like the USD path.
+            .map(c => [c.ticker, { price: c.priceINR, unit: String(c.unit ?? '').replace('₹', '') }])
+        ))
+      } catch { /* leave mcx empty — the strip falls back to USD spot */ }
+    }
+    loadMcx()
+    const id = setInterval(loadMcx, 60000)
+    return () => clearInterval(id)
+  }, [isIndia])
+
+  const commodities: QuoteTick[] = (data?.commodities ?? []).map(q => {
+    const m = mcx[q.symbol]
+    if (!m || q.unit === '%') return q
+    return { ...q, price: m.price, unit: m.unit, currency: '₹', label: `${q.label} MCX` }
+  })
 
   const indices = (data?.indices ?? []).filter(q => isIndia || !HERO_DUPLICATES.has(q.symbol))
 
@@ -236,7 +274,7 @@ export default function MarketOverviewStrip() {
           </div>
 
           {/* Section B — Commodity + Bond strip */}
-          {data.commodities.length > 0 && <CommodityStrip items={data.commodities} />}
+          {commodities.length > 0 && <CommodityStrip items={commodities} />}
 
           {/* Section C — Global market rows */}
           <div style={{ background: '#040904' }}>

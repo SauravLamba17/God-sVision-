@@ -10,6 +10,7 @@ export interface GlobalStats {
   critical: number
   casesPerMillion: number
   deathsPerMillion: number
+  affectedCountries: number
   updated: number
 }
 

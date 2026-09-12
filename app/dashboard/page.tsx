@@ -738,8 +738,16 @@ export default function DashboardPage() {
         ) : <PanelSkeleton h={280} />}
 
         {/* Row 5: Reddit + ISS + Earthquake + Weather — 1500ms */}
+        {/* The weather column was a hardcoded 180px. WeatherPanel lays its cities
+            out on `auto-fill, minmax(110px, 1fr)`, so 180px minus padding fits
+            exactly ONE column — the ten world cities stacked into a 1061px-tall
+            strip next to three ~400px siblings. That produced both symptoms at
+            once: a single-file weather list, and ~660px of empty grid beside it
+            that read as blank space at the bottom of the page. India mode never
+            showed either because it gives weather `minmax(0, 1fr)`; matching it
+            here fixes both. */}
         {phase >= 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 180px', gap: 6, minHeight: 200, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, alignItems: 'start' }}>
             <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
               <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
                 <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>REDDIT SENTIMENT</span>
