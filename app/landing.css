@@ -63,12 +63,6 @@ body:has(.gv-landing)::after {
   display: none !important;
 }
 
-/* globals.css sets `#__next, main { height: 100% }` for the fixed terminal
-   layout; the landing's <main> is a normal flow element. */
-.gv-landing main {
-  height: auto;
-}
-
 .gv-landing {
   font-family: Geist, "Helvetica Neue", system-ui, sans-serif;
 }

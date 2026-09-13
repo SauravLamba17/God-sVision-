@@ -62,19 +62,33 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
   }
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono' }}>
+    // Fill the panel the grid gives us and let the LIST scroll inside it, rather
+    // than sizing off a pixel constant. See the list's comment below.
+    <div style={{
+      fontFamily: 'IBM Plex Mono',
+      ...(compact ? {} : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }),
+    }}>
       {!compact && (
-        <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: 'var(--fs-header)', color: 'var(--text-accent)', letterSpacing: '0.03em', fontWeight: 700 }}>⚡ AI NARRATIVE DETECTOR</span>
           <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
             {data.headlinesAnalyzed} headlines · {new Date(data.generatedAt).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false })} ET
           </span>
         </div>
       )}
-      {/* Capped + scrollable: unbounded this list grew to ~900px and, via the
-          grid's default align-items:stretch, stretched its short row siblings
-          (FII/DII) into a mostly-empty panel. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 0 : 1, maxHeight: compact ? undefined : 420, overflowY: compact ? undefined : 'auto' }}>
+      {/* Scrollable, but sized by the panel rather than by a constant. This was
+          maxHeight:420 — a number tuned for the 380px column USA mode gives it.
+          The component cannot see its own column width, so in India mode's
+          narrower column the same five narratives wrap to ~845px and 424 of them
+          sat hidden behind a 6px scrollbar, cut mid-sentence. flex:1 + minHeight:0
+          makes the window whatever height the row actually has, at any width, in
+          either mode. Content still exceeds it (this list is ~435px even in a
+          900px column), so the internal scroll stays deliberate — the row's
+          min-height is what decides how much shows. */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: compact ? 0 : 1,
+        ...(compact ? {} : { flex: 1, minHeight: 0, overflowY: 'auto' }),
+      }}>
         {data.narratives.map((n, i) => (
           <div key={i} style={{
             padding: compact ? '6px 8px' : '8px 10px',

@@ -296,7 +296,12 @@ body::after {
   z-index: 0;
 }
 
-#__next, main { height: 100%; }
+/* Not `main`: the terminal's <main> (ClientLayout) is position:fixed with
+   top:100 + bottom:26. Adding height:100% over-constrains it, and CSS resolves
+   that by ignoring `bottom` — <main> became a full viewport tall starting 100px
+   down, so its last 100px sat below the window and the bottom of every page
+   (e.g. the India Weather grid's last row) could never be scrolled into view. */
+#__next { height: 100%; }
 
 /* ═══════════════════════════════════════════
    SCROLLBAR — theme-aware

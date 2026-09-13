@@ -638,7 +638,7 @@ export default function DashboardPage() {
 
           {/* Row 2: Daily Brief + RBI Policy — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6 }}>
               <ErrorBoundary name="Daily Brief"><DailyBrief /></ErrorBoundary>
               <ErrorBoundary name="RBI Policy Tracker"><RBIPolicyTracker /></ErrorBoundary>
             </div>
@@ -646,7 +646,7 @@ export default function DashboardPage() {
 
           {/* Row 3: Nifty Movers + India Crypto — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
               <ErrorBoundary name="India Market Movers"><IndiaMarketMovers /></ErrorBoundary>
               <ErrorBoundary name="India Crypto"><IndiaCryptoMini /></ErrorBoundary>
             </div>
@@ -673,9 +673,16 @@ export default function DashboardPage() {
 
           {/* Row 5: FII/DII + Narrative + India News — 1500ms */}
           {phase >= 3 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 280px) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
+            // No alignItems:'start' here. With it, the row took its height from the
+            // tall Narrative panel while FII/DII (256px) and the news list (354px)
+            // kept their natural heights, leaving 217px and 119px of bare
+            // background beneath them — the black void directly above the ISS row.
+            // Letting the three stretch to a common height is what USA mode's
+            // equivalent row already does. The Narrative column also goes 280 ->
+            // 380 to match USA's, which cuts its wrapped content from 845 to 623px.
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 380px) minmax(0, 1fr)', gap: 6, minHeight: 440 }}>
               <ErrorBoundary name="FII/DII Flow"><FIIDIIFlow /></ErrorBoundary>
-              <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
+              <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <ErrorBoundary name="Narrative Detector"><NarrativeDetector /></ErrorBoundary>
               </div>
               <ErrorBoundary name="India News"><IndiaNewsMini limit={12} /></ErrorBoundary>
@@ -684,7 +691,7 @@ export default function DashboardPage() {
 
           {/* Row 6: ISS + Earthquake + Weather — 2000ms */}
           {phase >= 4 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, width: '100%', overflow: 'hidden', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, width: '100%', overflow: 'hidden' }}>
               <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
                 <ErrorBoundary name="ISS Tracker"><ISSTracker /></ErrorBoundary>
               </div>
@@ -721,7 +728,7 @@ export default function DashboardPage() {
 
         {/* Row 3: Market Movers + Crypto — 500ms */}
         {phase >= 1 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
             <ErrorBoundary name="Market Movers"><MarketMovers /></ErrorBoundary>
             <ErrorBoundary name="Crypto Panel"><CryptoPanel /></ErrorBoundary>
           </div>
@@ -729,8 +736,8 @@ export default function DashboardPage() {
 
         {/* Row 4: Narrative Detector + News — 1000ms */}
         {phase >= 2 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '380px minmax(0, 1fr)', gap: 6, minHeight: 280 }}>
-            <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 380px) minmax(0, 1fr)', gap: 6, minHeight: 440 }}>
+            <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <ErrorBoundary name="Narrative Detector"><NarrativeDetector /></ErrorBoundary>
             </div>
             <ErrorBoundary name="News Panel"><NewsPanel limit={8} /></ErrorBoundary>
@@ -747,7 +754,7 @@ export default function DashboardPage() {
             showed either because it gives weather `minmax(0, 1fr)`; matching it
             here fixes both. */}
         {phase >= 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200 }}>
             <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
               <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
                 <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>REDDIT SENTIMENT</span>
