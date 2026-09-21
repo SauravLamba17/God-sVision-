@@ -36,6 +36,17 @@ export default function RedditSentiment() {
 
   if (loading) return <div style={{ padding:12, fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-accent)' }}>LOADING<span className="blink-cursor" /></div>
 
+  // No rows means the upstream returned nothing. This used to fall back to ten
+  // fabricated mentions with invented quotes; say it plainly instead.
+  if (mentions.length === 0) return (
+    <div style={{ padding:'12px 10px', fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-muted)', lineHeight:1.6 }}>
+      Reddit sentiment unavailable
+      <div style={{ fontSize:'var(--fs-meta)', marginTop:4 }}>
+        Reddit no longer serves its public JSON feed to unauthenticated clients (HTTP 403).
+      </div>
+    </div>
+  )
+
   return (
     <div>
       {/* Header */}

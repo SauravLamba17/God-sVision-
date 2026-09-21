@@ -4,13 +4,18 @@ import { authOptions } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 
+// Session-scoped: never store this in a shared cache. Belt-and-braces alongside
+// next.config.js no longer setting s-maxage on /api/:path*.
+const PRIVATE: Record<string, string> = { 'Cache-Control': 'private, no-store' }
+
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: PRIVATE });
 
   const userId = (session.user as any).id;
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404, headers: PRIVATE });
 
   let customerId = user.stripeCustomerId;
   if (!customerId) {
@@ -30,5 +35,5 @@ export async function POST(req: NextRequest) {
     metadata: { userId },
   });
 
-  return NextResponse.json({ url: checkoutSession.url });
+  return NextResponse.json({ url: checkoutSession.url }, { headers: PRIVATE });
 }

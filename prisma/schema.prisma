@@ -24,6 +24,7 @@ model User {
   priceAlerts       PriceAlert[]
   newsAlerts        NewsAlert[]
   pushSubscriptions PushSubscription[]
+  transactions      Transaction[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -148,6 +149,12 @@ model PushSubscription {
 
 model Transaction {
   id        Int      @id @default(autoincrement())
+  // Added to close a broken-access-control hole: the table previously had no
+  // owner column at all, so /api/transactions returned every user's rows to any
+  // caller and deleted by id alone. Nullable + SetNull to match the other
+  // user-owned models here; the table held 0 rows when this was added, so no
+  // existing data is orphaned.
+  userId    String?
   ticker    String
   type      String
   quantity  Float
@@ -156,6 +163,9 @@ model Transaction {
   fee       Float    @default(0)
   notes     String   @default("")
   createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
 }
 
 // Password reset tokens. Single-use, 1 hour expiry.

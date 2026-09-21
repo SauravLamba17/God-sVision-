@@ -13,38 +13,12 @@ export interface CalendarEvent {
 }
 
 // Hardcoded fallback: next 30 known major events
-const FALLBACK_EVENTS: CalendarEvent[] = [
-  { event: 'Fed Interest Rate Decision', country: 'US', currency: 'USD', date: '2026-07-29', time: '14:00', impact: 'high', forecast: '4.25%', previous: '4.50%', actual: '' },
-  { event: 'US Nonfarm Payrolls', country: 'US', currency: 'USD', date: '2026-07-03', time: '08:30', impact: 'high', forecast: '175K', previous: '151K', actual: '' },
-  { event: 'US CPI (YoY)', country: 'US', currency: 'USD', date: '2026-07-15', time: '08:30', impact: 'high', forecast: '2.4%', previous: '2.3%', actual: '' },
-  { event: 'US GDP Growth Rate QoQ', country: 'US', currency: 'USD', date: '2026-07-30', time: '08:30', impact: 'high', forecast: '1.8%', previous: '2.4%', actual: '' },
-  { event: 'US PPI (MoM)', country: 'US', currency: 'USD', date: '2026-07-11', time: '08:30', impact: 'medium', forecast: '0.2%', previous: '0.1%', actual: '' },
-  { event: 'US Retail Sales (MoM)', country: 'US', currency: 'USD', date: '2026-07-16', time: '08:30', impact: 'medium', forecast: '0.3%', previous: '-0.1%', actual: '' },
-  { event: 'ECB Interest Rate Decision', country: 'EU', currency: 'EUR', date: '2026-07-23', time: '14:15', impact: 'high', forecast: '3.90%', previous: '4.00%', actual: '' },
-  { event: 'Euro Zone CPI (YoY)', country: 'EU', currency: 'EUR', date: '2026-07-01', time: '10:00', impact: 'high', forecast: '2.1%', previous: '2.2%', actual: '' },
-  { event: 'Euro Zone GDP Growth Rate', country: 'EU', currency: 'EUR', date: '2026-07-30', time: '10:00', impact: 'medium', forecast: '0.3%', previous: '0.4%', actual: '' },
-  { event: 'Bank of England Rate Decision', country: 'UK', currency: 'GBP', date: '2026-08-07', time: '12:00', impact: 'high', forecast: '4.75%', previous: '5.00%', actual: '' },
-  { event: 'UK CPI (YoY)', country: 'UK', currency: 'GBP', date: '2026-07-16', time: '07:00', impact: 'high', forecast: '2.8%', previous: '2.6%', actual: '' },
-  { event: 'UK GDP (MoM)', country: 'UK', currency: 'GBP', date: '2026-07-11', time: '07:00', impact: 'medium', forecast: '0.2%', previous: '0.0%', actual: '' },
-  { event: 'Bank of Japan Rate Decision', country: 'JP', currency: 'JPY', date: '2026-07-31', time: '03:00', impact: 'high', forecast: '0.25%', previous: '0.10%', actual: '' },
-  { event: 'Japan CPI (YoY)', country: 'JP', currency: 'JPY', date: '2026-07-25', time: '23:30', impact: 'medium', forecast: '2.3%', previous: '2.2%', actual: '' },
-  { event: 'China GDP Growth Rate', country: 'CN', currency: 'CNY', date: '2026-07-15', time: '02:00', impact: 'high', forecast: '4.8%', previous: '5.4%', actual: '' },
-  { event: 'China CPI (YoY)', country: 'CN', currency: 'CNY', date: '2026-07-10', time: '01:30', impact: 'medium', forecast: '0.3%', previous: '0.1%', actual: '' },
-  { event: 'RBI Interest Rate Decision', country: 'IN', currency: 'INR', date: '2026-08-08', time: '10:00', impact: 'high', forecast: '5.75%', previous: '6.00%', actual: '' },
-  { event: 'India CPI (YoY)', country: 'IN', currency: 'INR', date: '2026-07-14', time: '17:30', impact: 'medium', forecast: '4.2%', previous: '3.6%', actual: '' },
-  { event: 'US Initial Jobless Claims', country: 'US', currency: 'USD', date: '2026-07-03', time: '08:30', impact: 'medium', forecast: '222K', previous: '219K', actual: '' },
-  { event: 'US ISM Manufacturing PMI', country: 'US', currency: 'USD', date: '2026-07-01', time: '10:00', impact: 'medium', forecast: '49.2', previous: '48.7', actual: '' },
-  { event: 'US ISM Services PMI', country: 'US', currency: 'USD', date: '2026-07-07', time: '10:00', impact: 'medium', forecast: '51.8', previous: '52.9', actual: '' },
-  { event: 'US FOMC Meeting Minutes', country: 'US', currency: 'USD', date: '2026-07-08', time: '18:00', impact: 'high', forecast: '', previous: '', actual: '' },
-  { event: 'US Consumer Confidence', country: 'US', currency: 'USD', date: '2026-07-29', time: '10:00', impact: 'medium', forecast: '100.5', previous: '98.0', actual: '' },
-  { event: 'Fed Powell Speech', country: 'US', currency: 'USD', date: '2026-07-22', time: '14:00', impact: 'high', forecast: '', previous: '', actual: '' },
-  { event: 'Euro Zone Retail Sales', country: 'EU', currency: 'EUR', date: '2026-07-04', time: '10:00', impact: 'low', forecast: '0.4%', previous: '0.0%', actual: '' },
-  { event: 'Germany ZEW Economic Sentiment', country: 'DE', currency: 'EUR', date: '2026-07-14', time: '11:00', impact: 'medium', forecast: '25.0', previous: '20.0', actual: '' },
-  { event: 'Bank of Canada Rate Decision', country: 'CA', currency: 'CAD', date: '2026-07-30', time: '14:00', impact: 'high', forecast: '2.75%', previous: '2.75%', actual: '' },
-  { event: 'Australia RBA Rate Decision', country: 'AU', currency: 'AUD', date: '2026-08-04', time: '04:30', impact: 'high', forecast: '3.85%', previous: '4.10%', actual: '' },
-  { event: 'US Treasury 10-Year Auction', country: 'US', currency: 'USD', date: '2026-07-09', time: '13:00', impact: 'medium', forecast: '', previous: '4.38%', actual: '' },
-  { event: 'US Core PCE Price Index (YoY)', country: 'US', currency: 'USD', date: '2026-07-31', time: '08:30', impact: 'high', forecast: '2.6%', previous: '2.6%', actual: '' },
-]
+// FALLBACK_EVENTS lived here: 30 hardcoded July/August 2026 events. On any
+// feed failure the catch below returned them as the CURRENT week — and its
+// date filter excluded them all by now, which tripped a
+// `filtered.length > 0 ? filtered : FALLBACK_EVENTS` guard into returning the
+// whole stale list unfiltered. An empty result is returned instead, and the
+// route reports source:'unavailable'.
 
 function mapImpact(ff: string): 'high' | 'medium' | 'low' {
   if (ff === 'High') return 'high'
@@ -99,19 +73,10 @@ export async function fetchCalendarEvents(week: 'this' | 'next' | 'prev' = 'this
     await setCache(cacheKey, events, 3600)
     return events
   } catch {
-    // Return filtered fallback
-    const now = new Date()
-    const filtered = FALLBACK_EVENTS
-      .filter(e => {
-        const d = new Date(e.date)
-        const diff = (d.getTime() - now.getTime()) / 86400000
-        if (week === 'this') return diff >= -7 && diff <= 7
-        if (week === 'next') return diff > 0 && diff <= 14
-        return diff < 0 && diff >= -14
-      })
-      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
-    const result = filtered.length > 0 ? filtered : FALLBACK_EVENTS
-    await setCache(cacheKey, result, 1800)
-    return result
+    // Serve the last good fetch if we have one; otherwise nothing. Never
+    // substitute hardcoded events - a calendar of dates that already passed is
+    // worse than an empty one.
+    if (cached) return cached.data as CalendarEvent[]
+    return []
   }
 }

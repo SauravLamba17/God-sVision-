@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
-import { INDIA_MACRO, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS, FII_DII_DATA } from '@/lib/apis/india'
+import { INDIA_MACRO, INDIA_MACRO_VINTAGE, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_macro'
@@ -26,9 +26,12 @@ export async function GET() {
     usdInr,
     yieldCurve: INDIA_YIELD_CURVE,
     nextMPC: { ...nextMPC, daysAway: daysToMPC },
-    fiiDii: FII_DII_DATA,
     rbiStance: 'NEUTRAL',
     lastPolicyAction: 'HOLD at 6.50% — Jun 2025',
+    // Everything except usdInr on this response is a manually maintained
+    // constant. The UI renders this so the panel can say so.
+    isStaticReference: true,
+    vintage: INDIA_MACRO_VINTAGE,
     rateHistory: [
       { date: '2024-02', rate: 6.50, action: 'HOLD' },
       { date: '2023-08', rate: 6.50, action: 'HOLD' },
@@ -41,5 +44,6 @@ export async function GET() {
   }
 
   await setCache(key, result, 3600)
-  return NextResponse.json({ data: result, source: 'live' })
+  // Not 'live': only usdInr is fetched. The rest are constants from india.ts.
+  return NextResponse.json({ data: result, source: 'static-reference' })
 }

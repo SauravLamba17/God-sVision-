@@ -4,6 +4,11 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import yahooFinance from 'yahoo-finance2'
 
+// Session-scoped: never store this in a shared cache. Belt-and-braces alongside
+// next.config.js no longer setting s-maxage on /api/:path*.
+const PRIVATE: Record<string, string> = { 'Cache-Control': 'private, no-store' }
+
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const check = searchParams.get('check')
@@ -13,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     if (check === 'prices') {
       const alerts = await prisma.priceAlert.findMany({ where: { userId, active: true, triggered: false } })
-      if (alerts.length === 0) return NextResponse.json({ data: [], triggered: [] })
+      if (alerts.length === 0) return NextResponse.json({ data: [], triggered: [] }, { headers: PRIVATE })
 
       const tickers = [...new Set(alerts.map(a => a.ticker))]
       let prices: Record<string, number> = {}
@@ -35,17 +40,17 @@ export async function GET(request: NextRequest) {
           triggered.push(alert.id)
         }
       }
-      return NextResponse.json({ data: alerts, triggered, prices })
+      return NextResponse.json({ data: alerts, triggered, prices }, { headers: PRIVATE })
     }
 
     const [priceAlerts, newsAlerts] = await Promise.all([
       prisma.priceAlert.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
       prisma.newsAlert.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
     ])
-    return NextResponse.json({ data: { priceAlerts, newsAlerts } })
+    return NextResponse.json({ data: { priceAlerts, newsAlerts } }, { headers: PRIVATE })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg })
+    return NextResponse.json({ error: msg }, { headers: PRIVATE })
   }
 }
 
@@ -60,18 +65,18 @@ export async function POST(request: NextRequest) {
       const alert = await prisma.priceAlert.create({
         data: { ticker: ticker.toUpperCase(), condition, targetPrice: parseFloat(targetPrice), userId },
       })
-      return NextResponse.json({ data: alert })
+      return NextResponse.json({ data: alert }, { headers: PRIVATE })
     }
 
     if (type === 'news') {
       const alert = await prisma.newsAlert.create({ data: { keyword, userId } })
-      return NextResponse.json({ data: alert })
+      return NextResponse.json({ data: alert }, { headers: PRIVATE })
     }
 
-    return NextResponse.json({ error: 'Invalid alert type' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid alert type' }, { status: 400, headers: PRIVATE })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg })
+    return NextResponse.json({ error: msg }, { headers: PRIVATE })
   }
 }
 
@@ -86,9 +91,9 @@ export async function DELETE(request: NextRequest) {
     if (type === 'price') await prisma.priceAlert.deleteMany({ where: { id, userId } })
     else                   await prisma.newsAlert.deleteMany({ where: { id, userId } })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true }, { headers: PRIVATE })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg })
+    return NextResponse.json({ error: msg }, { headers: PRIVATE })
   }
 }

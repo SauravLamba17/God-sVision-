@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { getQuotes } from '@/lib/apis/yahoo';
+
+// Values are null when the upstream did not return them. They were previously
+// `?? 0` with a `catch { yield: 0 }` per ticker, so a rate-limited Yahoo call
+// rendered as a real-looking 0.00% yield / $0.00 price. yahooFinance.quote()
+// hits query2 /v7/finance/quote, which answers "Too Many Requests"; getQuotes()
+// goes to query1 /v8/finance/chart first, which is a separate rate-limit pool
+// and is what the dashboard's own treasury display already uses.
+const num = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? v : null;
 
 const cache = new Map<string, { data: any; ts: number }>();
 const TTL = 5 * 60 * 1000;
@@ -32,55 +41,44 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === 'yields') {
-      const yields = await Promise.allSettled(
-        TREASURY_TICKERS.map(async (t) => {
-          try {
-            const q = await yahooFinance.quote(t.symbol);
-            return {
-              symbol: t.symbol,
-              label: t.label,
-              maturity: t.maturity,
-              yield: q.regularMarketPrice ?? 0,
-              change: q.regularMarketChange ?? 0,
-              changePct: q.regularMarketChangePercent ?? 0,
-            };
-          } catch {
-            return { symbol: t.symbol, label: t.label, maturity: t.maturity, yield: 0, change: 0, changePct: 0 };
-          }
-        })
-      );
-      const data = yields
-        .filter(r => r.status === 'fulfilled')
-        .map(r => (r as PromiseFulfilledResult<any>).value);
-      cache.set(cacheKey, { data, ts: Date.now() });
+      const quotes = await getQuotes(TREASURY_TICKERS.map(t => t.symbol));
+      const bySymbol = new Map(quotes.map((q: any) => [q.symbol, q]));
+      const data = TREASURY_TICKERS.map(t => {
+        const q = bySymbol.get(t.symbol);
+        return {
+          symbol: t.symbol,
+          label: t.label,
+          maturity: t.maturity,
+          yield: num(q?.regularMarketPrice),
+          change: num(q?.regularMarketChange),
+          changePct: num(q?.regularMarketChangePercent),
+        };
+      });
+      // Only cache a result that actually carries data, so a bad minute upstream
+      // is retried on the next request instead of being pinned for the full TTL.
+      if (data.some(d => d.yield !== null)) cache.set(cacheKey, { data, ts: Date.now() });
       return NextResponse.json(data);
     }
 
     if (type === 'etfs') {
-      const etfs = await Promise.allSettled(
-        BOND_ETFS.map(async (e) => {
-          try {
-            const q = await yahooFinance.quote(e.symbol);
-            return {
-              symbol: e.symbol,
-              label: e.label,
-              price: q.regularMarketPrice ?? 0,
-              change: q.regularMarketChange ?? 0,
-              changePct: q.regularMarketChangePercent ?? 0,
-              volume: q.regularMarketVolume ?? 0,
-              yield: (q as any).trailingAnnualDividendYield
-                ? ((q as any).trailingAnnualDividendYield * 100).toFixed(2)
-                : null,
-            };
-          } catch {
-            return { symbol: e.symbol, label: e.label, price: 0, change: 0, changePct: 0, volume: 0, yield: null };
-          }
-        })
-      );
-      const data = etfs
-        .filter(r => r.status === 'fulfilled')
-        .map(r => (r as PromiseFulfilledResult<any>).value);
-      cache.set(cacheKey, { data, ts: Date.now() });
+      const quotes = await getQuotes(BOND_ETFS.map(e => e.symbol));
+      const bySymbol = new Map(quotes.map((q: any) => [q.symbol, q]));
+      const data = BOND_ETFS.map(e => {
+        const q: any = bySymbol.get(e.symbol);
+        const divYield = num(q?.trailingAnnualDividendYield);
+        return {
+          symbol: e.symbol,
+          label: e.label,
+          price: num(q?.regularMarketPrice),
+          change: num(q?.regularMarketChange),
+          changePct: num(q?.regularMarketChangePercent),
+          volume: num(q?.regularMarketVolume),
+          // The v8 chart meta does not carry dividend yield, so this is null on
+          // that path rather than 0 — the UI already renders null as an em dash.
+          yield: divYield === null ? null : (divYield * 100).toFixed(2),
+        };
+      });
+      if (data.some(d => d.price !== null)) cache.set(cacheKey, { data, ts: Date.now() });
       return NextResponse.json(data);
     }
 
@@ -114,13 +112,22 @@ export async function GET(req: NextRequest) {
           })
         );
       }
-      // Fall back to static estimates if the key is missing OR every live FRED call failed
-      // (e.g. an invalid/placeholder key — FRED requires a 32-char alphanumeric key)
+      // No live FRED data -> report each series as unavailable. This previously
+      // substituted four hardcoded numbers (0.98 / 3.21 / 0.18 / -0.42) carrying
+      // date:'N/A', which the page rendered as real percentages. FRED_API_KEY is
+      // a placeholder in this environment, so that fabricated branch was the one
+      // always taken.
       if (Object.keys(spreads).length === 0) {
-        spreads['BAMLC0A0CM'] = { label: 'Investment Grade Spread', value: 0.98, date: 'N/A' };
-        spreads['BAMLH0A0HYM2'] = { label: 'High Yield Spread', value: 3.21, date: 'N/A' };
-        spreads['T10Y2Y'] = { label: '10Y-2Y Spread', value: 0.18, date: 'N/A' };
-        spreads['T10Y3M'] = { label: '10Y-3M Spread', value: -0.42, date: 'N/A' };
+        for (const s of [
+          { id: 'BAMLC0A0CM', label: 'Investment Grade Spread' },
+          { id: 'BAMLH0A0HYM2', label: 'High Yield Spread' },
+          { id: 'T10Y2Y', label: '10Y-2Y Spread' },
+          { id: 'T10Y3M', label: '10Y-3M Spread' },
+        ]) {
+          spreads[s.id] = { label: s.label, value: null, date: null, unavailable: true };
+        }
+        // Not cached: a key added later should take effect on the next request.
+        return NextResponse.json(spreads);
       }
       cache.set(cacheKey, { data: spreads, ts: Date.now() });
       return NextResponse.json(spreads);

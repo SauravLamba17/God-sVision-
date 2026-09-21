@@ -55,8 +55,16 @@ const nextConfig = {
       { source: '/api/insiders',      headers: [{ key: 'Cache-Control', value: 's-maxage=1800, stale-while-revalidate=3600' }] },
       { source: '/api/calendar',      headers: [{ key: 'Cache-Control', value: 's-maxage=3600, stale-while-revalidate=7200' }] },
       { source: '/api/correlation',   headers: [{ key: 'Cache-Control', value: 's-maxage=14400, stale-while-revalidate=28800' }] },
-      // Default for all other API routes
-      { source: '/api/:path*',        headers: [{ key: 'Cache-Control', value: 's-maxage=60, stale-while-revalidate=120' }] },
+      // Public, unauthenticated endpoints — caching here is deliberate.
+      { source: '/api/public/gv',         headers: [{ key: 'Cache-Control', value: 's-maxage=30, stale-while-revalidate=60' }] },
+      { source: '/api/public/gv-history', headers: [{ key: 'Cache-Control', value: 's-maxage=60, stale-while-revalidate=120' }] },
+      { source: '/api/public/ticker',     headers: [{ key: 'Cache-Control', value: 's-maxage=60, stale-while-revalidate=120' }] },
+      // NO catch-all for /api/:path*. It used to set s-maxage=60 on EVERY API
+      // route, including the session-scoped ones. s-maxage targets shared caches,
+      // and Vercel's CDN keys on URL + Vary — which carries no Cookie — so two
+      // signed-in users hitting /api/portfolio shared one cache entry. Caching is
+      // opt-in per route above, so a route added later cannot silently inherit it.
+
     ]
   },
   webpack: (config, { isServer }) => {

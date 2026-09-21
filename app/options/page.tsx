@@ -9,10 +9,16 @@ import {
 interface Contract {
   contractSymbol: string; strike: number; lastPrice: number; bid: number; ask: number; mid: number
   change: number; changePct: number; volume: number; openInterest: number; iv: number; inTheMoney: boolean
+  ivEstimated?: boolean
   delta: number|null; gamma: number|null; theta: number|null; vega: number|null; rho: number|null
 }
 
-interface OptionsData {
+interface OptionsDisclosure {
+  greeksModel?: string
+  riskFreeRate?: number
+  riskFreeSource?: string
+}
+interface OptionsData extends OptionsDisclosure {
   ticker: string; spotPrice: number; expiry: string; expiryDates: string[]
   daysToExpiry: number; calls: Contract[]; puts: Contract[]
 }
@@ -89,6 +95,15 @@ export default function OptionsPage() {
       }}>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: '#a78bfa', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(167,139,250,0.4)' }}>
           OPTIONS CHAIN
+        </span>
+        {/* Greeks are computed here, not quoted by the exchange. Bid/ask/last/
+            volume/OI come from the feed; DELTA/GAMMA/THETA/VEGA/RHO do not. */}
+        <span style={{
+          fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-warning)',
+          letterSpacing: '0.03em', marginLeft: 10,
+        }}>
+          ⚠ GREEKS ARE {data?.greeksModel ?? 'BLACK-SCHOLES'} ESTIMATES — NOT EXCHANGE-QUOTED
+          {data?.riskFreeSource ? ` · r = ${data.riskFreeSource}` : ''}
         </span>
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: 6 }}>
           <input
@@ -280,8 +295,16 @@ export default function OptionsPage() {
                   <td>{c.ask?.toFixed(2) || '—'}</td>
                   <td style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{c.mid?.toFixed(2) || '—'}</td>
                   <td>{c.lastPrice?.toFixed(2) || '—'}</td>
-                  <td style={{ color: c.iv > 80 ? 'var(--text-negative)' : c.iv > 40 ? 'var(--text-warning)' : 'var(--text-secondary)' }}>
+                  <td style={{ color: c.ivEstimated ? 'var(--text-muted)' : c.iv > 80 ? 'var(--text-negative)' : c.iv > 40 ? 'var(--text-warning)' : 'var(--text-secondary)' }}>
                     {c.iv?.toFixed(1)}%
+                    {/* No real IV from the feed for this strike: a flat 30% was
+                        assumed, so every Greek on this row is doubly estimated. */}
+                    {c.ivEstimated && (
+                      <span
+                        title="No implied volatility quoted for this strike — 30% assumed, so the Greeks on this row are derived from an assumed IV"
+                        style={{ marginLeft: 3, fontSize: 8, color: 'var(--text-warning)' }}
+                      >est.</span>
+                    )}
                   </td>
                   <td style={{ color: 'var(--text-secondary)' }}>{c.volume?.toLocaleString() || '—'}</td>
                   <td style={{ color: 'var(--text-secondary)' }}>{c.openInterest?.toLocaleString() || '—'}</td>
@@ -314,6 +337,16 @@ export default function OptionsPage() {
               <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{g.label}</span>: {g.desc}
             </span>
           ))}
+          <span style={{ color: 'var(--text-warning)' }}>
+            <span style={{ fontWeight: 600 }}>est.</span>: IV not quoted for that strike — 30% assumed
+          </span>
+        </div>
+        <div style={{ padding: '2px 8px 6px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          Greeks are calculated with a {data?.greeksModel ?? 'Black-Scholes'} model from the spot price,
+          strike, time to expiry, implied volatility and a risk-free rate
+          ({data?.riskFreeSource ?? 'assumed'}). They are not supplied by the exchange or a broker and
+          will differ from your broker&apos;s figures. Bid, ask, last, volume and open interest come from
+          the market feed.
         </div>
       </div>}
     </div>

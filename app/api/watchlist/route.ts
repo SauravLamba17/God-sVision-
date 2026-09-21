@@ -4,6 +4,11 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getQuotes } from '@/lib/apis/yahoo'
 
+// Session-scoped: never store this in a shared cache. Belt-and-braces alongside
+// next.config.js no longer setting s-maxage on /api/:path*.
+const PRIVATE: Record<string, string> = { 'Cache-Control': 'private, no-store' }
+
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -13,7 +18,7 @@ export async function GET() {
       where: userId ? { userId } : { userId: null },
       orderBy: { addedAt: 'asc' },
     })
-    if (items.length === 0) return NextResponse.json({ data: [] })
+    if (items.length === 0) return NextResponse.json({ data: [] }, { headers: PRIVATE })
 
     const tickers = items.map(i => i.ticker)
     const quotes = await getQuotes(tickers)
@@ -24,15 +29,15 @@ export async function GET() {
       change: quoteMap.get(item.ticker)?.regularMarketChange ?? null,
       changePct: quoteMap.get(item.ticker)?.regularMarketChangePercent ?? null,
     }))
-    return NextResponse.json({ data: enriched })
+    return NextResponse.json({ data: enriched }, { headers: PRIVATE })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message })
+    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
   }
 }
 
 export async function POST(req: NextRequest) {
   const { ticker, name, assetType, note } = await req.json()
-  if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400 })
+  if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400, headers: PRIVATE })
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
@@ -44,15 +49,15 @@ export async function POST(req: NextRequest) {
       update: { name: name || ticker, assetType: assetType || 'STOCK', note: note || '' },
       create: { ticker: ticker.toUpperCase(), name: name || ticker, assetType: assetType || 'STOCK', note: note || '', userId },
     })
-    return NextResponse.json({ data: item })
+    return NextResponse.json({ data: item }, { headers: PRIVATE })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message })
+    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
   }
 }
 
 export async function DELETE(req: NextRequest) {
   const ticker = req.nextUrl.searchParams.get('ticker')?.toUpperCase()
-  if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400 })
+  if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400, headers: PRIVATE })
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
@@ -60,8 +65,8 @@ export async function DELETE(req: NextRequest) {
     await prisma.watchlist.deleteMany({
       where: { ticker, userId },
     })
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true }, { headers: PRIVATE })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message })
+    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
   }
 }

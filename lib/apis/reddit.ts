@@ -38,29 +38,16 @@ const KNOWN_TICKERS = new Set([
   'JPM','C','BAC','WFC','GS','MS',
 ])
 
-// MOCK DATA — used when Reddit throttles/blocks server-side requests
-const MOCK_MENTIONS: TickerMention[] = [
-  { ticker:'NVDA', mentions:47, avgScore:1840, sentiment:'BULLISH', subreddits:['wallstreetbets','stocks'],
-    topPost:{ title:'NVDA calls printing — Jensen is a god', selftext:'', score:4200, num_comments:312, created_utc:Date.now()/1000-3600, url:'https://reddit.com/r/wallstreetbets', subreddit:'wallstreetbets', upvote_ratio:0.95 }, posts:[] },
-  { ticker:'TSLA', mentions:38, avgScore:920, sentiment:'MIXED', subreddits:['wallstreetbets','investing'],
-    topPost:{ title:'TSLA bouncing off 200 MA — next move?', selftext:'', score:2100, num_comments:198, created_utc:Date.now()/1000-7200, url:'https://reddit.com/r/investing', subreddit:'investing', upvote_ratio:0.78 }, posts:[] },
-  { ticker:'SPY', mentions:35, avgScore:680, sentiment:'BEARISH', subreddits:['wallstreetbets','stocks','Economics'],
-    topPost:{ title:'SPY puts loaded — recession incoming', selftext:'', score:1500, num_comments:240, created_utc:Date.now()/1000-1800, url:'https://reddit.com/r/wallstreetbets', subreddit:'wallstreetbets', upvote_ratio:0.68 }, posts:[] },
-  { ticker:'AAPL', mentions:28, avgScore:750, sentiment:'BULLISH', subreddits:['investing','stocks'],
-    topPost:{ title:'AAPL Vision Pro demand stronger than expected', selftext:'', score:1800, num_comments:155, created_utc:Date.now()/1000-5400, url:'https://reddit.com/r/investing', subreddit:'investing', upvote_ratio:0.85 }, posts:[] },
-  { ticker:'AMD', mentions:24, avgScore:620, sentiment:'BULLISH', subreddits:['wallstreetbets','stocks'],
-    topPost:{ title:'AMD vs NVDA AI chip war — AMD is catching up', selftext:'', score:1300, num_comments:187, created_utc:Date.now()/1000-9000, url:'https://reddit.com/r/stocks', subreddit:'stocks', upvote_ratio:0.82 }, posts:[] },
-  { ticker:'GME', mentions:21, avgScore:1100, sentiment:'BULLISH', subreddits:['wallstreetbets'],
-    topPost:{ title:'GME squeezing again — DFV was right', selftext:'', score:5500, num_comments:890, created_utc:Date.now()/1000-2700, url:'https://reddit.com/r/wallstreetbets', subreddit:'wallstreetbets', upvote_ratio:0.91 }, posts:[] },
-  { ticker:'META', mentions:19, avgScore:540, sentiment:'BULLISH', subreddits:['investing','stocks'],
-    topPost:{ title:'Meta Threads growing faster than Twitter ever did', selftext:'', score:980, num_comments:122, created_utc:Date.now()/1000-10800, url:'https://reddit.com/r/investing', subreddit:'investing', upvote_ratio:0.79 }, posts:[] },
-  { ticker:'BTC', mentions:31, avgScore:870, sentiment:'BULLISH', subreddits:['CryptoCurrency','wallstreetbets'],
-    topPost:{ title:'Bitcoin ETF inflows record-breaking this week', selftext:'', score:2400, num_comments:310, created_utc:Date.now()/1000-1200, url:'https://reddit.com/r/CryptoCurrency', subreddit:'CryptoCurrency', upvote_ratio:0.88 }, posts:[] },
-  { ticker:'ETH', mentions:22, avgScore:640, sentiment:'MIXED', subreddits:['CryptoCurrency'],
-    topPost:{ title:'ETH staking yields vs BTC — which is better?', selftext:'', score:1100, num_comments:204, created_utc:Date.now()/1000-4500, url:'https://reddit.com/r/CryptoCurrency', subreddit:'CryptoCurrency', upvote_ratio:0.72 }, posts:[] },
-  { ticker:'MSFT', mentions:17, avgScore:510, sentiment:'BULLISH', subreddits:['investing','stocks'],
-    topPost:{ title:'Microsoft Azure AI revenue up 28% YoY', selftext:'', score:890, num_comments:98, created_utc:Date.now()/1000-14400, url:'https://reddit.com/r/investing', subreddit:'investing', upvote_ratio:0.87 }, posts:[] },
-]
+// MOCK_MENTIONS lived here: ten fabricated TickerMention rows with invented
+// quotes ("NVDA calls printing — Jensen is a god", "GME squeezing again — DFV
+// was right") and invented mention counts. getTickerMentions() returned them
+// whenever the live fetch yielded nothing, and Reddit now answers 403 to
+// unauthenticated clients, so that branch was the one actually serving
+// production. Callers get an empty array instead and say so in the UI.
+//
+// To restore real data: Reddit requires an OAuth script app
+// (client id + secret -> https://oauth.reddit.com), which no env var here
+// currently provides.
 
 const BULLISH_WORDS = ['buy','bought','calls','moon','bull','bullish','long','gains','pump','breakout','squeeze','rocket','🚀','💎','🙌','ath']
 const BEARISH_WORDS = ['sell','sold','puts','bear','bearish','short','dump','crash','collapse','rekt','bag','falling','correction']
@@ -176,8 +163,9 @@ export async function getTickerMentions(): Promise<TickerMention[]> {
   }
 
   if (mentions.length === 0) {
-    await setCache(cacheKey, MOCK_MENTIONS, 300)
-    return MOCK_MENTIONS
+    // Short cache so a recovered upstream is picked up quickly.
+    await setCache(cacheKey, [], 300)
+    return []
   }
 
   const result = mentions.sort((a, b) => b.mentions - a.mentions).slice(0, 30)

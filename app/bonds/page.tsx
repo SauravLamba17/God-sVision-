@@ -1,28 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 
+// Numeric fields are nullable: the API returns null when Yahoo/FRED did not
+// supply a value, instead of the 0 it used to substitute. Render null as an
+// em dash — never as 0.00%, which reads as a real quote.
 interface YieldData {
   symbol: string;
   label: string;
   maturity: string;
-  yield: number;
-  change: number;
-  changePct: number;
+  yield: number | null;
+  change: number | null;
+  changePct: number | null;
 }
 
 interface ETFData {
   symbol: string;
   label: string;
-  price: number;
-  change: number;
-  changePct: number;
-  volume: number;
+  price: number | null;
+  change: number | null;
+  changePct: number | null;
+  volume: number | null;
   yield: string | null;
 }
 
 interface SpreadData {
-  [key: string]: { label: string; value: number; date: string };
+  [key: string]: { label: string; value: number | null; date: string | null; unavailable?: boolean };
 }
+
+const DASH = '—';
+const fmtNum = (v: number | null, d: number, suffix = '') => v === null ? DASH : `${v.toFixed(d)}${suffix}`;
+const fmtSigned = (v: number | null, d: number, suffix = '') =>
+  v === null ? DASH : `${v >= 0 ? '+' : ''}${v.toFixed(d)}${suffix}`;
+const signColor = (v: number | null) =>
+  v === null ? 'var(--text-muted)' : v >= 0 ? 'var(--text-positive)' : 'var(--text-negative)';
 
 export default function BondsPage() {
   const [yields, setYields] = useState<YieldData[]>([]);
@@ -185,12 +195,12 @@ export default function BondsPage() {
                     onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg-hover)'}
                     onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}>
                     <td style={{ padding: '8px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{y.label}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text-primary)', fontWeight: 700 }}>{y.yield.toFixed(2)}%</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', color: y.change >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {y.change >= 0 ? '+' : ''}{y.change.toFixed(3)}
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: y.yield === null ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: 700 }}>{fmtNum(y.yield, 2, '%')}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: signColor(y.change) }}>
+                      {fmtSigned(y.change, 3)}
                     </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', color: y.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {y.changePct >= 0 ? '+' : ''}{y.changePct.toFixed(2)}%
+                    <td style={{ padding: '8px 10px', textAlign: 'right', color: signColor(y.changePct) }}>
+                      {fmtSigned(y.changePct, 2, '%')}
                     </td>
                   </tr>
                 ))}
@@ -211,11 +221,18 @@ export default function BondsPage() {
                   ))}
                   {/* Curve */}
                   {yields.length >= 2 && (() => {
-                    const maxY = Math.max(...yields.map(y => y.yield));
-                    const minY = Math.min(...yields.map(y => y.yield));
+                    // Only maturities that actually returned a yield are plotted.
+                    // Nulls fed through Math.max/min give NaN coordinates, and the
+                    // old `?? 0` substitution drew a fabricated 0.00% point.
+                    const plotted = yields.filter(
+                      (y): y is YieldData & { yield: number } => y.yield !== null
+                    );
+                    if (plotted.length < 2) return null;
+                    const maxY = Math.max(...plotted.map(y => y.yield));
+                    const minY = Math.min(...plotted.map(y => y.yield));
                     const range = maxY - minY || 1;
-                    const pts = yields.map((y, i) => {
-                      const x = 40 + (i / (yields.length - 1)) * 250;
+                    const pts = plotted.map((y, i) => {
+                      const x = 40 + (i / (plotted.length - 1)) * 250;
                       const yPos = 20 + ((maxY - y.yield) / range) * 120;
                       return `${x},${yPos}`;
                     });
@@ -223,8 +240,8 @@ export default function BondsPage() {
                       <>
                         <polyline points={pts.join(' ')} fill="none"
                           stroke="var(--text-accent)" strokeWidth="2" strokeLinejoin="round" />
-                        {yields.map((y, i) => {
-                          const x = 40 + (i / (yields.length - 1)) * 250;
+                        {plotted.map((y, i) => {
+                          const x = 40 + (i / (plotted.length - 1)) * 250;
                           const yPos = 20 + ((maxY - y.yield) / range) * 120;
                           return (
                             <g key={i}>
@@ -245,8 +262,16 @@ export default function BondsPage() {
                   })()}
                 </svg>
               )}
-              {/* Inversion warning */}
-              {yields.length >= 2 && yields[0]?.yield > yields[yields.length - 1]?.yield && (
+              {yields.length > 0 && yields.every(y => y.yield === null) && (
+                <div style={{ padding: '10px 2px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
+                  Treasury yields unavailable - upstream quote feed did not respond.
+                </div>
+              )}
+              {/* Inversion warning - only meaningful when both ends actually quoted */}
+              {yields.length >= 2
+                && yields[0]?.yield !== null
+                && yields[yields.length - 1]?.yield !== null
+                && (yields[0]!.yield as number) > (yields[yields.length - 1]!.yield as number) && (
                 <div style={{
                   marginTop: '8px',
                   padding: '6px 10px',
@@ -291,18 +316,18 @@ export default function BondsPage() {
                   onMouseLeave={ev => (ev.currentTarget as HTMLTableRowElement).style.background = 'transparent'}>
                   <td style={{ padding: '8px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{e.symbol}</td>
                   <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontSize: '10px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.label}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text-primary)', fontWeight: 700 }}>${e.price.toFixed(2)}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: e.change >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                    {e.change >= 0 ? '+' : ''}{e.change.toFixed(2)}
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: e.price === null ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: 700 }}>{e.price === null ? DASH : `$${e.price.toFixed(2)}`}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: signColor(e.change) }}>
+                    {fmtSigned(e.change, 2)}
                   </td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', color: e.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
-                    {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
+                  <td style={{ padding: '8px 10px', textAlign: 'right', color: signColor(e.changePct), fontWeight: 700 }}>
+                    {fmtSigned(e.changePct, 2, '%')}
                   </td>
                   <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text-info)' }}>
                     {e.yield ? `${e.yield}%` : '—'}
                   </td>
                   <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--text-muted)', fontSize: '10px' }}>
-                    {e.volume >= 1e6 ? `${(e.volume/1e6).toFixed(1)}M` : e.volume >= 1e3 ? `${(e.volume/1e3).toFixed(0)}K` : `${e.volume}`}
+                    {e.volume === null ? DASH : e.volume >= 1e6 ? `${(e.volume/1e6).toFixed(1)}M` : e.volume >= 1e3 ? `${(e.volume/1e3).toFixed(0)}K` : `${e.volume}`}
                   </td>
                 </tr>
               ))}
@@ -322,17 +347,19 @@ export default function BondsPage() {
               <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px' }}>
                 {s.label}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '28px', fontWeight: 700, color: s.value < 0 ? 'var(--text-negative)' : 'var(--text-primary)' }}>
-                {s.value > 0 ? '+' : ''}{s.value.toFixed(2)}%
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '28px', fontWeight: 700, color: s.value === null ? 'var(--text-muted)' : s.value < 0 ? 'var(--text-negative)' : 'var(--text-primary)' }}>
+                {s.value === null ? DASH : `${s.value > 0 ? '+' : ''}${s.value.toFixed(2)}%`}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                As of {s.date} · Source: FRED
+                {s.value === null ? 'Unavailable — FRED_API_KEY not configured' : `As of ${s.date} · Source: FRED`}
               </div>
+              {/* No verdict without a real number: these lines previously
+                  interpreted four hardcoded fallback values as live FRED data. */}
               <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-secondary)' }}>
-                {id === 'BAMLC0A0CM' && (s.value < 1.5 ? '✓ Tight spreads — credit markets healthy' : s.value < 3 ? '⚠ Moderate spreads — some credit stress' : '⚠ Wide spreads — credit stress elevated')}
-                {id === 'BAMLH0A0HYM2' && (s.value < 4 ? '✓ Tight HY spreads — risk-on sentiment' : s.value < 7 ? '⚠ Moderate HY spreads' : '⚠ Wide HY spreads — risk-off / recession risk')}
-                {id === 'T10Y2Y' && (s.value < 0 ? '⚠ Inverted curve — recession indicator' : s.value < 0.5 ? '⚠ Flat curve — slowing growth' : '✓ Normal curve — healthy economy')}
-                {id === 'T10Y3M' && (s.value < 0 ? '⚠ Inverted — historically precedes recession' : '✓ Positive spread')}
+                {s.value !== null && id === 'BAMLC0A0CM' && (s.value < 1.5 ? '✓ Tight spreads — credit markets healthy' : s.value < 3 ? '⚠ Moderate spreads — some credit stress' : '⚠ Wide spreads — credit stress elevated')}
+                {s.value !== null && id === 'BAMLH0A0HYM2' && (s.value < 4 ? '✓ Tight HY spreads — risk-on sentiment' : s.value < 7 ? '⚠ Moderate HY spreads' : '⚠ Wide HY spreads — risk-off / recession risk')}
+                {s.value !== null && id === 'T10Y2Y' && (s.value < 0 ? '⚠ Inverted curve — recession indicator' : s.value < 0.5 ? '⚠ Flat curve — slowing growth' : '✓ Normal curve — healthy economy')}
+                {s.value !== null && id === 'T10Y3M' && (s.value < 0 ? '⚠ Inverted — historically precedes recession' : '✓ Positive spread')}
               </div>
             </div>
           ))}

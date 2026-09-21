@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Session-scoped: never store this in a shared cache. Belt-and-braces alongside
+// next.config.js no longer setting s-maxage on /api/:path*.
+const PRIVATE: Record<string, string> = { 'Cache-Control': 'private, no-store' }
+
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +20,8 @@ export async function POST(req: NextRequest) {
       create: { endpoint: subscription.endpoint, keys: subscription.keys, userId },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: PRIVATE });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message }, { status: 500, headers: PRIVATE });
   }
 }

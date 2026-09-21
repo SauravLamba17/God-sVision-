@@ -12,6 +12,10 @@ interface MacroData {
   rateHistory: { date: string; rate: number; action: string }[]
   nextMPC: { date: string; resolution: string; daysAway: number }
   fetchedAt: number
+  // Set by /api/india/macro: every field here except usdInr is a manually
+  // maintained constant, not a live reading.
+  isStaticReference?: boolean
+  vintage?: string
 }
 
 export default function RBIPolicyTracker() {
@@ -52,6 +56,21 @@ export default function RBIPolicyTracker() {
         <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
         <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC.daysAway}d to next</span>
       </div>
+
+      {/* These rates are hand-maintained constants, so the panel says so rather
+          than letting them read as a live RBI feed. */}
+      {data.isStaticReference && (
+        <div style={{
+          padding: '3px 10px',
+          borderBottom: '1px solid #1e293b',
+          background: 'rgba(255,153,51,0.06)',
+          fontSize: 'var(--fs-badge)',
+          color: 'var(--text-warning)',
+          letterSpacing: '0.04em',
+        }}>
+          STATIC REFERENCE — not a live feed{data.vintage ? ` · ${data.vintage}` : ''}
+        </div>
+      )}
 
       <div style={{ padding: '8px 10px', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8 }}>
         {/* Rates */}

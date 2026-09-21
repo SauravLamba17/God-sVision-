@@ -50,6 +50,11 @@ export const MCX_COMMODITY_TICKERS = {
 }
 
 // ── India macro static data (RBI/MoSPI — update when RBI changes rates) ────
+// Manually maintained reference values, NOT a live feed. India's policy rates
+// and print-frequency macro series have no free real-time API wired up here
+// (FRED would cover some of it, but FRED_API_KEY is an unset placeholder in
+// this deployment). Consumers must label these as static — see
+// INDIA_MACRO_VINTAGE below — rather than presenting them as current readings.
 export const INDIA_MACRO = {
   repoRate:        6.50,
   reverseRepoRate: 3.35,
@@ -65,6 +70,11 @@ export const INDIA_MACRO = {
   npaRatio:        3.9,
   unemployment:    7.8,
 }
+
+// What the values above are pinned to. Surfaced by /api/india/macro so the UI
+// can state the vintage instead of implying a live reading. Update this
+// whenever the numbers above are refreshed.
+export const INDIA_MACRO_VINTAGE = 'RBI MPC — HOLD at 6.50%, Jun 2025'
 
 // ── India yield curve (G-Sec — update quarterly) ────────────────────────────
 export const INDIA_YIELD_CURVE = [
@@ -100,14 +110,10 @@ export const RBI_MPC_MEETINGS = [
 ]
 
 // ── Static FII/DII data (updated from NSE daily press release) ──────────────
-export const FII_DII_DATA = {
-  fiiNetEquity:  2345,   // ₹ Cr — positive = net buying
-  diiNetEquity:  1234,   // ₹ Cr
-  fiiNetDebt:    -456,   // ₹ Cr
-  fiiYTDEquity:  22450,  // ₹ Cr — YTD accumulation
-  diiYTDEquity:  18700,
-  lastUpdated:   '2026-06-27',
-}
+// FII_DII_DATA was here: six hardcoded ₹ Cr figures with a literal
+// lastUpdated:'2026-06-27', rendered under a "NSE Data · <date>" header. It is
+// replaced by lib/apis/fiiDii.ts, which fetches NSE's own fiidiiTradeReact
+// endpoint and returns null (an honest "unavailable" panel) when NSE declines.
 
 // ── Indian market hours ──────────────────────────────────────────────────────
 export function getIndianMarketStatus(): 'OPEN' | 'CLOSED' | 'PRE-OPEN' | 'AFTER-HOURS' {
