@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { fetchNifty50Quotes, getIndianMarketStatus } from '@/lib/apis/india'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 // fetchChart() names its fields price/changePct/volume, but every movers table
 // in the app reads the Yahoo `regularMarket*` names that /api/stocks emits.
 // Emitting that same shape here is what keeps the NIFTY MOVERS table from

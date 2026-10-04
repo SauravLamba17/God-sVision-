@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { geminiGenerate } from '@/lib/gemini'
+import { cachedAI } from '@/lib/aiCache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import {
@@ -164,6 +165,8 @@ Respond with ONLY valid JSON (no markdown code fences, no commentary before or a
 }
 topPicks must contain exactly 5 entries, ranked by conviction. Keep string fields concise (1-2 sentences).`
 
+const AI_TTL_SECONDS = 12 * 3600
+
 function parseJson(text: string): any {
   const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   return JSON.parse(cleaned)
@@ -197,27 +200,33 @@ export async function GET(req: NextRequest) {
       } catch { /* news optional */ }
     }
 
-    let result: any
-    let source: 'live' | 'mock' = 'mock'
+    let result: any = null
+    // 'ai-stale' = the last good AI briefing, served because Gemini is out of
+    // quota/unavailable (generatedAt says how old). 'rules' = deterministic
+    // synthesis of the same live snapshots (was labelled 'mock').
+    let source: 'live' | 'ai-stale' | 'rules' = 'rules'
+    let aiGeneratedAt: number | null = null
 
     if (KEY_VALID()) {
-      try {
+      // One AI briefing per market per 12h, shared by every user and instance
+      // (Postgres) → 4 Gemini calls/day for both markets.
+      const ai = await cachedAI(`ai:analyst:${market}`, AI_TTL_SECONDS, async () => {
         const userPrompt = `Snapshot timestamp: ${new Date().toISOString()}\nMarket: ${market === 'IN' ? 'India NSE/BSE' : 'US NYSE/NASDAQ'}\n\nTechnical snapshots:\n${JSON.stringify(snapshots, null, 1)}\n\nMatched news headlines by ticker:\n${JSON.stringify(newsMap, null, 1)}\n\nProduce the trading briefing JSON now.`
-        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT)
-        result = parseJson(text)
-        source = 'live'
-      } catch (err) {
-        console.error('Analyst Gemini synthesis failed, falling back to rule-based:', err)
-        result = buildRuleBasedSynthesis(snapshots, market, newsMap)
+        return parseJson(await geminiGenerate(userPrompt, SYSTEM_PROMPT, 'scheduled'))
+      })
+      if (ai) {
+        result = ai.data
+        source = ai.stale ? 'ai-stale' : 'live'
+        aiGeneratedAt = ai.generatedAt
       }
-    } else {
-      result = buildRuleBasedSynthesis(snapshots, market, newsMap)
     }
+    if (!result) result = buildRuleBasedSynthesis(snapshots, market, newsMap)
 
     result.market = market
     result.marketStatus = market === 'IN' ? getIndianMarketStatus() : getUSMarketStatus()
-    result.generatedAt = Date.now()
-    result.nextRefresh = Date.now() + 15 * 60 * 1000
+    result.generatedAt = aiGeneratedAt ?? Date.now()
+    result.aiStale = source === 'ai-stale' // survives the 15-min result cache, unlike `source`
+    result.nextRefresh = aiGeneratedAt && source === 'live' ? aiGeneratedAt + AI_TTL_SECONDS * 1000 : Date.now() + 15 * 60 * 1000
     result.universeSize = snapshots.length
 
     await setCache(cacheKey, result, 900)

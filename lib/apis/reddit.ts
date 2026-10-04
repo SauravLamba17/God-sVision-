@@ -84,7 +84,7 @@ async function fetchSubreddit(sub: string, limit: number): Promise<RedditPost[]>
   try {
     const res = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=${limit}`, {
       headers: { 'User-Agent': 'GodVision/1.0 financial-terminal' },
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 900 }, signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return []
     const j = await res.json()

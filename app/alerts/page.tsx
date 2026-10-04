@@ -68,20 +68,25 @@ export default function AlertsPage() {
 
   const addPriceAlert = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'price', ticker: form.ticker, condition: form.condition, targetPrice: form.targetPrice }) })
+    // try/catch: a network failure used to surface as an unhandled rejection.
+    try {
+      await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'price', ticker: form.ticker, condition: form.condition, targetPrice: form.targetPrice }) })
+    } catch { return }
     setForm(f => ({ ...f, ticker: '', targetPrice: '' }))
     loadAlerts()
   }
 
   const addNewsAlert = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'news', keyword: form.keyword }) })
+    try {
+      await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'news', keyword: form.keyword }) })
+    } catch { return }
     setForm(f => ({ ...f, keyword: '' }))
     loadAlerts()
   }
 
   const deleteAlert = async (id: number, type: 'price'|'news') => {
-    await fetch(`/api/alerts?id=${id}&type=${type}`, { method: 'DELETE' })
+    try { await fetch(`/api/alerts?id=${id}&type=${type}`, { method: 'DELETE' }) } catch { /* list reloads below */ }
     loadAlerts()
   }
 

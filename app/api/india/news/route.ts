@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { INDIA_NEWS_FEEDS } from '@/lib/apis/india'
 
+// ISR: regenerated at most every 300s (news/sentiment). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 300
+
 interface NewsItem {
   title: string
   url: string
@@ -13,7 +17,7 @@ interface NewsItem {
 async function fetchFeed(feed: { name: string; url: string }): Promise<NewsItem[]> {
   try {
     const res = await fetch(feed.url, {
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 300 }, signal: AbortSignal.timeout(8000),
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; GODsVision/1.0; +https://finance.yahoo.com)',
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',

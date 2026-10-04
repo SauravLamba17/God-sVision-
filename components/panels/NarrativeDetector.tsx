@@ -15,6 +15,7 @@ interface NarrativeData {
   generatedAt: number
   headlinesAnalyzed: number
   keyConfigured?: boolean
+  stale?: boolean
 }
 
 const SENT_COLORS = { BULLISH: 'var(--text-positive)', BEARISH: 'var(--text-negative)', NEUTRAL: 'var(--text-warning)' }
@@ -30,6 +31,10 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
         const res = await fetch('/api/narratives')
         const j = await res.json()
         if (j.data) setData(j.data)
+      } catch {
+        // Network failure ("Failed to fetch") used to escape as an unhandled
+        // rejection and trip the Next.js error overlay. Keep whatever we had;
+        // with nothing, the panel shows its unavailable state below.
       } finally { setLoading(false) }
     }
     load()
@@ -52,7 +57,7 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
     // Not loading and nothing to show: say so rather than an endless skeleton.
     return (
       <div style={{ padding: compact ? 8 : 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
-        AI narratives unavailable right now — not enough live headlines to analyse{data ? ` (${data.headlinesAnalyzed} received)` : ''}.
+        AI narratives unavailable right now — {data ? `not enough live headlines to analyse (${data.headlinesAnalyzed} received)` : 'could not reach the server'}.
       </div>
     )
   }
@@ -68,7 +73,8 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
         <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: 'var(--fs-header)', color: 'var(--text-accent)', letterSpacing: '0.03em', fontWeight: 700 }}>⚡ AI NARRATIVE DETECTOR</span>
           <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
-            {data.headlinesAnalyzed} headlines · {new Date(data.generatedAt).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false })} ET
+            {data.headlinesAnalyzed} headlines · generated {new Date(data.generatedAt).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} ET
+            {data.stale && <span style={{ color: 'var(--text-warning)' }}> · cached (AI quota used up)</span>}
           </span>
         </div>
       )}

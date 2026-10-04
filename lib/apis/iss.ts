@@ -21,7 +21,7 @@ export interface ISSData {
 export async function fetchISSPosition(): Promise<ISSPosition> {
   try {
     const res = await fetch('http://api.open-notify.org/iss-now.json', {
-      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 60 }, signal: AbortSignal.timeout(5000),
     })
     const data = await res.json()
     return {
@@ -43,7 +43,7 @@ export async function fetchAstronauts(): Promise<Astronaut[]> {
 
   try {
     const res = await fetch('http://api.open-notify.org/astros.json', {
-      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 21600 }, signal: AbortSignal.timeout(5000),
     })
     const data = await res.json()
     const astronauts: Astronaut[] = data.people || []

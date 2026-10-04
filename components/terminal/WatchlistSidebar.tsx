@@ -49,19 +49,24 @@ export default function WatchlistSidebar() {
   const addTicker = async () => {
     const t = newTicker.trim().toUpperCase()
     if (!t) return
-    await fetch('/api/watchlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker: t, name: t }),
-    })
+    try {
+      await fetch('/api/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: t, name: t }),
+      })
+    } catch { return } // keep the typed ticker so the user can retry
     setNewTicker('')
     setAdding(false)
     await load()
   }
 
   const removeTicker = async (ticker: string) => {
-    await fetch(`/api/watchlist?ticker=${ticker}`, { method: 'DELETE' })
-    setItems(prev => prev.filter(i => i.ticker !== ticker))
+    // Only drop it locally once the server confirmed the delete.
+    try {
+      const res = await fetch(`/api/watchlist?ticker=${ticker}`, { method: 'DELETE' })
+      if (res.ok) setItems(prev => prev.filter(i => i.ticker !== ticker))
+    } catch { /* keep the item */ }
   }
 
   const totalValue = items.reduce((sum, i) => sum + (i.price ?? 0), 0)

@@ -35,7 +35,7 @@ export async function fetchGlobalStats(): Promise<GlobalStats | null> {
 
   try {
     const res = await fetch('https://disease.sh/v3/covid-19/all', {
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 21600 }, signal: AbortSignal.timeout(8000),
     })
     const data = await res.json()
     await setCache(cacheKey, data, 3600)
@@ -52,7 +52,7 @@ export async function fetchCountryStats(limit = 50): Promise<CountryStats[]> {
 
   try {
     const res = await fetch(`https://disease.sh/v3/covid-19/countries?sort=cases&limit=${limit}`, {
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 21600 }, signal: AbortSignal.timeout(8000),
     })
     const data = await res.json()
     const countries = Array.isArray(data) ? data.slice(0, limit) : []
@@ -70,7 +70,7 @@ export async function fetchHistoricalGlobal(days = 90): Promise<{ date: string; 
 
   try {
     const res = await fetch(`https://disease.sh/v3/covid-19/historical/all?lastdays=${days}`, {
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 21600 }, signal: AbortSignal.timeout(8000),
     })
     const data = await res.json()
     const timeline = data?.cases || {}

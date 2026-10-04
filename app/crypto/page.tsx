@@ -143,40 +143,46 @@ export default function CryptoPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [coinsRes, fgRes, defiRes, trendRes, globalRes, halvingRes] = await Promise.allSettled([
-        fetch('/api/crypto?type=top100'),
-        fetch('/api/crypto?type=feargreed'),
-        fetch('/api/crypto?type=defi'),
-        fetch('/api/crypto?type=trending'),
-        fetch('/api/crypto?type=global'),
-        fetch('/api/crypto?type=halving'),
-      ])
+      try {
+        const [coinsRes, fgRes, defiRes, trendRes, globalRes, halvingRes] = await Promise.allSettled([
+          fetch('/api/crypto?type=top100'),
+          fetch('/api/crypto?type=feargreed'),
+          fetch('/api/crypto?type=defi'),
+          fetch('/api/crypto?type=trending'),
+          fetch('/api/crypto?type=global'),
+          fetch('/api/crypto?type=halving'),
+        ])
 
-      if (coinsRes.status === 'fulfilled') {
-        const j = await coinsRes.value.json()
-        if (j.data) { setCoins(j.data); if (!selectedCoin) setSelectedCoin(j.data[0]) }
+        if (coinsRes.status === 'fulfilled') {
+          const j = await coinsRes.value.json()
+          if (j.data) { setCoins(j.data); if (!selectedCoin) setSelectedCoin(j.data[0]) }
+        }
+        if (fgRes.status === 'fulfilled') {
+          const j = await fgRes.value.json()
+          if (j.data?.[0]) setFearGreed(j.data[0])
+        }
+        if (defiRes.status === 'fulfilled') {
+          const j = await defiRes.value.json()
+          if (j.data) setDefi(j.data.slice(0, 10))
+        }
+        if (trendRes.status === 'fulfilled') {
+          const j = await trendRes.value.json()
+          if (j.data) setTrending(j.data.slice(0, 7))
+        }
+        if (globalRes.status === 'fulfilled') {
+          const j = await globalRes.value.json()
+          if (j.data) setGlobalData(j.data)
+        }
+        if (halvingRes.status === 'fulfilled') {
+          const j = await halvingRes.value.json()
+          if (j.data) setHalving(j.data)
+        }
+      
+      } catch {
+        // json() on a failed/non-JSON response — keep what's shown.
+      } finally {
+        setLoading(false)
       }
-      if (fgRes.status === 'fulfilled') {
-        const j = await fgRes.value.json()
-        if (j.data?.[0]) setFearGreed(j.data[0])
-      }
-      if (defiRes.status === 'fulfilled') {
-        const j = await defiRes.value.json()
-        if (j.data) setDefi(j.data.slice(0, 10))
-      }
-      if (trendRes.status === 'fulfilled') {
-        const j = await trendRes.value.json()
-        if (j.data) setTrending(j.data.slice(0, 7))
-      }
-      if (globalRes.status === 'fulfilled') {
-        const j = await globalRes.value.json()
-        if (j.data) setGlobalData(j.data)
-      }
-      if (halvingRes.status === 'fulfilled') {
-        const j = await halvingRes.value.json()
-        if (j.data) setHalving(j.data)
-      }
-      setLoading(false)
     }
     fetchAll()
     const id = setInterval(fetchAll, 60000)
@@ -186,8 +192,13 @@ export default function CryptoPage() {
   useEffect(() => {
     if (!selectedCoin) return
     const fetchChart = async () => {
-      const res = await fetch(`/api/crypto?type=chart&coin=${selectedCoin.id}&days=30`)
-      const json = await res.json()
+      let json: any
+      try {
+        const res = await fetch(`/api/crypto?type=chart&coin=${selectedCoin.id}&days=30`)
+        json = await res.json()
+      } catch {
+        return // network failure: keep the previous chart rather than an unhandled rejection
+      }
       if (json.data) {
         const candles = json.data.map((d: [number, number, number, number, number]) => ({
           time: Math.floor(d[0] / 1000),

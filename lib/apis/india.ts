@@ -192,9 +192,11 @@ export async function fetchNifty50Quotes() {
 
 // Live USD/INR, or null. Every India route used to fall back to a hardcoded
 // 83.5 — ~15% off the real rate — and convert commodity prices with it.
-export async function getUsdInr(): Promise<number | null> {
+// `revalidate` bounds Next's fetch cache to the caller's freshness instead of
+// the default (which persisted for a year).
+export async function getUsdInr(revalidate = 60): Promise<number | null> {
   try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(5000) })
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { next: { revalidate }, signal: AbortSignal.timeout(5000) })
     const d = await r.json()
     if (d.rates?.INR) return d.rates.INR
   } catch { /* try Yahoo */ }

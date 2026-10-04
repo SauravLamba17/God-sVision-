@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { INDIA_MACRO, INDIA_MACRO_VINTAGE, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS, getUsdInr } from '@/lib/apis/india'
 
+// ISR: regenerated at most every 3600s (macro/central-bank/daily-flow data). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 3600
+
 export async function GET() {
   const key    = 'india_macro'
   const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   // Live USD/INR
-  const usdInr = await getUsdInr()
+  const usdInr = await getUsdInr(3600)
 
   // Next MPC meeting
   const now       = new Date()

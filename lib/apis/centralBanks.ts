@@ -92,7 +92,7 @@ async function fetchBankSpeeches(bank: typeof CENTRAL_BANKS[0]): Promise<Central
   try {
     const res = await fetch(bank.rssUrl, {
       headers: { 'User-Agent': 'GodVision/1.0 financial-terminal' },
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return []
     const xml = await res.text()

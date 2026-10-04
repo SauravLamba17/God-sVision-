@@ -220,45 +220,49 @@ export default function GodModePage() {
   // Data fetching
   useEffect(() => {
     const fetchData = async () => {
-      const [moversRes, quakesRes, newsRes, cryptoRes, btcRes] = await Promise.allSettled([
-        fetch('/api/stocks?type=movers'),
-        fetch('/api/earthquakes?minMag=4.0'),
-        fetch('/api/news'),
-        fetch('/api/crypto?type=top100'),
-        fetch('/api/crypto?type=chart&coin=bitcoin&days=30'),
-      ])
-      if (moversRes.status==='fulfilled') {
-        const j = await moversRes.value.json()
-        setGainers((j.data?.gainers || []).slice(0,5))
-        setLosers((j.data?.losers || []).slice(0,5))
-      }
-      if (quakesRes.status==='fulfilled') {
-        const j = await quakesRes.value.json()
-        if (j.data) {
-          setQuakes(j.data)
-          // Play warning if M >= 6
-          const bigOne = j.data.find((q: Quake) => q.magnitude >= 6.0 && (Date.now() - q.time) < 60000)
-          if (bigOne) {
-            import('@/lib/sounds').then(s => s.playWarningTone())
-            goToScene(4) // Switch to earthquake scene
+      try {
+        const [moversRes, quakesRes, newsRes, cryptoRes, btcRes] = await Promise.allSettled([
+          fetch('/api/stocks?type=movers'),
+          fetch('/api/earthquakes?minMag=4.0'),
+          fetch('/api/news'),
+          fetch('/api/crypto?type=top100'),
+          fetch('/api/crypto?type=chart&coin=bitcoin&days=30'),
+        ])
+        if (moversRes.status==='fulfilled') {
+          const j = await moversRes.value.json()
+          setGainers((j.data?.gainers || []).slice(0,5))
+          setLosers((j.data?.losers || []).slice(0,5))
+        }
+        if (quakesRes.status==='fulfilled') {
+          const j = await quakesRes.value.json()
+          if (j.data) {
+            setQuakes(j.data)
+            // Play warning if M >= 6
+            const bigOne = j.data.find((q: Quake) => q.magnitude >= 6.0 && (Date.now() - q.time) < 60000)
+            if (bigOne) {
+              import('@/lib/sounds').then(s => s.playWarningTone())
+              goToScene(4) // Switch to earthquake scene
+            }
           }
         }
-      }
-      if (newsRes.status==='fulfilled') {
-        const j = await newsRes.value.json()
-        if (j.data) setNews(j.data.slice(0,20))
-      }
-      if (cryptoRes.status==='fulfilled') {
-        const j = await cryptoRes.value.json()
-        if (j.data) setCoins(j.data.slice(0,20))
-      }
-      if (btcRes.status==='fulfilled') {
-        const j = await btcRes.value.json()
-        if (j.data) {
-          setBtcCandles(j.data.map((d: [number,number,number,number,number]) => ({
-            time: Math.floor(d[0] / 1000), open: d[1], high: d[2], low: d[3], close: d[4],
-          })))
+        if (newsRes.status==='fulfilled') {
+          const j = await newsRes.value.json()
+          if (j.data) setNews(j.data.slice(0,20))
         }
+        if (cryptoRes.status==='fulfilled') {
+          const j = await cryptoRes.value.json()
+          if (j.data) setCoins(j.data.slice(0,20))
+        }
+        if (btcRes.status==='fulfilled') {
+          const j = await btcRes.value.json()
+          if (j.data) {
+            setBtcCandles(j.data.map((d: [number,number,number,number,number]) => ({
+              time: Math.floor(d[0] / 1000), open: d[1], high: d[2], low: d[3], close: d[4],
+            })))
+          }
+        }
+      } catch {
+        // json() on a failed/HTML response — keep the last scene data.
       }
     }
     fetchData()

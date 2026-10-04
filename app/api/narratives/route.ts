@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { detectNarratives } from '@/lib/apis/narratives'
 
+// ISR: regenerated at most every 300s (news/sentiment). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 300
+
 // Backstop only; the route already self-limits via withTimeout(12000).
 export const maxDuration = 30
 

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 const INDIA_CRYPTO_IDS = [
   'bitcoin','ethereum','matic-network','solana','ripple',
   'cardano','dogecoin','shiba-inu','chainlink','polkadot',
@@ -25,7 +29,7 @@ export async function GET() {
   try {
     const ids = INDIA_CRYPTO_IDS.join(',')
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=inr,usd&include_24hr_change=true&include_market_cap=true`
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    const res = await fetch(url, { next: { revalidate: 60 }, signal: AbortSignal.timeout(10000) })
 
     if (!res.ok) throw new Error(`CoinGecko ${res.status}`)
     const raw = await res.json() as Record<string, {

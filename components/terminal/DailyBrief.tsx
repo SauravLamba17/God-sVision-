@@ -15,6 +15,10 @@ export default function DailyBrief() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [triggered, setTriggered] = useState(false)
+  // When the brief was actually generated (it's cached for a day), and whether
+  // it's an older brief served because today's Gemini quota is spent.
+  const [generatedAt, setGeneratedAt] = useState<number | null>(null)
+  const [stale, setStale] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const fetchBrief = async () => {
@@ -30,6 +34,8 @@ export default function DailyBrief() {
       const data = await res.json()
       if (data.brief) {
         setText(data.brief)
+        setGeneratedAt(data.generatedAt ?? null)
+        setStale(!!data.stale)
         setDone(true)
       } else if (data.error) {
         setError(data.error)
@@ -97,7 +103,7 @@ export default function DailyBrief() {
             letterSpacing: '0.06em',
           }}
         >
-          {loading ? 'GENERATING...' : done ? '↻ REGENERATE' : 'GENERATE BRIEF'}
+          {loading ? 'GENERATING...' : done ? '↻ REFRESH' : 'GENERATE BRIEF'}
         </button>
       </div>
 
@@ -129,7 +135,8 @@ export default function DailyBrief() {
 
       {done && (
         <div style={{ borderTop: '1px solid #1e293b', padding: '3px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
-          Powered by Gemini · GOD's Vision AI · {new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })} ET
+          Powered by Gemini · Generated {generatedAt ? new Date(generatedAt).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' ET' : '—'}
+          {stale && <span style={{ color: 'var(--text-warning)' }}> · cached — today's AI quota is used up</span>}
         </div>
       )}
     </div>

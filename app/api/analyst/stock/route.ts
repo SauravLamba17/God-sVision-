@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { geminiGenerate } from '@/lib/gemini'
+import { cachedAI } from '@/lib/aiCache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { buildStockSnapshot, matchNewsForTicker, generateSyntheticOptionsChain, StockSnapshot } from '@/lib/apis/analyst-data'
@@ -64,26 +65,33 @@ export async function GET(req: NextRequest) {
       fundamentals = await getQuoteSummary(ticker)
     } catch { /* best-effort only */ }
 
-    let ai: { analysis: string; verdict: string; confidence: number }
+    type Verdict = { analysis: string; verdict: string; confidence: number }
+    let ai: Verdict | null = null
+    // Was labelled 'live' even when Gemini failed and the rule-based verdict
+    // was shown. 'ai-stale' = last good AI verdict (quota used up).
+    let source: 'live' | 'ai-stale' | 'rules' = 'rules'
+    let aiGeneratedAt: number | null = null
 
     if (KEY_VALID()) {
-      try {
+      // On-demand: per ticker, cached globally for 6h; counts against the
+      // on-demand share of the daily Gemini budget (lib/gemini.ts).
+      const cachedVerdict = await cachedAI<Verdict>(`ai:analyst-stock:${market}:${ticker.toUpperCase().slice(0, 20)}`, 6 * 3600, async () => {
         const { candles, ...snapshotForPrompt } = snapshot
         const userPrompt = `Stock snapshot:\n${JSON.stringify(snapshotForPrompt, null, 1)}\n\nRecent headlines:\n${JSON.stringify(news.map(n => n.title), null, 1)}\n\nProduce the verdict JSON now.`
-        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT)
-        const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-        ai = JSON.parse(cleaned)
-      } catch (err) {
-        console.error('Stock deep-dive Gemini call failed, using rule-based verdict:', err)
-        ai = ruleBasedVerdict(snapshot, news)
+        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT, 'ondemand')
+        return JSON.parse(text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim())
+      })
+      if (cachedVerdict) {
+        ai = cachedVerdict.data
+        source = cachedVerdict.stale ? 'ai-stale' : 'live'
+        aiGeneratedAt = cachedVerdict.generatedAt
       }
-    } else {
-      ai = ruleBasedVerdict(snapshot, news)
     }
+    if (!ai) ai = ruleBasedVerdict(snapshot, news)
 
-    const result = { snapshot, news, optionsChain, fundamentals, ai, generatedAt: Date.now() }
+    const result = { snapshot, news, optionsChain, fundamentals, ai, generatedAt: Date.now(), aiGeneratedAt, aiStale: source === 'ai-stale' }
     await setCache(cacheKey, result, 300)
-    return NextResponse.json({ data: result, source: KEY_VALID() ? 'live' : 'mock' })
+    return NextResponse.json({ data: result, source })
   } catch (err) {
     const fallback = await getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })

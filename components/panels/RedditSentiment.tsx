@@ -27,6 +27,8 @@ export default function RedditSentiment() {
         const res = await fetch('/api/reddit')
         const j = await res.json()
         if (j.data) setMentions(j.data.slice(0, 10))
+      } catch {
+        // Network failure ("Failed to fetch") — keep the panel's unavailable state.
       } finally { setLoading(false) }
     }
     load()

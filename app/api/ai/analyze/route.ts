@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { geminiFlash } from '@/lib/gemini';
+import { geminiFlash, reserveGeminiCall } from '@/lib/gemini';
 
 // Streams Gemini output; cap a hung stream well under the 300s platform default.
 export const maxDuration = 60
@@ -11,6 +11,11 @@ export async function POST(req: NextRequest) {
         { error: 'AI not configured. Add GEMINI_API_KEY to .env.local' },
         { status: 503 }
       );
+    }
+
+    // Counts against the on-demand share of the free-tier daily budget.
+    if (!(await reserveGeminiCall('ondemand'))) {
+      return NextResponse.json({ error: 'AI daily quota reached — try again after midnight Pacific time.' }, { status: 429 });
     }
 
     const body = await req.json();

@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { fetchIndiaForex, getUsdInr } from '@/lib/apis/india'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 export async function GET() {
   const key    = 'india_forex'
   const cached = await getCache(key)

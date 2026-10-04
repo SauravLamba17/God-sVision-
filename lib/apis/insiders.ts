@@ -101,7 +101,7 @@ export async function fetchInsiderTransactions(minValue = 100000): Promise<Insid
       'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&dateb=&owner=only&count=100&search_text=&output=atom',
       {
         headers: { 'User-Agent': 'GodVision/1.0 operations@myhealthiq.io' },
-        signal: AbortSignal.timeout(10000),
+        next: { revalidate: 900 }, signal: AbortSignal.timeout(10000),
       }
     )
     if (!res.ok) throw new Error(`EDGAR HTTP ${res.status}`)

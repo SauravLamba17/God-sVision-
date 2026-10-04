@@ -143,19 +143,25 @@ export default function WeatherPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [citiesRes, noaaRes] = await Promise.allSettled([
-        fetch('/api/weather'),
-        fetch('/api/weather?type=noaa')
-      ])
-      if (citiesRes.status === 'fulfilled') {
-        const j = await citiesRes.value.json()
-        if (j.data) setCityWeathers(j.data.filter(Boolean))
+      try {
+        const [citiesRes, noaaRes] = await Promise.allSettled([
+          fetch('/api/weather'),
+          fetch('/api/weather?type=noaa')
+        ])
+        if (citiesRes.status === 'fulfilled') {
+          const j = await citiesRes.value.json()
+          if (j.data) setCityWeathers(j.data.filter(Boolean))
+        }
+        if (noaaRes.status === 'fulfilled') {
+          const j = await noaaRes.value.json()
+          if (j.data) setNoaaAlerts(j.data.slice(0, 5))
+        }
+      
+      } catch {
+        // json() on a failed/non-JSON response — keep what's shown.
+      } finally {
+        setLoading(false)
       }
-      if (noaaRes.status === 'fulfilled') {
-        const j = await noaaRes.value.json()
-        if (j.data) setNoaaAlerts(j.data.slice(0, 5))
-      }
-      setLoading(false)
     }
     fetchAll()
     fetchCurrent(selectedCity.lat, selectedCity.lon, selectedCity.name)

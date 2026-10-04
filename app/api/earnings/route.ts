@@ -26,7 +26,7 @@ async function fetchUpcoming(): Promise<Upcoming[]> {
     if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) days.push(d.toISOString().slice(0, 10))
   }
   const results = await Promise.allSettled(days.map(async date => {
-    const res = await fetch(`https://api.nasdaq.com/api/calendar/earnings?date=${date}`, { headers: NASDAQ_HEADERS, signal: AbortSignal.timeout(10000) })
+    const res = await fetch(`https://api.nasdaq.com/api/calendar/earnings?date=${date}`, { headers: NASDAQ_HEADERS, next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) })
     if (!res.ok) throw new Error(`nasdaq ${res.status}`)
     const rows: any[] = (await res.json())?.data?.rows ?? []
     return rows

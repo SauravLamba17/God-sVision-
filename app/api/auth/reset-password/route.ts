@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { hashResetToken } from '@/lib/resetToken';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +15,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
     }
 
-    const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (typeof token !== 'string') {
+      return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
+    }
+    // The DB holds only SHA-256(token); hash the submitted raw token to look it up.
+    const tokenHash = hashResetToken(token);
+    const resetToken = await prisma.passwordResetToken.findUnique({ where: { token: tokenHash } });
 
     if (!resetToken) {
       return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
@@ -29,13 +35,18 @@ export async function POST(req: NextRequest) {
     // Same cost factor as registration (app/api/auth/register/route.ts).
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    await prisma.user.update({
+    // Rows for unknown emails exist only as rate-limit records (their raw token
+    // was never sent), so there may be no matching user.
+    const updated = await prisma.user.updateMany({
       where: { email: resetToken.email },
       data: { password: hashedPassword },
     });
+    if (updated.count !== 1) {
+      return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
+    }
 
     await prisma.passwordResetToken.update({
-      where: { token },
+      where: { token: tokenHash },
       data: { used: true },
     });
 

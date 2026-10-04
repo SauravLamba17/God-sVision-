@@ -72,7 +72,7 @@ export async function fetchOutbreaks(limit = 10): Promise<Outbreak[]> {
     // events at the time of writing, against 5 in the newest 20.
     const res = await fetch(`${DON_API}&$top=${Math.min(limit * 5, 60)}`, {
       headers: { 'User-Agent': 'GodVision/1.0 (operations@myhealthiq.io)', Accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
+      next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) throw new Error(`WHO DON responded ${res.status}`)
 

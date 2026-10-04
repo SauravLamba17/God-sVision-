@@ -47,6 +47,8 @@ export default function CentralBanksPage() {
         if (j.rates) setRates(j.rates)
         if (j.ratesError) setRatesError(j.ratesError)
         if (j.speeches) setSpeeches(j.speeches)
+      } catch {
+        setRatesError('Central bank data unavailable — network error')
       } finally { setLoading(false) }
     }
     load()

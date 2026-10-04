@@ -37,7 +37,7 @@ async function fetchFromAlpaca(symbol: string): Promise<number[]> {
     start.setHours(0, 0, 0, 0);
     const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?` +
       `start=${start.toISOString()}&end=${now.toISOString()}&timeframe=5Min&limit=100&feed=iex`;
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+    const res = await fetch(url, { headers, next: { revalidate: 300 }, signal: AbortSignal.timeout(6000) });
     if (res.ok) {
       const data = await res.json();
       const bars = data.bars ?? [];
@@ -54,7 +54,7 @@ async function fetchFromAlpaca(symbol: string): Promise<number[]> {
     dailyStart.setDate(dailyStart.getDate() - 7);
     const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?` +
       `start=${dailyStart.toISOString()}&end=${now.toISOString()}&timeframe=1Day&limit=10&feed=iex`;
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+    const res = await fetch(url, { headers, next: { revalidate: 300 }, signal: AbortSignal.timeout(6000) });
     if (res.ok) {
       const data = await res.json();
       const bars = data.bars ?? [];
@@ -68,7 +68,7 @@ async function fetchFromAlpaca(symbol: string): Promise<number[]> {
 async function fetchFromCoinGecko(coinId: string): Promise<number[]> {
   const res = await fetch(
     `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=1`,
-    { signal: AbortSignal.timeout(6000) }
+    { next: { revalidate: 300 }, signal: AbortSignal.timeout(6000) }
   );
   if (!res.ok) return [];
   const data = await res.json();

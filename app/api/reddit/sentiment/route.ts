@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { geminiFlash } from '@/lib/gemini'
+import { geminiFlash, reserveGeminiCall } from '@/lib/gemini'
 import { getTickerSentiment } from '@/lib/apis/reddit'
 
 // SSE stream over Gemini; cap a hung stream well under the 300s platform default.
@@ -28,6 +28,13 @@ export async function POST(req: NextRequest) {
 
       const posts = mention.posts.map((p: any) => `• [r/${p.subreddit} · ${p.score}pts] ${p.title}`).join('\n')
       const prompt = `Based on these Reddit posts about ${ticker} (${mention.mentions} mentions, avg score ${mention.avgScore}):\n\n${posts}\n\nSummarize retail investor sentiment in 3 bullet points: (1) overall mood, (2) main bull thesis, (3) main bear concern. Be concise and direct.`
+
+      if (!(await reserveGeminiCall('ondemand'))) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: 'AI daily quota reached — try again after midnight Pacific time.' })}\n\n`))
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+        controller.close()
+        return
+      }
 
       try {
         const result = await geminiFlash.generateContentStream(prompt)

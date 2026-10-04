@@ -142,6 +142,8 @@ export default function DiseasePage() {
         const j = await histRes.value.json()
         if (j.data) setHistory(j.data)
       }
+    } catch {
+      // A failed/non-JSON response: keep what's shown; the page has empty states.
     } finally { setLoading(false) }
   }, [])
 

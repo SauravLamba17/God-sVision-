@@ -3,6 +3,10 @@ import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
 import { priorSessionClose } from '@/lib/apis/yahoo'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 const YF_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Accept': 'application/json,text/plain,*/*',

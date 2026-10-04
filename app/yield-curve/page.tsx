@@ -61,6 +61,7 @@ export default function YieldCurvePage() {
     fetch('/api/yield-curve?mode=history')
       .then(r => r.json())
       .then(json => { if (json.data) setHistory(json.data) })
+      .catch(() => { /* history chart shows its empty state */ })
       .finally(() => setHistLoad(false))
   }, [])
 

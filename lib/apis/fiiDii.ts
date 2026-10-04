@@ -47,7 +47,7 @@ export async function fetchFiiDii(): Promise<FiiDiiFlow | null> {
   if (cached && !cached.stale) return cached.data
 
   try {
-    const res = await fetch(NSE_FII_DII, { headers: NSE_HEADERS, signal: AbortSignal.timeout(10000) })
+    const res = await fetch(NSE_FII_DII, { headers: NSE_HEADERS, next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) })
     if (!res.ok) throw new Error(`NSE responded ${res.status}`)
 
     const rows: any[] = await res.json()

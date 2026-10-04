@@ -66,7 +66,7 @@ export async function fetchAirQuality(region: 'world' | 'india'): Promise<CityAq
     `&current=us_aqi,pm2_5`
 
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    const res = await fetch(url, { next: { revalidate: 900 }, signal: AbortSignal.timeout(10000) })
     if (!res.ok) throw new Error(`Open-Meteo air quality responded ${res.status}`)
 
     const json = await res.json()

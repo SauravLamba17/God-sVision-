@@ -49,7 +49,7 @@ export async function fetchCalendarEvents(week: 'this' | 'next' | 'prev' = 'this
     const url = urls[week]
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 GodVision/1.0' },
-      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) throw new Error(`FF returned ${res.status}`)
     const data = await res.json()

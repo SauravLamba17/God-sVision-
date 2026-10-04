@@ -139,27 +139,35 @@ export default function PortfolioPage() {
 
   const addTx = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(txForm) })
+    // try/catch: a network failure used to surface as an unhandled rejection.
+    try {
+      await fetch('/api/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(txForm) })
+    } catch { return }
     setTxForm({ ticker: '', type: 'BUY', quantity: '', price: '', date: new Date().toISOString().slice(0,10), fee: '0', notes: '' })
     setShowTxForm(false)
     loadTxs()
   }
 
   const deleteTx = async (id: number) => {
-    await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' })
-    setTxs(prev => prev.filter(t => t.id !== id))
+    // Only drop the row locally once the server confirmed the delete.
+    try {
+      const res = await fetch(`/api/transactions?id=${id}`, { method: 'DELETE' })
+      if (res.ok) setTxs(prev => prev.filter(t => t.id !== id))
+    } catch { /* keep the row */ }
   }
 
   const addHolding = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    try {
+      await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    } catch { return }
     setForm({ ticker: '', name: '', quantity: '', buyPrice: '', buyDate: new Date().toISOString().slice(0, 10) })
     setShowForm(false)
     loadHoldings()
   }
 
   const removeHolding = async (id: number) => {
-    await fetch(`/api/portfolio?id=${id}`, { method: 'DELETE' })
+    try { await fetch(`/api/portfolio?id=${id}`, { method: 'DELETE' }) } catch { /* list reloads below */ }
     loadHoldings()
   }
 

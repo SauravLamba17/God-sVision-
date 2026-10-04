@@ -35,6 +35,19 @@ const publicPaths = [
   '/manifest.json',
 ];
 
+// Unauthenticated response. API callers (client fetches, server code) get a
+// 401 they can act on — a 307 to the HTML sign-in page parses as garbage, which
+// is how the narratives /api/news self-fetch silently failed. Pages keep
+// redirecting to sign-in exactly as before.
+function deny(req: NextRequest, path: string) {
+  if (path.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const signInUrl = new URL('/auth/signin', req.url);
+  signInUrl.searchParams.set('callbackUrl', path);
+  return NextResponse.redirect(signInUrl);
+}
+
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
@@ -48,22 +61,16 @@ export async function middleware(req: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    if (!token) {
-      const signInUrl = new URL('/auth/signin', req.url);
-      signInUrl.searchParams.set('callbackUrl', path);
-      return NextResponse.redirect(signInUrl);
-    }
+    if (!token) return deny(req, path);
 
     return NextResponse.next();
   } catch (e) {
     // Never let a token-verification error take the whole site down with
-    // MIDDLEWARE_INVOCATION_FAILED — fail safe to the sign-in page instead.
+    // MIDDLEWARE_INVOCATION_FAILED — fail safe to sign-in (or 401 for APIs) instead.
     // Most likely trigger: NEXTAUTH_SECRET missing/mismatched in the
     // deployment environment.
     console.error('[Middleware] Token verification error:', e);
-    const signInUrl = new URL('/auth/signin', req.url);
-    signInUrl.searchParams.set('callbackUrl', path);
-    return NextResponse.redirect(signInUrl);
+    return deny(req, path);
   }
 }
 

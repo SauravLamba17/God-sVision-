@@ -27,6 +27,7 @@ interface AnalystData {
   market: 'IN' | 'US'
   marketStatus: string
   generatedAt: number
+  aiStale?: boolean
   nextRefresh: number
   universeSize: number
 }
@@ -178,6 +179,11 @@ export default function AnalystPanel() {
           )}
           {source && (
             <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{source.toUpperCase()}</span>
+          )}
+          {data?.aiStale && (
+            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-warning)' }}>
+              AI briefing generated {new Date(data.generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · quota used up
+            </span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

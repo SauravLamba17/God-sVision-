@@ -27,7 +27,7 @@ async function fetchVIX(): Promise<number | null> {
 async function fetchBTCFearGreed(): Promise<number | null> {
   try {
     const res = await fetch('https://api.alternative.me/fng/?limit=1', {
-      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 300 }, signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null
     const j = await res.json()

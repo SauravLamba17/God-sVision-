@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { fetchRSSFeeds, fetchHackerNews, fetchRedditPosts, fetchNewsAPI, getRSSFeedNames } from '@/lib/apis/news'
 import { setCache, getCache } from '@/lib/cache'
 
+// ISR: regenerated at most every 300s (news/sentiment). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 300
+
 const CACHE_KEY = 'news_all'
 const CACHE_TTL = 90  // seconds — down from 300s so news refreshes every 1.5 min
 // News is the one payload where serving a long-expired fallback is worse than

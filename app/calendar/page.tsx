@@ -67,6 +67,8 @@ export default function CalendarPage() {
       const res = await fetch(`/api/calendar?week=${w}`)
       const j = await res.json()
       if (j.data) { setEvents(j.data); setSource(j.source || 'live') }
+    } catch {
+      // Network failure: keep current events; the page shows its empty state.
     } finally { setLoading(false) }
   }, [])
 

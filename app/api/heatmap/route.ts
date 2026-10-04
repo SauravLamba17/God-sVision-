@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 const SECTORS = [
   { name: 'TECHNOLOGY',   etf: 'XLK',  weight: 29.3, stocks: ['AAPL','MSFT','NVDA','AVGO','ORCL','CSCO','AMD','INTC','CRM','QCOM'] },
   { name: 'HEALTHCARE',   etf: 'XLV',  weight: 12.2, stocks: ['UNH','LLY','JNJ','ABBV','MRK','TMO','ABT','DHR','BMY','AMGN'] },

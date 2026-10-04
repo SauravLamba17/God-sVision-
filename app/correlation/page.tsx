@@ -40,6 +40,8 @@ export default function CorrelationPage() {
         const j = await res.json()
         if (j.data) setData(j.data)
         if (j.assets) setAssets(j.assets)
+      } catch {
+        // Network failure: no matrix; the page renders its empty state.
       } finally { setLoading(false) }
     }
     load()

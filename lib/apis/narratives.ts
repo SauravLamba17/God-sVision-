@@ -1,4 +1,5 @@
-import { getCache, setCache } from '@/lib/cache'
+import { getCache } from '@/lib/cache'
+import { cachedAI } from '@/lib/aiCache'
 import { geminiGenerate } from '@/lib/gemini'
 import { fetchRSSFeeds } from '@/lib/apis/news'
 
@@ -16,30 +17,31 @@ export interface NarrativeData {
   generatedAt: number
   headlinesAnalyzed: number
   keyConfigured: boolean
+  stale?: boolean // last good result served because Gemini is unavailable / out of quota
 }
 
+// Narratives are global, cached in Postgres for 8h → 3 Gemini calls/day.
+const TTL_SECONDS = 8 * 3600
+
 export async function detectNarratives(): Promise<NarrativeData> {
-  const cacheKey = 'ai_narratives'
-  const cached = await getCache(cacheKey)
-  if (cached && !cached.stale) return cached.data as NarrativeData
-
-  const keyValid = !!process.env.GEMINI_API_KEY
-
-  // Live headlines only. This used to HTTP-fetch our own /api/news, which the
-  // auth middleware redirects to the sign-in page (no session cookie on a
-  // server-to-server call); the JSON parse then failed and five hardcoded
-  // "headlines" were substituted, so the panel showed AI analysis of invented
-  // news. Read the news cache, or the feeds directly, instead.
-  const newsCache = await getCache<{ items: { title: string }[] }>('news_all')
-  const items = newsCache?.data?.items ?? await fetchRSSFeeds().catch(() => [])
-  const headlines = items.slice(0, 100).map(n => n.title).filter(Boolean)
-
-  if (!keyValid || headlines.length < 5) {
-    // Honest empty state — never invented narratives or headlines.
-    return { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: keyValid }
+  if (!process.env.GEMINI_API_KEY) {
+    return { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: 0, keyConfigured: false }
   }
 
-  const prompt = `You are a macro market analyst. Analyze these ${headlines.length} financial news headlines and identify the TOP 5 dominant market narratives driving investor attention.
+  let headlinesAnalyzed = 0
+  const result = await cachedAI<{ narratives: Narrative[]; headlinesAnalyzed: number }>('ai:narratives', TTL_SECONDS, async () => {
+    // Live headlines only. This used to HTTP-fetch our own /api/news, which the
+    // auth middleware rejected (no session on a server-to-server call), and
+    // five hardcoded "headlines" were substituted. Read the news cache, or the
+    // feeds directly, instead.
+    const newsCache = await getCache<{ items: { title: string }[] }>('news_all')
+    const items = newsCache?.data?.items ?? await fetchRSSFeeds().catch(() => [])
+    const headlines = items.slice(0, 100).map(n => n.title).filter(Boolean)
+    headlinesAnalyzed = headlines.length
+    // Never invent narratives or headlines.
+    if (headlines.length < 5) throw new Error(`only ${headlines.length} live headlines`)
+
+    const prompt = `You are a macro market analyst. Analyze these ${headlines.length} financial news headlines and identify the TOP 5 dominant market narratives driving investor attention.
 
 Headlines:
 ${headlines.slice(0, 80).map((h, i) => `${i + 1}. ${h}`).join('\n')}
@@ -58,20 +60,12 @@ Return a JSON array of exactly 5 narratives:
 
 Order by importance/prevalence. Use ALL CAPS for titles. Respond ONLY with valid JSON array.`
 
-  try {
-    const text = await geminiGenerate(prompt)
+    const text = await geminiGenerate(prompt, undefined, 'scheduled')
     const jsonMatch = /\[[\s\S]*\]/.exec(text)
-    if (jsonMatch) {
-      const narratives = JSON.parse(jsonMatch[0]) as Narrative[]
-      const result: NarrativeData = { narratives: narratives.slice(0, 5), generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
-      await setCache(cacheKey, result, 900)
-      return result
-    }
-  } catch (err) {
-    console.error('Narrative detection error:', err)
-  }
+    if (!jsonMatch) throw new Error('Gemini returned no JSON array')
+    return { narratives: (JSON.parse(jsonMatch[0]) as Narrative[]).slice(0, 5), headlinesAnalyzed: headlines.length }
+  })
 
-  const empty: NarrativeData = { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: true }
-  await setCache(cacheKey, empty, 300)
-  return empty
+  if (!result) return { narratives: [], generatedAt: Date.now(), headlinesAnalyzed, keyConfigured: true }
+  return { ...result.data, generatedAt: result.generatedAt, keyConfigured: true, stale: result.stale }
 }

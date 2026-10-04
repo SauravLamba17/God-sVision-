@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getVesselSnapshot } from '@/lib/apis/ships'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 // Note: Real-time AIS WebSocket requires AISSTREAM_KEY in .env.local
 // Free tier at aisstream.io — connect once server-side for live tracking
 export async function GET() {

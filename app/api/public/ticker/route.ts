@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getCryptoTop100 } from '@/lib/apis/coingecko'
 import { getCache, setCache } from '@/lib/cache'
 
+// ISR: regenerated at most every 60s (prices/tickers). Without this the route was
+// prerendered at build and served build-time data forever.
+export const revalidate = 60
+
 // Public ticker feed for the marketing landing page's marquee. Lives under
 // /api/public so it inherits the same middleware exemption the Sheets API uses
 // (matcher negative-lookahead + publicPaths), but unlike /api/public/gv it
