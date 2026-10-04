@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchOutbreaks } from '@/lib/apis/whoOutbreaks'
+import { z } from 'zod'
+import { parseQuery, intParam } from '@/lib/validation'
+
+const Query = z.object({ limit: intParam(1, 25).default(10) })
 
 export async function GET(req: NextRequest) {
-  const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') || '10', 10) || 10, 25)
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { limit } = q.data
 
   try {
     const data = await fetchOutbreaks(limit)

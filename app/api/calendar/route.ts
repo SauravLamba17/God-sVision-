@@ -1,5 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { fetchCalendarEvents } from '@/lib/apis/calendar'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+
+const Query = z.object({
+  week: z.enum(['this', 'next', 'prev']).default('this'),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, 'currency must be a 3-letter code').optional(),
+  impact: z.enum(['high', 'medium', 'low']).optional(),
+})
 
 interface CalendarEvent {
   date:        string
@@ -19,9 +27,9 @@ interface CalendarEvent {
 // stale table cannot be wired back in by accident.
 
 export async function GET(req: NextRequest) {
-  const week = (req.nextUrl.searchParams.get('week') || 'this') as 'this' | 'next' | 'prev'
-  const currency = req.nextUrl.searchParams.get('currency') || ''
-  const impact = req.nextUrl.searchParams.get('impact') || ''
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { week, currency, impact } = q.data
 
   try {
     let events = await fetchCalendarEvents(week)

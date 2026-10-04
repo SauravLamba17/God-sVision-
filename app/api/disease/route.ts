@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchGlobalStats, fetchCountryStats, fetchHistoricalGlobal } from '@/lib/apis/disease'
+import { z } from 'zod'
+import { parseQuery, intParam } from '@/lib/validation'
+
+const Query = z.object({ type: z.enum(['all', 'global', 'history']).default('all'), days: intParam(1, 3650).default(90) })
 
 export async function GET(req: NextRequest) {
-  const type = req.nextUrl.searchParams.get('type') || 'all'
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { type, days } = q.data
 
   try {
     if (type === 'global') {
@@ -10,7 +16,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data, source: 'live' })
     }
     if (type === 'history') {
-      const days = parseInt(req.nextUrl.searchParams.get('days') || '90')
       const data = await fetchHistoricalGlobal(days)
       return NextResponse.json({ data, source: 'live' })
     }
@@ -20,14 +25,14 @@ export async function GET(req: NextRequest) {
       fetchGlobalStats(),
       fetchCountryStats(50),
     ])
+    const global = global_.status === 'fulfilled' ? global_.value : null
+    const countryList = countries.status === 'fulfilled' ? countries.value : []
     return NextResponse.json({
-      data: {
-        global: global_.status === 'fulfilled' ? global_.value : null,
-        countries: countries.status === 'fulfilled' ? countries.value : [],
-      },
-      source: 'live',
+      data: { global, countries: countryList },
+      // Both upstream calls failing used to still say 'live'.
+      source: global || countryList.length ? 'live' : 'unavailable',
     })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message })
+    return NextResponse.json({ error: err.message, source: 'unavailable' })
   }
 }

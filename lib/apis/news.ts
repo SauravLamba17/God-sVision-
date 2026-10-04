@@ -1,5 +1,6 @@
 import axios from 'axios'
 import Parser from 'rss-parser'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 const parser = new Parser({
   timeout: 10000,

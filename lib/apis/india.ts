@@ -2,6 +2,7 @@
 import yahooFinance from 'yahoo-finance2'
 import axios from 'axios'
 import { priorSessionClose } from '@/lib/apis/yahoo'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 // ── Indian index tickers (Yahoo Finance) ────────────────────────────────────
 export const INDIA_INDEX_TICKERS: Record<string, string> = {

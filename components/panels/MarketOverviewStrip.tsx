@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { toDataStatus } from '@/lib/dataStatus'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 import { useMode } from '@/lib/context/ModeContext'
 
 // The USA hero cards directly above this strip already carry S&P 500 and NASDAQ
@@ -175,7 +177,7 @@ export default function MarketOverviewStrip() {
   const { isIndia } = useMode()
   const [data,    setData]    = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [source,  setSource]  = useState('live')
+  const [source,  setSource]  = useState<string | undefined>()
   const [lastAt,  setLastAt]  = useState<number | null>(null)
   // India-mode MCX overlay, keyed by the Yahoo ticker the overview route uses.
   const [mcx, setMcx] = useState<Record<string, { price: number; unit: string }>>({})
@@ -239,11 +241,7 @@ export default function MarketOverviewStrip() {
           ▸ GLOBAL MARKET MONITOR
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {source === 'live' && (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', display: 'inline-block' }} />LIVE
-            </span>
-          )}
+          {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Yahoo Finance" asOf={data?.fetchedAt} />}
           {/* The ET clock that used to sit here is the same time the MARKET
               CLOCK panel shows in Section D, and the TopBar carries the
               OPEN/CLOSED badge. Three copies of one clock, so this one goes. */}

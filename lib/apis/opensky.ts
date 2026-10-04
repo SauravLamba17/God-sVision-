@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { Aircraft } from '@/lib/flights'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 // Aircraft shape lives in lib/flights.ts so the client map and this server
 // fetcher can never drift apart.

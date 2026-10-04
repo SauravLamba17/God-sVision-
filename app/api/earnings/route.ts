@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery, ticker } from '@/lib/validation'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
+
+const Query = z.object({ ticker: ticker.optional() })
 
 // Upcoming earnings from Nasdaq's public calendar (no key). This replaced a
 // hand-curated list of July 2026 dates and invented EPS/revenue estimates that
@@ -54,8 +59,9 @@ async function getUpcoming(): Promise<Upcoming[]> {
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const ticker = searchParams.get('ticker') || ''
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const ticker = q.data.ticker ?? ''
 
   if (ticker) {
     const cacheKey = `earnings_ticker_v3_${ticker.toUpperCase()}`

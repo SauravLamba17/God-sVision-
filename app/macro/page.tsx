@@ -16,6 +16,7 @@ interface CalEvent { date: string; time: string; event: string; currency: string
 export default function MacroPage() {
   const [fedBalance, setFedBalance] = useState<FedBalancePoint[]>([])
   const [loading, setLoading] = useState(true)
+  const [fedSource, setFedSource] = useState<string | undefined>() // API status → PanelWrapper badge
   const [spread, setSpread] = useState<number | null>(null)
   // Upcoming US high-impact releases from the live calendar feed (replaced a
   // hardcoded list of July–September 2024 events).
@@ -38,6 +39,7 @@ export default function MacroPage() {
           .slice(0, 10))
         if (balRes.status === 'fulfilled') {
           const j = await balRes.value.json()
+          setFedSource(j.source)
           if (j.data) {
             setFedBalance(j.data.filter((d: FedBalancePoint) => d.value !== null).slice(-52).map((d: FedBalancePoint) => ({
               date: d.date,
@@ -78,7 +80,7 @@ export default function MacroPage() {
 
         {/* Fed Balance Sheet */}
         {fedBalance.length > 0 && (
-          <PanelWrapper title="FED BALANCE SHEET (WALCL)">
+          <PanelWrapper title="FED BALANCE SHEET (WALCL)" source={fedSource}>
             <LineChartComponent
               data={fedBalance.map(d => ({ date: d.date?.slice(0, 7) || '', value: d.value || 0 }))}
               color="#ff6d00"

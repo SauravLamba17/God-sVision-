@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiFlash, reserveGeminiCall } from '@/lib/gemini';
+import { z } from 'zod';
+import { parseBody, shortText } from '@/lib/validation';
+import { checkLimits, LIMITS, limiterId, tooManyRequests } from '@/lib/rateLimit';
+
+// `ticker` is really the subject: a symbol or a panel name ("Correlation Matrix").
+// `data` is the panel's own snapshot — any JSON, but bounded so a caller can't
+// stuff an arbitrarily large prompt.
+const Body = z.object({
+  ticker: shortText(100).min(1, 'ticker required'),
+  context: shortText(2000).optional(),
+  mode: z.enum(['USA', 'INDIA']).optional(),
+  data: z.unknown().optional(),
+}).refine(b => b.data === undefined || JSON.stringify(b.data).length <= 20_000, { message: 'data too large (max 20 KB)' });
 
 // Streams Gemini output; cap a hung stream well under the 300s platform default.
 export const maxDuration = 60
@@ -13,13 +26,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Counts against the on-demand share of the free-tier daily budget.
+    // Validate first: a malformed request must not spend a quota slot.
+    const parsed = await parseBody(req, Body);
+    if (parsed.error) return parsed.error;
+    const { ticker, context, mode, data } = parsed.data;
+
+    // Per-user share of the on-demand budget, then the global budget.
+    const rl = await checkLimits([LIMITS.aiUser(await limiterId(req))]);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter, 'AI requests today (your share of the shared daily AI quota)');
     if (!(await reserveGeminiCall('ondemand'))) {
       return NextResponse.json({ error: 'AI daily quota reached — try again after midnight Pacific time.' }, { status: 429 });
     }
-
-    const body = await req.json();
-    const { ticker, context, mode, data } = body;
 
     const systemPrompt = `You are GOD's Vision Analyst — a senior quantitative analyst with 20 years of experience at top hedge funds. You specialize in ${mode === 'INDIA' ? 'Indian equity markets (NSE/BSE), Nifty options, RBI policy' : 'US equity markets, Fed policy, S&P 500'}.
 

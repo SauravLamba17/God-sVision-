@@ -1,3 +1,4 @@
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 export interface ISSPosition {
   lat: number
   lng: number

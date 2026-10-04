@@ -1,4 +1,5 @@
 import axios from 'axios'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 const KEY = process.env.OPENWEATHER_KEY || ''
 const BASE = 'https://api.openweathermap.org/data/2.5'

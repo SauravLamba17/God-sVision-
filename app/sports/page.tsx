@@ -60,12 +60,14 @@ export default function SportsPage() {
   const [nbaData, setNbaData] = useState<{ games: NBAGame[]; date: string }>({ games: [], date: '' })
   const [cricketData, setCricketData] = useState<FootballEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [source, setSource] = useState<string | undefined>() // API status → PanelWrapper badge
 
   const fetchSport = async (sport: SportType) => {
     setLoading(true)
     try {
       const res = await fetch(`/api/sports?type=${sport}`)
       const json = await res.json()
+      setSource(json.source)
       if (sport === 'football') setFootballData(json.data || [])
       else if (sport === 'f1') setF1Data({ drivers: [], races: [], season: new Date().getFullYear(), ...(json.data || {}) })
       else if (sport === 'nba') setNbaData(json.data || { games: [], date: '' })
@@ -103,7 +105,7 @@ export default function SportsPage() {
               <span className="font-mono text-[11px] text-positive">LOADING<span className="blink-cursor" /></span>
             </div>
           ) : footballData.map(league => (
-            <PanelWrapper key={league.league} title={league.league.toUpperCase()}>
+            <PanelWrapper source={source} key={league.league} title={league.league.toUpperCase()}>
               {league.events.length === 0 ? (
                 <div className="px-2 py-2 text-muted font-mono text-[10px]">NO RECENT MATCHES</div>
               ) : (
@@ -142,7 +144,7 @@ export default function SportsPage() {
       {/* F1 */}
       {activeTab === 'f1' && (
         <div className="grid grid-cols-2 gap-2">
-          <PanelWrapper title={`F1 ${f1Data.season} DRIVERS`} loading={loading}>
+          <PanelWrapper source={source} title={`F1 ${f1Data.season} DRIVERS`} loading={loading}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -167,7 +169,7 @@ export default function SportsPage() {
               </tbody>
             </table>
           </PanelWrapper>
-          <PanelWrapper title={`F1 ${f1Data.season} RECENT RACES`} loading={loading}>
+          <PanelWrapper source={source} title={`F1 ${f1Data.season} RECENT RACES`} loading={loading}>
             {f1Data.races.map((race, i) => (
               <div key={race.session_key || i} className="px-2 py-2" style={{ borderBottom: '1px solid #0d1f0d' }}>
                 <div className="flex items-center justify-between">
@@ -191,7 +193,7 @@ export default function SportsPage() {
 
       {/* NBA */}
       {activeTab === 'nba' && (
-        <PanelWrapper title={`NBA SCORES — ${nbaData.date || 'TODAY'}`} loading={loading}>
+        <PanelWrapper source={source} title={`NBA SCORES — ${nbaData.date || 'TODAY'}`} loading={loading}>
           {nbaData.games.length === 0 ? (
             <div className="px-2 py-4 text-muted font-mono text-[11px] text-center">
               No NBA games today. Check back during the season.
@@ -230,7 +232,7 @@ export default function SportsPage() {
 
       {/* Cricket */}
       {activeTab === 'cricket' && (
-        <PanelWrapper title="CRICKET — RECENT MATCHES" loading={loading}>
+        <PanelWrapper source={source} title="CRICKET — RECENT MATCHES" loading={loading}>
           {cricketData.length === 0 ? (
             <div className="px-2 py-4 text-muted font-mono text-[11px] text-center">No cricket matches found.</div>
           ) : (

@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery, shortText } from '@/lib/validation'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+
+const Query = z.object({ q: shortText(100).default('') })
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const q = (searchParams.get('q') || '').trim()
+  const parsed = parseQuery(request, Query)
+  if (parsed.error) return parsed.error
+  const { q } = parsed.data
   if (!q || q.length < 1) return NextResponse.json({ data: [] })
 
   const cacheKey = `search:${q.toLowerCase()}`
   const cached = await getCache(cacheKey)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     const res = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {

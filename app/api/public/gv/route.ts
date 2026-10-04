@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
 import { getQuotes } from '@/lib/apis/yahoo';
 import { isValidSheetsKey } from '@/lib/sheetsKey';
+import { z } from 'zod';
+import { parseQuery, ticker } from '@/lib/validation';
+import { checkLimits, LIMITS, clientIp, tooManyRequests } from '@/lib/rateLimit';
+import { track } from '@/lib/feedHealth';
+
+const Query = z.object({
+  ticker: z.string({ required_error: 'ticker parameter required' }).pipe(ticker),
+  field: z.enum(['price', 'change', 'change_pct', 'volume', 'market_cap', 'pe_ratio', 'eps', 'day_high', 'day_low', 'prev_close', 'open', 'fifty_two_week_high', 'fifty_two_week_low', 'name', 'currency', 'exchange']).default('price'),
+});
 
 // Fields the crumb-free query1 chart quote carries. Everything else (P/E, EPS,
 // market cap…) still needs yahoo-finance2's query2 quote, which 429s under load.
@@ -12,17 +21,22 @@ const TTL = 30 * 1000;
 
 export async function GET(req: NextRequest) {
   try {
+    // Generous per-IP limit: Apps Script calls come from Google's shared IP pool.
+    const ipLimit = await checkLimits([LIMITS.sheetsIp(clientIp(req))]);
+    if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter, 'requests from this network');
+
     const apiKey = req.nextUrl.searchParams.get('key');
     if (!(await isValidSheetsKey(apiKey))) {
       return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
     }
+    // Per key only once it's known to be valid, so random keys can't mint counter rows.
+    const keyLimit = await checkLimits([LIMITS.sheetsKey(apiKey!)]);
+    if (!keyLimit.ok) return tooManyRequests(keyLimit.retryAfter, 'requests for this API key');
 
-    const ticker = req.nextUrl.searchParams.get('ticker')?.toUpperCase();
-    const field = req.nextUrl.searchParams.get('field') ?? 'price';
-
-    if (!ticker) {
-      return NextResponse.json({ error: 'ticker parameter required' }, { status: 400 });
-    }
+    // Validated after the key check, so an unauthenticated caller always gets 401.
+    const q = parseQuery(req, Query);
+    if (q.error) return q.error;
+    const { ticker, field } = q.data;
 
     const cacheKey = `${ticker}_${field}`;
     const cached = cache.get(cacheKey);
@@ -30,7 +44,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached.data);
     }
 
-    const quote: any = (CHART_FIELDS.has(field) && (await getQuotes([ticker]))[0]) || await yahooFinance.quote(ticker);
+    const quote: any = (CHART_FIELDS.has(field) && (await getQuotes([ticker]))[0]) || await track('Yahoo Finance (yahoo-finance2)', () => yahooFinance.quote(ticker));
 
     const fieldMap: Record<string, any> = {
       price: quote.regularMarketPrice,

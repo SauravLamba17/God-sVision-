@@ -1,13 +1,26 @@
 import { NextRequest } from 'next/server'
 import { geminiFlash, reserveGeminiCall } from '@/lib/gemini'
 import { getTickerSentiment } from '@/lib/apis/reddit'
+import { z } from 'zod'
+import { parseBody, ticker as tickerSchema } from '@/lib/validation'
+import { checkLimits, LIMITS, limiterId, tooManyRequests } from '@/lib/rateLimit'
+
+const Body = z.object({ ticker: tickerSchema })
 
 // SSE stream over Gemini; cap a hung stream well under the 300s platform default.
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
-  const { ticker } = await req.json()
-  const mention = await getTickerSentiment(ticker?.toUpperCase())
+  const parsed = await parseBody(req, Body)
+  if (parsed.error) return parsed.error
+  const { ticker } = parsed.data
+  const mention = await getTickerSentiment(ticker)
+
+  // Counted only when the stream below will call Gemini.
+  if (process.env.GEMINI_API_KEY && geminiFlash && mention) {
+    const rl = await checkLimits([LIMITS.aiUser(await limiterId(req))])
+    if (!rl.ok) return tooManyRequests(rl.retryAfter, 'AI requests today (your share of the shared daily AI quota)')
+  }
 
   const encoder = new TextEncoder()
   const readable = new ReadableStream({

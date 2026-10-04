@@ -4,6 +4,7 @@ import {
   Candle, sma, ema, rsi, macd, bollingerBands, atr, supertrend, vwap,
   findSupportResistance, fibonacciLevels, detectCandlestickPatterns, volumeAnalysis, last,
 } from '@/lib/utils/technicals'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 // ── Stock universes (15 most liquid names each) ─────────────────────────────
 export const ANALYST_UNIVERSE_IN = [

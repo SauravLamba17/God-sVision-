@@ -137,6 +137,7 @@ export default function CryptoPage() {
   const [globalData, setGlobalData] = useState<{ total_market_cap?: { usd: number }; market_cap_percentage?: { btc: number; eth: number } } | null>(null)
   const [halving, setHalving] = useState({ days: 0, hours: 0, minutes: 0 })
   const [loading, setLoading] = useState(true)
+  const [coinsSource, setCoinsSource] = useState<string | undefined>() // API status → PanelWrapper badge
 
   // Binance real-time WebSocket stream (symbol → ticker)
   const binanceTickers = useBinanceStream()
@@ -155,6 +156,7 @@ export default function CryptoPage() {
 
         if (coinsRes.status === 'fulfilled') {
           const j = await coinsRes.value.json()
+          setCoinsSource(j.source)
           if (j.data) { setCoins(j.data); if (!selectedCoin) setSelectedCoin(j.data[0]) }
         }
         if (fgRes.status === 'fulfilled') {
@@ -243,7 +245,7 @@ export default function CryptoPage() {
           title="CRYPTO TOP 100"
           loading={loading}
           fullHeight
-          source={binanceTickers.size > 0 ? 'live' : undefined}
+          source={binanceTickers.size > 0 ? 'live' : coinsSource}
         >
           {/* Panel header with Binance status and AI button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: '1px solid #0d1f0d' }}>

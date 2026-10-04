@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
+import { checkLimits, LIMITS } from '@/lib/rateLimit';
+import { track } from '@/lib/feedHealth';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -33,7 +35,7 @@ function assertNotBuilding() {
 //   scheduled — morning brief, narratives, analyst (cached globally, see lib/aiCache.ts)
 //   ondemand  — ⚡ AI buttons, per-stock analyst, headline sentiment
 export type GeminiKind = 'scheduled' | 'ondemand';
-const DAILY_CAP: Record<GeminiKind, number> = { scheduled: 10, ondemand: 8 };
+export const DAILY_CAP: Record<GeminiKind, number> = { scheduled: 10, ondemand: 8 };
 
 /** Atomically counts one call against today's budget; false once it's spent. */
 export async function reserveGeminiCall(kind: GeminiKind): Promise<boolean> {
@@ -53,20 +55,23 @@ export async function reserveGeminiCall(kind: GeminiKind): Promise<boolean> {
   }
 }
 
-async function guard(kind: GeminiKind) {
+async function guard(kind: GeminiKind, limiterId?: string) {
   if (!geminiFlash) throw new Error('GEMINI_API_KEY not configured');
   assertNotBuilding();
+  // Per-user share first, so a capped user can't spend the shared budget.
+  if (limiterId && !(await checkLimits([LIMITS.aiUser(limiterId)])).ok) throw new Error('Per-user daily AI limit reached');
   if (!(await reserveGeminiCall(kind))) throw new Error(`Gemini daily ${kind} budget reached`);
 }
 
-export async function geminiGenerate(prompt: string, systemPrompt?: string, kind: GeminiKind = 'ondemand'): Promise<string> {
-  await guard(kind);
+/** `limiterId` (from lib/rateLimit limiterId) counts on-demand calls against that user's daily share. */
+export async function geminiGenerate(prompt: string, systemPrompt?: string, kind: GeminiKind = 'ondemand', limiterId?: string): Promise<string> {
+  await guard(kind, limiterId);
   if (!geminiFlash) throw new Error('GEMINI_API_KEY not configured');
   try {
     const fullPrompt = systemPrompt
       ? `${systemPrompt}\n\n${prompt}`
       : prompt;
-    const result = await geminiFlash.generateContent(fullPrompt);
+    const result = await track('Gemini', () => geminiFlash!.generateContent(fullPrompt));
     const response = await result.response;
     return response.text();
   } catch (e: any) {

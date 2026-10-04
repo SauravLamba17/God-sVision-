@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { toDataStatus } from '@/lib/dataStatus';
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge';
 
 interface Props { compact?: boolean; }
 
@@ -8,12 +10,13 @@ const TICKERS = 'SPY,QQQ,BTC-USD,GLD,DX-Y.NYB,^VIX';
 export default function DashboardModule({ compact }: Props) {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [source, setSource] = useState<string | undefined>();
 
   useEffect(() => {
     const load = () =>
       fetch(`/api/stocks?tickers=${TICKERS}`)
         .then(r => r.json())
-        .then(d => { setQuotes(Array.isArray(d.data) ? d.data : []); setLoading(false); })
+        .then(d => { setQuotes(Array.isArray(d.data) ? d.data : []); setSource(d.source); setLoading(false); })
         .catch(() => setLoading(false));
     load();
     const iv = setInterval(load, 30000);
@@ -27,7 +30,7 @@ export default function DashboardModule({ compact }: Props) {
     <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: compact ? '3px 8px' : '5px 10px', borderBottom: '1px solid var(--border-dim)', background: 'var(--bg-header)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>DASHBOARD</span>
-        <span style={{ fontSize: 8, color: 'var(--text-positive)' }}>● LIVE</span>
+        {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Yahoo Finance" />}
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: compact ? '4px' : '6px' }}>
         {loading ? (

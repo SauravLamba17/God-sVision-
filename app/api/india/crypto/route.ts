@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 // ISR: regenerated at most every 60s (prices/tickers). Without this the route was
 // prerendered at build and served build-time data forever.

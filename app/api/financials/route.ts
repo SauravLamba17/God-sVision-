@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import yahooFinance from 'yahoo-finance2'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery, ticker } from '@/lib/validation'
+import { track } from '@/lib/feedHealth' // also registers axios feed-health interceptors
+
+const Query = z.object({ ticker, period: z.enum(['annual', 'quarterly']).default('annual') })
 
 const YF_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -62,7 +67,7 @@ function buildKeyMetrics(fd: any, ks: any, sd: any) {
 async function fetchViaPackage(ticker: string, modules: string[]): Promise<any> {
   for (let i = 0; i < 3; i++) {
     try {
-      return await (yahooFinance as any).quoteSummary(ticker, { modules })
+      return await track('Yahoo Finance (yahoo-finance2)', () => (yahooFinance as any).quoteSummary(ticker, { modules }))
     } catch (err: any) {
       const msg = err?.message || ''
       if ((msg.includes('Too Many Requests') || msg.includes('429') || msg.includes('invalid json')) && i < 2) {
@@ -84,15 +89,13 @@ async function fetchViaDirect(ticker: string, moduleStr: string): Promise<any> {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const ticker = (searchParams.get('ticker') || '').toUpperCase().trim()
-  const period = searchParams.get('period') || 'annual'
-
-  if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400 })
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { ticker, period } = q.data
 
   const cacheKey = `financials:${ticker}:${period}`
   const cached = await getCache(cacheKey)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   const moduleArr = period === 'quarterly'
     ? ['incomeStatementHistoryQuarterly', 'balanceSheetHistoryQuarterly', 'cashflowStatementHistoryQuarterly', 'financialData', 'defaultKeyStatistics', 'summaryDetail']

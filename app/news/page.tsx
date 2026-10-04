@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { timeAgo } from '@/lib/utils'
+import { toDataStatus } from '@/lib/dataStatus'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 const CATEGORIES = ['All', 'Business', 'Tech', 'World', 'Science', 'Politics', 'Health', 'Sports', 'Energy', 'India']
 const REFRESH_INTERVAL = 300 // seconds — each refresh also POSTs to /api/news/sentiment (Gemini + Prisma)
@@ -64,6 +66,7 @@ function articleAge(publishedAt: string): number {
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([])
   const [meta, setMeta] = useState<Meta | null>(null)
+  const [feedSource, setFeedSource] = useState<string | undefined>() // API status → badge
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('All')
   const [search, setSearch] = useState('')
@@ -78,6 +81,7 @@ export default function NewsPage() {
     try {
       const res = await fetch('/api/news')
       const json = await res.json()
+      setFeedSource(json.source)
       if (json.data) {
         const incoming: NewsItem[] = json.data
         const fresh = incoming.filter(n => !prevIdsRef.current.has(n.id)).map(n => n.id)
@@ -173,9 +177,10 @@ export default function NewsPage() {
       <div style={{ width: 168, flexShrink: 0, borderRight: '1px solid #1e293b', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column' }}>
         {/* Live status */}
         <div style={{ padding: '8px 10px', borderBottom: '1px solid #1e293b' }}>
+          {/* Was a hardcoded green "LIVE FEED" whatever /api/news returned. */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="status-dot status-live" />
-            <span className="font-mono text-[10px] text-positive font-bold">LIVE FEED</span>
+            <span className="font-mono text-[10px] text-muted font-bold">NEWS FEED</span>
+            {toDataStatus(feedSource) && <DataStatusBadge status={toDataStatus(feedSource)!} source="RSS feeds" asOf={meta?.lastUpdated} />}
           </div>
           <div className="font-mono text-[9px] text-muted">
             {meta ? `${meta.sources} SOURCES` : '50+ SOURCES'}
@@ -263,7 +268,7 @@ export default function NewsPage() {
           </span>
           <span className="font-mono text-[9px] text-muted">|</span>
           <span className="font-mono text-[9px] text-muted">
-            {meta?.sources || '—'} SOURCES LIVE
+            {meta?.sources || '—'} SOURCES
           </span>
           <span className="font-mono text-[9px] text-muted">|</span>
           <div className="flex items-center gap-1.5">

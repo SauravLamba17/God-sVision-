@@ -1,0 +1,10 @@
+# gitleaks config — default ruleset plus allowlists for GENUINE false positives only.
+# Never allowlist a real secret here: rotate it instead.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Cache-key string literals (e.g. const cacheKey = 'earnings_upcoming_v2') are identifiers, not secrets"
+regexTarget = "line"
+regexes = ['''\bcacheKey\s*=\s*['"`][A-Za-z0-9_${}.\-]+['"`]''']

@@ -12,6 +12,6 @@ export async function GET() {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message, data: null, source: 'empty' })
+    return NextResponse.json({ error: err.message, data: null, source: 'unavailable' })
   }
 }

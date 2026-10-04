@@ -24,7 +24,7 @@ function sha256(text: string): string {
   return createHash('sha256').update(text).digest('hex').slice(0, 32)
 }
 
-export async function scoreHeadlines(headlines: string[]): Promise<HeadlineSentiment[]> {
+export async function scoreHeadlines(headlines: string[], limiterId?: string): Promise<HeadlineSentiment[]> {
   // Uses the shared singleton from lib/prisma. This previously did
   // `new PrismaClient()` per call — and this runs on every news poll from both
   // the news page and the dashboard panel, so each concurrent request opened
@@ -62,7 +62,7 @@ ${batch.map((h, j) => `${j + 1}. ${h}`).join('\n')}
 
 Respond ONLY with a valid JSON array. No markdown, no explanation.`
 
-        const content = await geminiGenerate(prompt)
+        const content = await geminiGenerate(prompt, undefined, 'ondemand', limiterId)
         const jsonMatch = /\[[\s\S]*\]/.exec(content)
         if (jsonMatch) {
           const scored = JSON.parse(jsonMatch[0]) as Array<{ headline: string; sentiment: string; confidence: number; reason: string }>

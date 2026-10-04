@@ -87,6 +87,8 @@ export default function AlertsPage() {
 
   const deleteAlert = async (id: number, type: 'price'|'news') => {
     try { await fetch(`/api/alerts?id=${id}&type=${type}`, { method: 'DELETE' }) } catch { /* list reloads below */ }
+    // Reload rather than drop locally: on 404 (already gone / not yours) the UI
+    // shows exactly what the server has, never removing a row that still exists.
     loadAlerts()
   }
 

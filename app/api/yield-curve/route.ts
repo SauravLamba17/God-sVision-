@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+
+const Query = z.object({ mode: z.enum(['current', 'history']).default('current') })
 
 const MATURITIES = [
   { label: '1M',  id: 'DGS1MO',  months: 1   },
@@ -32,15 +37,16 @@ async function fetchFredSeries(seriesId: string, limit = 365): Promise<{ date: s
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const mode = searchParams.get('mode') || 'current'
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { mode } = q.data
 
   const cacheKey = `yield-curve:${mode}`
   const cached = await getCache(cacheKey)
   // getCache returns an envelope { data, stale }. Returning the envelope itself
   // handed the page an object where it expected an array, and every cached
   // load crashed /yield-curve to a white screen (history.slice is not a function).
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     if (mode === 'current') {

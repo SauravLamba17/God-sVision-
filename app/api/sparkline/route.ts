@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
+import { z } from 'zod';
+import { parseQuery, ticker } from '@/lib/validation';
+import { trackedFetch as fetch, track } from '@/lib/feedHealth' // records feed health; same fetch semantics;
+
+const Query = z.object({ symbol: z.string({ required_error: 'symbol required' }).pipe(ticker) });
 
 // Cache: much longer TTL to avoid re-triggering Yahoo's rate limit
 const cache = new Map<string, { data: number[]; ts: number; source: string }>();
@@ -95,7 +100,7 @@ async function fetchIntradaySeriesYahoo(symbol: string): Promise<number[]> {
 
   for (const attempt of attempts) {
     try {
-      const result = await yahooFinance.chart(symbol, attempt);
+      const result = await track('Yahoo Finance (yahoo-finance2)', () => yahooFinance.chart(symbol, attempt));
       const closes = (result.quotes ?? [])
         .map((q: any) => q.close)
         .filter((c: any) => typeof c === 'number' && !isNaN(c) && c > 0);
@@ -109,10 +114,10 @@ async function fetchIntradaySeriesYahoo(symbol: string): Promise<number[]> {
 
 export async function GET(req: NextRequest) {
   try {
-    const symbol = req.nextUrl.searchParams.get('symbol');
-    if (!symbol) {
-      return NextResponse.json({ prices: [], error: 'symbol required' }, { status: 400 });
-    }
+    // Validated: the symbol is a cache key and goes upstream.
+    const q = parseQuery(req, Query);
+    if (q.error) return q.error;
+    const { symbol } = q.data;
 
     const mapping = SOURCE_MAP[symbol] ?? { source: 'yahoo' as const, proxySymbol: symbol };
     const cacheKey = symbol;

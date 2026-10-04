@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+import { parseBody, parseQuery, ticker, shortText, positiveAmount, isoDate, id } from '@/lib/validation'
+import { checkLimits, LIMITS, tooManyRequests } from '@/lib/rateLimit'
+
+const PostBody = z.object({
+  ticker,
+  type: z.string().trim().toUpperCase().pipe(z.enum(['BUY', 'SELL'])),
+  quantity: positiveAmount,
+  price: positiveAmount,
+  date: isoDate.optional(),
+  fee: z.coerce.number().finite().min(0).max(1e9).optional(),
+  notes: shortText(500).optional(),
+})
+const DeleteQuery = z.object({ id })
 
 // Every handler here reads the owner from the SESSION, never from the request
 // body or query. Before this, GET ran findMany() with no where clause and no
@@ -38,23 +52,24 @@ export async function POST(req: NextRequest) {
   const userId = await requireUserId()
   if (!userId) return unauthorized()
 
-  const { ticker, type, quantity, price, date, fee, notes } = await req.json()
-  if (!ticker || !type || !quantity || !price) {
-    return NextResponse.json({ error: 'ticker, type, quantity, price required' }, { status: 400, headers: PRIVATE })
-  }
+  const parsed = await parseBody(req, PostBody, PRIVATE)
+  if (parsed.error) return parsed.error
+  const rl = await checkLimits([LIMITS.writes(userId)])
+  if (!rl.ok) return tooManyRequests(rl.retryAfter, 'changes', PRIVATE)
+  const { ticker, type, quantity, price, date, fee, notes } = parsed.data
   try {
     const tx = await prisma.transaction.create({
       // userId comes from the session only — a client-supplied userId in the
       // body is ignored, since it is not destructured above.
       data: {
         userId,
-        ticker: ticker.toUpperCase(),
-        type: type.toUpperCase(),
-        quantity: parseFloat(quantity),
-        price: parseFloat(price),
-        date: new Date(date || new Date()),
-        fee: parseFloat(fee || 0),
-        notes: notes || '',
+        ticker,
+        type,
+        quantity,
+        price,
+        date: date ? new Date(date) : new Date(),
+        fee: fee ?? 0,
+        notes: notes ?? '',
       },
     })
     return NextResponse.json({ data: tx }, { headers: PRIVATE })
@@ -67,8 +82,11 @@ export async function DELETE(req: NextRequest) {
   const userId = await requireUserId()
   if (!userId) return unauthorized()
 
-  const id = parseInt(req.nextUrl.searchParams.get('id') ?? '')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400, headers: PRIVATE })
+  const q = parseQuery(req, DeleteQuery, PRIVATE)
+  if (q.error) return q.error
+  const rl = await checkLimits([LIMITS.writes(userId)])
+  if (!rl.ok) return tooManyRequests(rl.retryAfter, 'changes', PRIVATE)
+  const { id } = q.data
 
   try {
     // deleteMany with BOTH id and userId in the filter: ownership is enforced by

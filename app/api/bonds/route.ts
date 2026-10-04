@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchSeries } from '@/lib/apis/fred';
 import { getQuotes } from '@/lib/apis/yahoo';
+import { z } from 'zod';
+import { parseQuery } from '@/lib/validation';
+
+const Query = z.object({ type: z.enum(['overview', 'yields', 'etfs', 'spread']).default('overview') });
 
 // Values are null when the upstream did not return them. They were previously
 // `?? 0` with a `catch { yield: 0 }` per ticker, so a rate-limited Yahoo call
@@ -34,7 +38,9 @@ const BOND_ETFS = [
 
 export async function GET(req: NextRequest) {
   try {
-    const type = req.nextUrl.searchParams.get('type') ?? 'overview';
+    const q = parseQuery(req, Query);
+    if (q.error) return q.error;
+    const { type } = q.data;
     const cacheKey = `bonds_${type}`;
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.ts < TTL) {

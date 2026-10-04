@@ -26,7 +26,7 @@ interface NewsPayload {
 export async function GET() {
   const cached = await getCache<NewsPayload>(CACHE_KEY)
   if (cached && !cached.stale) {
-    return NextResponse.json({ data: cached.data.items, source: 'cache', meta: cached.data.meta })
+    return NextResponse.json({ data: cached.data.items, source: 'cached', meta: cached.data.meta })
   }
 
   try {
@@ -69,6 +69,6 @@ export async function GET() {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     if (cached) return NextResponse.json({ data: cached.data.items, source: 'cached', meta: cached.data.meta, error: msg })
-    return NextResponse.json({ error: msg, data: [], source: 'empty', meta: { total: 0, sources: 0, lastUpdated: new Date().toISOString(), feedNames: [] } })
+    return NextResponse.json({ error: msg, data: [], source: 'unavailable', meta: { total: 0, sources: 0, lastUpdated: new Date().toISOString(), feedNames: [] } })
   }
 }

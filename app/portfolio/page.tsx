@@ -168,6 +168,8 @@ export default function PortfolioPage() {
 
   const removeHolding = async (id: number) => {
     try { await fetch(`/api/portfolio?id=${id}`, { method: 'DELETE' }) } catch { /* list reloads below */ }
+    // Reload rather than drop locally: on 404 (already gone / not yours) the UI
+    // shows exactly what the server has, never removing a row that still exists.
     loadHoldings()
   }
 

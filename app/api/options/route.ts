@@ -3,6 +3,11 @@ import yahooFinance from 'yahoo-finance2'
 import { getCache, setCache } from '@/lib/cache'
 import { blackScholes, daysToExpiry } from '@/lib/black-scholes'
 import { getQuotes } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery, ticker, isoDate } from '@/lib/validation'
+import { track } from '@/lib/feedHealth'
+
+const Query = z.object({ ticker: ticker.default('AAPL'), expiry: isoDate.optional() })
 
 // Fallback only. The live 3-month T-bill (^IRX) is the standard risk-free
 // proxy and is fetched below; this is used only if that quote fails, and the
@@ -11,9 +16,10 @@ const RISK_FREE_FALLBACK = 0.05
 const IRX = '^IRX'
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const ticker = (searchParams.get('ticker') || 'AAPL').toUpperCase()
-  const expiry = searchParams.get('expiry') || ''
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const ticker = q.data.ticker
+  const expiry = q.data.expiry ?? ''
 
   const cacheKey = `options_v2_${ticker}_${expiry}`
   const cached = await getCache(cacheKey)
@@ -23,7 +29,7 @@ export async function GET(req: Request) {
     // Get current spot price via chart (no crumb needed)
     const [spotQuotes, optData] = await Promise.allSettled([
       getQuotes([ticker, IRX]),
-      (yahooFinance as any).options(ticker, expiry ? { date: expiry } : undefined),
+      track<any>('Yahoo Finance (yahoo-finance2)', () => (yahooFinance as any).options(ticker, expiry ? { date: expiry } : undefined)),
     ])
 
     const quoteList: any[] = spotQuotes.status === 'fulfilled' ? spotQuotes.value : []

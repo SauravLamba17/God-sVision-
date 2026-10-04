@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { geminiGenerate } from '@/lib/gemini';
 import { getQuotes } from '@/lib/apis/yahoo';
 import { cachedAI } from '@/lib/aiCache';
+import { z } from 'zod';
+import { parseQuery } from '@/lib/validation';
+
+const Query = z.object({ mode: z.enum(['USA', 'INDIA']).default('USA') });
 
 // One brief per mode per day, cached globally in Postgres (lib/aiCache) —
 // 2 Gemini calls/day total. The old 1h in-process Map re-spent quota on every
@@ -21,7 +25,9 @@ const TICKERS: Record<string, [string, string][]> = {
 
 export async function GET(req: NextRequest) {
   try {
-    const mode = req.nextUrl.searchParams.get('mode') === 'INDIA' ? 'INDIA' : 'USA';
+    const q = parseQuery(req, Query);
+    if (q.error) return q.error;
+    const { mode } = q.data;
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({

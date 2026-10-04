@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRecentEarthquakes, getSignificantEarthquakes } from '@/lib/apis/usgs'
 import { setCache, getCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery, numParam } from '@/lib/validation'
+
+const Query = z.object({ type: z.enum(['recent', 'significant']).default('recent'), minMag: numParam(0, 10).default(2.5) })
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'recent'
-  const minMag = parseFloat(searchParams.get('minMag') || '2.5')
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { type, minMag } = q.data
 
   const key = `earthquakes_${type}_${minMag}`
   const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     const data = type === 'significant'

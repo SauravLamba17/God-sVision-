@@ -91,7 +91,8 @@ export default function StatusBar() {
           color: liveCount === 6 ? 'var(--text-positive)' : liveCount >= 4 ? 'var(--text-warning)' : 'var(--text-negative)',
           letterSpacing: '0.06em',
         }}>
-          {checkedAt ? `${liveCount}/${statuses.length} FEEDS LIVE` : 'CHECKING FEEDS…'}
+          {/* Counts endpoints that answered OK — reachability, not data freshness. */}
+          {checkedAt ? `${liveCount}/${statuses.length} FEEDS UP` : 'CHECKING FEEDS…'}
         </span>
         <span style={{ color: 'var(--border-bright)' }}>│</span>
         <span style={{ color: 'var(--text-muted)' }}>

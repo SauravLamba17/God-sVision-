@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllAircraft, getRegionCounts, OpenSkyRateLimitError } from '@/lib/apis/opensky'
 import { setCache, getCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery, numParam } from '@/lib/validation'
+
+const Query = z.object({
+  bounds: z.string().max(300).transform((s, ctx) => {
+    try { return JSON.parse(s) } catch { ctx.addIssue({ code: 'custom', message: 'bounds must be JSON' }); return z.NEVER }
+  }).pipe(z.object({
+    minLat: numParam(-90, 90), minLon: numParam(-180, 180),
+    maxLat: numParam(-90, 90), maxLon: numParam(-180, 180),
+  })).optional(),
+})
 
 // OpenSky refreshes state vectors every 5-10s, so anything under ~30s of cache
 // buys no freshness and just burns credits (a global /states/all costs 4 of the
@@ -17,17 +28,19 @@ const CACHE_TTL_SECONDS = 30
 const MAX_AIRCRAFT_SHIPPED = 3000
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const bounds = searchParams.get('bounds')
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { bounds } = q.data
 
-  const key = bounds ? `flights_${bounds}` : 'flights_all'
+  // Normalised JSON of the validated box — never the raw string — as cache key.
+  const key = bounds ? `flights_${JSON.stringify(bounds)}` : 'flights_all'
   const cached = await getCache<any>(key)
   if (cached && !cached.stale) {
-    return NextResponse.json({ ...cached.data, source: 'cache' })
+    return NextResponse.json({ ...cached.data, source: 'cached' })
   }
 
   try {
-    const parsedBounds = bounds ? JSON.parse(bounds) : undefined
+    const parsedBounds = bounds
     const { aircraft, creditsRemaining, snapshotTime, authenticated } = await getAllAircraft(parsedBounds)
 
     const counts = getRegionCounts(aircraft)

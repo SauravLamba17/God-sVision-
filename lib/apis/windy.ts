@@ -1,4 +1,5 @@
 import axios from 'axios'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 const KEY = process.env.WINDY_WEBCAM_KEY || ''
 const BASE = 'https://api.windy.com/webcams/api/v3'

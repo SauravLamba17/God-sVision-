@@ -1,5 +1,6 @@
 import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 export interface FearSignal {
   name: string

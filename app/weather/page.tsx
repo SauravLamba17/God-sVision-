@@ -94,6 +94,9 @@ export default function WeatherPage() {
   const [noaaAlerts, setNoaaAlerts] = useState<NOAAAlert[]>([])
   const [cityWeathers, setCityWeathers] = useState<WeatherData[]>([])
   const [loading, setLoading] = useState(true)
+  const [citiesSource, setCitiesSource] = useState<string | undefined>() // API status → PanelWrapper badge
+  const [fcSource, setFcSource] = useState<string | undefined>() // API status → PanelWrapper badge
+  const [noaaSource, setNoaaSource] = useState<string | undefined>() // API status → PanelWrapper badge
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('gv_temp_unit')
@@ -136,6 +139,7 @@ export default function WeatherPage() {
       }
       if (fcRes.status === 'fulfilled') {
         const j = await fcRes.value.json()
+        setFcSource(j.source)
         if (j.data) setForecast(j.data)
       }
     } catch { /* silent */ }
@@ -150,10 +154,12 @@ export default function WeatherPage() {
         ])
         if (citiesRes.status === 'fulfilled') {
           const j = await citiesRes.value.json()
+          setCitiesSource(j.source)
           if (j.data) setCityWeathers(j.data.filter(Boolean))
         }
         if (noaaRes.status === 'fulfilled') {
           const j = await noaaRes.value.json()
+          setNoaaSource(j.source)
           if (j.data) setNoaaAlerts(j.data.slice(0, 5))
         }
       
@@ -257,7 +263,7 @@ export default function WeatherPage() {
 
         {/* 7-Day Forecast */}
         {forecast?.daily && (
-          <PanelWrapper title="7-DAY FORECAST">
+          <PanelWrapper title="7-DAY FORECAST" source={fcSource}>
             <div className="flex divide-x" style={{ borderColor: 'var(--border-dim, #1e293b)' }}>
               {forecast.daily.time.slice(0, 7).map((date, i) => {
                 const maxT = forecast.daily.temperature_2m_max[i]
@@ -290,7 +296,7 @@ export default function WeatherPage() {
 
         {/* Hourly Chart — key forces remount on unit change */}
         {hourlyChartData.length > 0 && (
-          <PanelWrapper title={`24H TEMPERATURE (°${tempUnit})`}>
+          <PanelWrapper title={`24H TEMPERATURE (°${tempUnit})`} source={fcSource}>
             <LineChartComponent
               key={tempUnit}
               data={hourlyChartData}
@@ -324,7 +330,7 @@ export default function WeatherPage() {
         </div>
 
         {/* World Weather Table */}
-        <PanelWrapper title="WORLD WEATHER" loading={loading}>
+        <PanelWrapper title="WORLD WEATHER" loading={loading} source={citiesSource}>
           <table className="data-table">
             <thead>
               <tr>
@@ -356,7 +362,7 @@ export default function WeatherPage() {
 
         {/* NOAA Alerts */}
         {noaaAlerts.length > 0 && (
-          <PanelWrapper title="⚠ NOAA ALERTS">
+          <PanelWrapper title="⚠ NOAA ALERTS" source={noaaSource}>
             <div className="divide-y" style={{ borderColor: 'var(--border-dim)' }}>
               {noaaAlerts.map((alert, i) => (
                 <div key={i} className="px-2 py-1.5">

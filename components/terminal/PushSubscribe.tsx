@@ -29,11 +29,12 @@ export function PushSubscribe() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-      await fetch('/api/push/subscribe', {
+      const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub),
       });
+      if (!res.ok) throw new Error(`server answered ${res.status}`);
       setSubscribed(true);
     } catch (e) {
       console.error('[Push] Subscribe failed:', e);

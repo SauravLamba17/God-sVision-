@@ -54,6 +54,7 @@ function SignInForm() {
     setLoading(true); setError('');
     try {
       const res = await signIn('credentials', { email, password, redirect: false });
+      if (res?.error === 'TooManyAttempts') { setError('Too many sign-in attempts. Please wait 15 minutes and try again.'); setLoading(false); return; }
       if (res?.error) { setError('Invalid email or password'); setLoading(false); return; }
       if (res?.ok) { gotoCallback(); return; }
       setError('Something went wrong. Please try again.'); setLoading(false);

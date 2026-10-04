@@ -43,6 +43,8 @@ export default function YieldCurvePage() {
   const [spreads,  setSpreads] = useState<Spreads | null>(null)
   const [history,  setHistory] = useState<HistPoint[]>([])
   const [loading,  setLoading] = useState(true)
+  const [curveSource, setCurveSource] = useState<string | undefined>() // API status → PanelWrapper badge
+  const [histSource, setHistSource] = useState<string | undefined>() // API status → PanelWrapper badge
   const [histLoad, setHistLoad]= useState(true)
   const [error,    setError]   = useState<string|null>(null)
   const [tab,      setTab]     = useState<'curve'|'spreads'>('curve')
@@ -51,6 +53,7 @@ export default function YieldCurvePage() {
     fetch('/api/yield-curve?mode=current')
       .then(r => r.json())
       .then(json => {
+        setCurveSource(json.source)
         if (json.error) { setError(json.error); return }
         setCurve(json.data.curve)
         setSpreads(json.data.spreads)
@@ -60,7 +63,7 @@ export default function YieldCurvePage() {
 
     fetch('/api/yield-curve?mode=history')
       .then(r => r.json())
-      .then(json => { if (json.data) setHistory(json.data) })
+      .then(json => { setHistSource(json.source); if (json.data) setHistory(json.data) })
       .catch(() => { /* history chart shows its empty state */ })
       .finally(() => setHistLoad(false))
   }, [])
@@ -99,7 +102,7 @@ export default function YieldCurvePage() {
       <div style={{ flex: 1, display: 'flex', gap: 8 }}>
         {/* Left: current curve + table */}
         <div style={{ width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PanelWrapper title="CURRENT YIELD CURVE" loading={loading} error={error} accentColor="#38bdf8">
+          <PanelWrapper title="CURRENT YIELD CURVE" loading={loading} error={error} source={curveSource} accentColor="#38bdf8">
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={curveChartData}>
                 <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
@@ -135,7 +138,7 @@ export default function YieldCurvePage() {
 
         {/* Right: historical */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PanelWrapper title="HISTORICAL YIELDS (2Y / 10Y)" loading={histLoad} accentColor="#a78bfa">
+          <PanelWrapper title="HISTORICAL YIELDS (2Y / 10Y)" loading={histLoad} source={histSource} accentColor="#a78bfa">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history.slice(-252)}>
                 <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
@@ -149,7 +152,7 @@ export default function YieldCurvePage() {
             </ResponsiveContainer>
           </PanelWrapper>
 
-          <PanelWrapper title="10Y-2Y SPREAD (Recession Indicator)" loading={histLoad} accentColor="#ef4444">
+          <PanelWrapper title="10Y-2Y SPREAD (Recession Indicator)" loading={histLoad} source={histSource} accentColor="#ef4444">
             <div style={{ padding: '4px 8px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4 }}>
               When spread {"<"} 0 (inverted): historically precedes recession by 12-18 months
             </div>

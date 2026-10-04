@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { setCache, getCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+
+const Query = z.object({
+  type: z.enum(['football', 'f1', 'nba', 'cricket', 'tennis']).default('football'),
+  league: z.string().regex(/^\d{1,6}$/, 'league must be a numeric id').default('4328'),
+})
 
 const SPORTSDB = 'https://www.thesportsdb.com/api/v1/json/3'
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports'
 const OPENF1 = 'https://api.openf1.org/v1'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'football'
-  const league = searchParams.get('league') || '4328'
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { type, league } = q.data
 
   const key = `sports_${type}_${league}`
   const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     if (type === 'football') {

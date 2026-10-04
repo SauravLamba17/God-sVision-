@@ -45,7 +45,7 @@ export default function ScreenerPage() {
   const [stocks,   setStocks]  = useState<Stock[]>([])
   const [loading,  setLoading] = useState(true)
   const [error,    setError]   = useState<string|null>(null)
-  const [source,   setSource]  = useState('live')
+  const [source,   setSource]  = useState<string | undefined>()
   const [selected, setSelected] = useState<Stock|null>(null)
   const [sort,     setSort]    = useState<{ key: keyof Stock; dir: 1|-1 }>({ key: 'changePct', dir: -1 })
 

@@ -1,6 +1,7 @@
 import { getCache, setCache } from '@/lib/cache'
 import { WORLD_CITIES, INDIA_CITIES } from '@/lib/apis/openweather'
 import { aqiBand, type CityAqi } from '@/lib/aqi'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 /**
  * Per-city air quality for the weather panels.

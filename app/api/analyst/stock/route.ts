@@ -5,6 +5,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { buildStockSnapshot, matchNewsForTicker, generateSyntheticOptionsChain, StockSnapshot } from '@/lib/apis/analyst-data'
 import { getQuoteSummary } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery, ticker as tickerSchema } from '@/lib/validation'
+import { limiterId } from '@/lib/rateLimit'
+
+const Query = z.object({ ticker: tickerSchema, market: z.string().trim().toUpperCase().pipe(z.enum(['US', 'IN'])).default('IN') })
 
 // Per-ticker snapshot + Gemini; cold path can run tens of seconds.
 export const maxDuration = 60
@@ -35,9 +40,12 @@ const SYSTEM_PROMPT = `You are GOD's VISION ANALYST, a senior quantitative analy
 Respond with ONLY valid JSON (no markdown fences): { "analysis": string (150-220 words, data-driven, terminal-style prose, no bullet points), "verdict": "BUY"|"SELL"|"HOLD", "confidence": number (0-100) }.`
 
 export async function GET(req: NextRequest) {
-  const ticker = req.nextUrl.searchParams.get('ticker')
-  const market = (req.nextUrl.searchParams.get('market') || 'IN').toUpperCase() === 'US' ? 'US' : 'IN'
-  if (!ticker) return NextResponse.json({ error: 'ticker is required' }, { status: 400 })
+  // Validated: the ticker becomes a cache key and an AI-cache key, so free-form
+  // strings would mint unbounded cache entries (and Gemini attempts).
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { ticker, market } = q.data
+  const uid = await limiterId(req)
 
   const cacheKey = `analyst_stock_${ticker}`
   const cached = await getCache<any>(cacheKey)
@@ -78,7 +86,7 @@ export async function GET(req: NextRequest) {
       const cachedVerdict = await cachedAI<Verdict>(`ai:analyst-stock:${market}:${ticker.toUpperCase().slice(0, 20)}`, 6 * 3600, async () => {
         const { candles, ...snapshotForPrompt } = snapshot
         const userPrompt = `Stock snapshot:\n${JSON.stringify(snapshotForPrompt, null, 1)}\n\nRecent headlines:\n${JSON.stringify(news.map(n => n.title), null, 1)}\n\nProduce the verdict JSON now.`
-        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT, 'ondemand')
+        const text = await geminiGenerate(userPrompt, SYSTEM_PROMPT, 'ondemand', uid)
         return JSON.parse(text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim())
       })
       if (cachedVerdict) {

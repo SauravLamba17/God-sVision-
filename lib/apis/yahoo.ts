@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import yahooFinance from 'yahoo-finance2'
 import axios from 'axios'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+import { track } from '@/lib/feedHealth'
 
 export const DEFAULT_TICKERS = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'JPM']
 
@@ -56,7 +58,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, baseDelay = 1500)
   for (let i = 0; i < retries; i++) {
     await throttle()
     try {
-      const result = await fn()
+      const result = await track('Yahoo Finance (yahoo-finance2)', fn)
       releaseThrottle()
       return result
     } catch (err: any) {

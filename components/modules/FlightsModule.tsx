@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { toDataStatus } from '@/lib/dataStatus';
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge';
 
 interface Props { compact?: boolean; }
 
@@ -14,6 +16,7 @@ interface Aircraft {
 export default function FlightsModule({ compact }: Props) {
   const [flights, setFlights] = useState<Aircraft[]>([]);
   const [loading, setLoading] = useState(true);
+  const [source, setSource] = useState<string | undefined>();
   const [rateLimited, setRateLimited] = useState(false);
 
   useEffect(() => {
@@ -24,6 +27,7 @@ export default function FlightsModule({ compact }: Props) {
         .then(d => {
           setFlights(Array.isArray(d.data?.aircraft) ? d.data.aircraft.slice(0, limit) : []);
           setRateLimited(!!d.rateLimited);
+          setSource(d.source);
           setLoading(false);
         })
         .catch(() => setLoading(false));
@@ -38,7 +42,7 @@ export default function FlightsModule({ compact }: Props) {
     <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: compact ? '3px 8px' : '5px 10px', borderBottom: '1px solid var(--border-dim)', background: 'var(--bg-header)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>FLIGHTS</span>
-        <span style={{ fontSize: 8, color: 'var(--text-positive)' }}>● LIVE</span>
+        {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="OpenSky Network" />}
       </div>
       {rateLimited && (
         <div style={{ fontSize: '9px', color: 'var(--text-warning)', padding: '4px 8px', flexShrink: 0 }}>

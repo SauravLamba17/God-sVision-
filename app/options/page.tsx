@@ -46,7 +46,7 @@ export default function OptionsPage() {
   const [data,    setData]    = useState<OptionsData|null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string|null>(null)
-  const [source,  setSource]  = useState('live')
+  const [source,  setSource]  = useState<string | undefined>()
   const [tab,       setTab]       = useState<'calls'|'puts'>('calls')
   const [viewMode,  setViewMode]  = useState<'chain'|'surface'>('chain')
   const [strikeFilter, setStrikeFilter] = useState<'all'|'itm'|'otm'>('all')

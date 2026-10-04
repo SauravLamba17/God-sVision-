@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { parseQuery, tickerList } from '@/lib/validation'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 // Live US quotes for the browser, polled every 10s by useAlpacaStream.
 // Replaces the browser WebSocket that needed the Alpaca secret client-side
@@ -9,8 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // set per 10s, shared by every user and instance.
 export const revalidate = 10
 
-const SYMBOL = /^[A-Z][A-Z0-9.]{0,9}$/
-const MAX_SYMBOLS = 50
+const Query = z.object({ symbols: tickerList(50) })
 
 export async function GET(req: NextRequest) {
   const key = process.env.ALPACA_API_KEY
@@ -19,10 +21,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: {}, error: 'Alpaca not configured' }, { status: 503 })
   }
 
-  const symbols = [...new Set(
-    (req.nextUrl.searchParams.get('symbols') ?? '').split(',').map(s => s.trim().toUpperCase()).filter(s => SYMBOL.test(s)),
-  )].sort().slice(0, MAX_SYMBOLS)
-  if (symbols.length === 0) return NextResponse.json({ data: {} })
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  // Sorted so the same set always hits the same upstream cache entry.
+  const symbols = [...q.data.symbols].sort()
 
   try {
     const res = await fetch(`https://data.alpaca.markets/v2/stocks/snapshots?symbols=${symbols.join(',')}&feed=iex`, {

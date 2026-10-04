@@ -120,6 +120,7 @@ export default function FinancialsPage() {
   const [tab,     setTab]     = useState<Tab>('income')
   const [data,    setData]    = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [source, setSource] = useState<string | undefined>() // API status → PanelWrapper badge
   const [error,   setError]   = useState<string|null>(null)
 
   const fetchData = useCallback(async (t: string, p: string) => {
@@ -127,6 +128,7 @@ export default function FinancialsPage() {
     try {
       const res  = await fetch(`/api/financials?ticker=${t}&period=${p}`)
       const json = await res.json()
+      setSource(json.source)
       if (json.rateLimited) {
         setError('Yahoo Finance rate limit — auto-retrying in 30s...')
         setTimeout(() => fetchData(t, p), 30000)
@@ -217,7 +219,7 @@ export default function FinancialsPage() {
             ))}
           </div>
 
-          <PanelWrapper title={`${ticker} — ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} accentColor="#22c55e">
+          <PanelWrapper title={`${ticker} — ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} source={source} accentColor="#22c55e">
             {data && tab !== 'metrics' && <StatementTable data={data[tab]} type={tab} />}
             {data && tab === 'metrics' && km && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: 8 }}>

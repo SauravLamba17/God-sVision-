@@ -20,6 +20,7 @@ export default function ForexPage() {
   const [rates, setRates] = useState<Record<string, number>>({})
   const [selectedPair, setSelectedPair] = useState('EUR/USD')
   const [loading, setLoading] = useState(true)
+  const [pairsSource, setPairsSource] = useState<string | undefined>() // API status → PanelWrapper badge
   const [carryBase, setCarryBase] = useState('EUR')
   const [carryQuote, setCarryQuote] = useState('USD')
 
@@ -38,6 +39,7 @@ export default function ForexPage() {
           fetch(`/api/stocks?tickers=${MAJOR_PAIRS.map(yahooSym).join(',')}`).catch(() => null),
         ])
         const json = await res.json()
+        setPairsSource(json.source)
         const chg: Record<string, number> = {}
         try {
           for (const q of (await chgRes?.json())?.data ?? []) {
@@ -77,7 +79,7 @@ export default function ForexPage() {
         <ForexPanel />
 
         {/* Major Pairs Table */}
-        <PanelWrapper title="MAJOR FX PAIRS" loading={loading}>
+        <PanelWrapper title="MAJOR FX PAIRS" loading={loading} source={pairsSource}>
           <table className="data-table">
             <thead>
               <tr>

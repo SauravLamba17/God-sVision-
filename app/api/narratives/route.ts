@@ -16,6 +16,6 @@ export async function GET() {
     const data = await withTimeout(detectNarratives(), 12000)
     return NextResponse.json({ data })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message, data: null, source: 'empty' })
+    return NextResponse.json({ error: err.message, data: null, source: 'unavailable' })
   }
 }

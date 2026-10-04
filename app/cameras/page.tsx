@@ -274,7 +274,7 @@ export default function CamerasPage() {
 
           <div>
             <div className="font-mono text-[10px] text-muted mb-2">
-              WORLD WEBCAMS {webcamsSource === 'cache' ? '(cached)' : ''}
+              WORLD WEBCAMS {webcamsSource === 'cached' ? '(cached)' : ''}
             </div>
             {webcamsLoading ? (
               <div className="text-center py-8">

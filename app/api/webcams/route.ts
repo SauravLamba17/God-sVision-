@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTopWebcams, getTfLCameras, WindyNotConfiguredError } from '@/lib/apis/windy'
 import { setCache, getCache } from '@/lib/cache'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+
+const Query = z.object({ type: z.enum(['all', 'tfl']).default('all') })
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'all'
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { type } = q.data
 
   const key = `webcams_${type}`
   const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     if (type === 'tfl') {

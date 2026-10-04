@@ -20,6 +20,6 @@ export async function GET() {
   } catch (err) {
     const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
-    return NextResponse.json({ error: String(err), data: { indices: [], marketStatus: 'CLOSED', fetchedAt: Date.now() }, source: 'empty' })
+    return NextResponse.json({ error: String(err), data: { indices: [], marketStatus: 'CLOSED', fetchedAt: Date.now() }, source: 'unavailable' })
   }
 }

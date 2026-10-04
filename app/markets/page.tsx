@@ -8,6 +8,8 @@ import AIButton from '@/components/terminal/AIButton'
 import { formatCurrency, formatNumber, formatPercent, getCurrencyForTicker } from '@/lib/utils'
 import { useAlpacaStream } from '@/lib/hooks/useAlpacaStream'
 import { useFlash } from '@/lib/hooks/useFlash'
+import { toDataStatus } from '@/lib/dataStatus'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 const DEFAULT_TICKERS = ['SPY','QQQ','AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','JPM','PLTR','AMD']
 
@@ -66,7 +68,7 @@ function MarketsInner() {
   const [rateLimited,    setRateLimited]    = useState(false)
   const [retryCountdown, setRetryCountdown] = useState(0)
   const [watchlist,      setWatchlist]      = useState<Quote[]>([])
-  const [source,         setSource]         = useState('live')
+  const [source,         setSource]         = useState<string | undefined>()
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['SMA20','SMA50','RSI','MACD'])
 
   const liveTicker = alpacaTickers.get(selectedTicker ?? 'SPY')
@@ -90,7 +92,7 @@ function MarketsInner() {
         setCandles(json.data.candles || [])
         setIndicators(json.data.indicators || [])
         setSignals(json.data.signals || {})
-        setSource(json.source || 'live')
+        setSource(json.source)
         setRateLimited(false)
       } else if (json.rateLimited) {
         setRateLimited(true)
@@ -221,21 +223,9 @@ function MarketsInner() {
                   {quote.regularMarketChange>=0 ? '+' : ''}{quote.regularMarketChange?.toFixed(2)}
                 </div>
               </div>
-              {alpacaConnected ? (
-                <span style={{
-                  background: 'rgba(0,230,118,0.1)', color: '#00e676', border: '1px solid rgba(0,230,118,0.3)',
-                  borderRadius: '20px', padding: '1px 8px', fontSize: 'var(--fs-badge)', fontWeight: 700, fontFamily: 'IBM Plex Mono',
-                }}>
-                  ● LIVE
-                </span>
-              ) : (
-                <span style={{
-                  background: 'rgba(255,152,0,0.1)', color: '#ff9800', border: '1px solid rgba(255,152,0,0.3)',
-                  borderRadius: '20px', padding: '1px 8px', fontSize: 'var(--fs-badge)', fontWeight: 700, fontFamily: 'IBM Plex Mono',
-                }}>
-                  ● DELAYED 15m
-                </span>
-              )}
+              {/* LIVE only while /api/stocks/live returned Alpaca quotes on the last poll;
+                  otherwise the price shown is Yahoo's quote. */}
+              <DataStatusBadge status={alpacaConnected ? 'live' : 'delayed'} source={alpacaConnected ? 'Alpaca (IEX feed)' : 'Yahoo Finance'} />
             </div>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
               {Object.entries(signals).filter(([k]) => k !== 'rsi' && k !== 'macdValue').map(([k,v]) => (
@@ -289,9 +279,7 @@ function MarketsInner() {
         <div style={{ border:'1px solid #1e293b', background:'var(--bg-terminal)', borderRadius:2, overflow:'hidden' }}>
           <div className="panel-header">
             <span className="panel-header-title">{selectedTicker} — OHLCV · {PERIODS.find(p=>p.value===period)?.label}</span>
-            <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color: source==='live' ? 'var(--text-positive)' : 'var(--text-warning)' }}>
-              {source==='live' ? '● LIVE' : '⚠ CACHED'}
-            </span>
+            {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Yahoo Finance" />}
           </div>
           {rateLimited ? (
             <div style={{ height:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>

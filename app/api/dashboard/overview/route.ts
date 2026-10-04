@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
 import { priorSessionClose } from '@/lib/apis/yahoo'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 // ISR: regenerated at most every 60s (prices/tickers). Without this the route was
 // prerendered at build and served build-time data forever.

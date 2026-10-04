@@ -3,6 +3,15 @@ import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
 import { sma, ema, rsi, macd, bollingerBands, atr, type Candle } from '@/lib/utils/technicals'
 import { getChartData } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery, ticker } from '@/lib/validation'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+
+const Query = z.object({
+  ticker: ticker.default('SPY'),
+  period: z.enum(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']).default('3mo'),
+  interval: z.enum(['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo']).default('1d'),
+})
 
 const YF_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -90,10 +99,9 @@ function buildResult(quotes: any[], ticker: string, period: string, interval: st
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const ticker   = (searchParams.get('ticker') || 'SPY').toUpperCase()
-  const period   = searchParams.get('period')   || '3mo'
-  const interval = searchParams.get('interval') || '1d'
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { ticker, period, interval } = q.data
 
   const cacheKey = `technicals_${ticker}_${period}_${interval}`
   const cached   = await getCache(cacheKey)

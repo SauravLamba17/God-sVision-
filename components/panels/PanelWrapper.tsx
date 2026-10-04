@@ -1,21 +1,26 @@
 'use client'
 import { useState, useEffect, ReactNode } from 'react'
 import { formatTimestamp } from '@/lib/utils'
+import { toDataStatus } from '@/lib/dataStatus'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 interface PanelWrapperProps {
   title: string
   children: ReactNode
   className?: string
+  /** The API's own status string (route `source` field) — drives the badge. */
   source?: 'live' | 'cached' | 'cache' | 'static' | string
+  /** When the data was produced upstream, if the API says (tooltip only). */
+  asOf?: string | number | null
+  /** Provider name for the tooltip, e.g. "CoinGecko". */
+  sourceName?: string
   loading?: boolean
   error?: string | null
   onRefresh?: () => void
   fullHeight?: boolean
   accentColor?: string
   headerExtra?: ReactNode
-  /** Suppress the auto age badge (LIVE/RECENT/DELAYED). For panels whose data is
-   *  historical by nature — the badge measures fetch age, not data recency, so on
-   *  a stale-by-design feed it reads as a claim the numbers are current. */
+  /** Suppress the status badge (for panels whose data is historical by nature). */
   hideAgeBadge?: boolean
 }
 
@@ -24,6 +29,8 @@ export default function PanelWrapper({
   children,
   className = '',
   source,
+  asOf,
+  sourceName,
   loading = false,
   error = null,
   onRefresh,
@@ -39,18 +46,11 @@ export default function PanelWrapper({
   }, [loading, error])
 
   const isCached = source === 'cached' || source === 'cache' || source === 'stale'
-  const isLive   = source === 'live'
 
-  // Compute data age badge
-  const ageMs   = lastUpdated ? Date.now() - lastUpdated.getTime() : null
-  // The age badge measures when the CLIENT last fetched, so it must never claim
-  // LIVE for a panel showing an error/unavailable state or non-live data —
-  // financials/options showed "● LIVE" right above "DATA UNAVAILABLE".
-  const ageBadge = (ageMs === null || hideAgeBadge || error || source === 'static' || source === 'empty') ? null
-    : source === 'stale' ? { label: '● STALE', color: 'var(--text-warning)' }
-    : ageMs < 5 * 60_000  ? { label: '● LIVE',    color: 'var(--text-positive)' }
-    : ageMs < 30 * 60_000 ? { label: '● RECENT',  color: 'var(--text-warning)' }
-    : { label: '⚠ DELAYED', color: 'var(--text-accent)' }
+  // Status comes ONLY from the API's own source field. This used to show
+  // "● LIVE" whenever the browser had fetched within 5 minutes — whatever the
+  // API said, and for panels that pass no source at all. No source → no badge.
+  const status = loading ? null : error ? 'unavailable' : toDataStatus(source)
 
   return (
     <div
@@ -96,17 +96,7 @@ export default function PanelWrapper({
             {title}
           </span>
 
-          {ageBadge && (
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-badge)', color: ageBadge.color, letterSpacing: '0.06em' }}>
-              {ageBadge.label}
-            </span>
-          )}
-          {!ageBadge && !hideAgeBadge && !error && isLive && (
-            <span className="badge-live">
-              <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 2s ease-in-out infinite' }} />
-              LIVE
-            </span>
-          )}
+          {status && !hideAgeBadge && <DataStatusBadge status={status} asOf={asOf} source={sourceName} />}
           {headerExtra}
         </div>
 

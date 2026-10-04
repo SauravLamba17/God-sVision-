@@ -1,4 +1,5 @@
 import axios from 'axios'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 export interface Earthquake {
   id: string

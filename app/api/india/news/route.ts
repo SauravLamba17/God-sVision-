@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { INDIA_NEWS_FEEDS } from '@/lib/apis/india'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 // ISR: regenerated at most every 300s (news/sentiment). Without this the route was
 // prerendered at build and served build-time data forever.
@@ -85,6 +86,6 @@ export async function GET() {
   } catch (err) {
     const fallback = await getCache(key)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
-    return NextResponse.json({ error: String(err), data: { articles: [], total: 0, fetchedAt: Date.now() }, source: 'empty' })
+    return NextResponse.json({ error: String(err), data: { articles: [], total: 0, fetchedAt: Date.now() }, source: 'unavailable' })
   }
 }

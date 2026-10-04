@@ -7,6 +7,10 @@ import {
   buildUniverseSnapshots, ANALYST_UNIVERSE_IN, ANALYST_UNIVERSE_US, StockSnapshot, matchNewsForTicker,
 } from '@/lib/apis/analyst-data'
 import { getIndianMarketStatus } from '@/lib/apis/india'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+
+const MarketQuery = z.object({ market: z.string().trim().toUpperCase().pipe(z.enum(['US', 'IN'])).default('IN') })
 
 // Builds the full universe snapshot then calls Gemini; cold path can run tens of seconds.
 export const maxDuration = 60
@@ -173,7 +177,9 @@ function parseJson(text: string): any {
 }
 
 export async function GET(req: NextRequest) {
-  const market = (req.nextUrl.searchParams.get('market') || 'IN').toUpperCase() === 'US' ? 'US' : 'IN'
+  const q = parseQuery(req, MarketQuery)
+  if (q.error) return q.error
+  const { market } = q.data
   const cacheKey = `analyst_${market}`
   const cached = await getCache<any>(cacheKey)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
@@ -185,7 +191,7 @@ export async function GET(req: NextRequest) {
     if (snapshots.length === 0) {
       const fallback = await getCache<any>(cacheKey)
       if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
-      return NextResponse.json({ error: 'No market data available', data: null, source: 'empty' })
+      return NextResponse.json({ error: 'No market data available', data: null, source: 'unavailable' })
     }
 
     let newsMap: Record<string, string> = {}
@@ -234,6 +240,6 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     const fallback = await getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
-    return NextResponse.json({ error: String(err), data: null, source: 'empty' })
+    return NextResponse.json({ error: String(err), data: null, source: 'unavailable' })
   }
 }

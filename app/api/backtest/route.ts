@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChartRange } from '@/lib/apis/yahoo';
+import { z } from 'zod';
+import { parseBody, ticker, isoDate } from '@/lib/validation';
+import { checkLimits, LIMITS, limiterId, tooManyRequests } from '@/lib/rateLimit';
+
+const today = () => new Date().toISOString().split('T')[0];
+const period = (min: number, max: number) => z.coerce.number().int().min(min).max(max).optional();
+const Body = z.object({
+  ticker: ticker.default('SPY'),
+  strategy: z.enum(['sma_crossover', 'rsi', 'buy_hold']).default('sma_crossover'),
+  startDate: isoDate.default('2022-01-01'),
+  endDate: isoDate.default(today),
+  initialCapital: z.coerce.number().finite().positive().max(1e9).default(10000),
+  params: z.object({
+    shortPeriod: period(2, 200),
+    longPeriod: period(2, 400),
+    period: period(2, 100),
+    oversold: z.coerce.number().min(1).max(99).optional(),
+    overbought: z.coerce.number().min(1).max(99).optional(),
+  }).default({}),
+}).refine(b => b.startDate < b.endDate, { message: 'startDate must be before endDate' });
 
 interface OHLCV {
   date: Date;
@@ -205,15 +225,11 @@ function runBacktest(
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {
-      ticker = 'SPY',
-      strategy = 'sma_crossover',
-      startDate = '2022-01-01',
-      endDate = new Date().toISOString().split('T')[0],
-      initialCapital = 10000,
-      params = {},
-    } = body;
+    const parsed = await parseBody(req, Body);
+    if (parsed.error) return parsed.error;
+    const { ticker, strategy, startDate, endDate, initialCapital, params } = parsed.data;
+    const rl = await checkLimits([LIMITS.backtest(await limiterId(req))]);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter, 'backtests');
 
     const chart = await getChartRange(ticker, new Date(startDate), new Date(endDate), '1d');
 

@@ -1,4 +1,5 @@
 import { getCache, setCache } from '@/lib/cache'
+import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
 
 /**
  * FII/DII cash-market flows from NSE's own endpoint.

@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { resend } from '@/lib/resend';
 import crypto from 'crypto';
 import { hashResetToken } from '@/lib/resetToken';
+import { z } from 'zod';
+import { parseBody } from '@/lib/validation';
+import { checkLimits, LIMITS, clientIp, tooManyRequests } from '@/lib/rateLimit';
+
+const Body = z.object({ email: z.string().trim().max(254).email('Email required') });
 
 // ponytail: used/expired PasswordResetToken rows are never purged. Harmless
 // (extra rows only, no functional impact) — add a scheduled cleanup job if the
@@ -51,11 +56,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(body, init);
   };
   try {
-    const { email: rawEmail } = await req.json();
-    if (!rawEmail || typeof rawEmail !== 'string') {
-      return NextResponse.json({ error: 'Email required' }, { status: 400 });
-    }
-    const email = rawEmail.trim().toLowerCase();
+    // Per IP (on top of the per-email limit below): stops one client mailing
+    // reset links to many different addresses. Says nothing about accounts.
+    const ipLimit = await checkLimits([LIMITS.forgotIp(clientIp(req))]);
+    if (!ipLimit.ok) return tooManyRequests(ipLimit.retryAfter, 'reset requests from this network');
+
+    // A malformed email is rejected before any lookup — reveals nothing about accounts.
+    const parsed = await parseBody(req, Body);
+    if (parsed.error) return parsed.error;
+    const email = parsed.data.email.toLowerCase();
 
     // Throttle BEFORE looking the account up (see checkRateLimit).
     const rateLimit = await checkRateLimit(email);

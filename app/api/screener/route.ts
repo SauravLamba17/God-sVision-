@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery, intParam, numParam, shortText } from '@/lib/validation'
+
+const Query = z.object({
+  scrId: z.enum(['day_gainers', 'day_losers', 'most_actives', 'undervalued_growth_stocks', 'growth_technology_stocks', 'aggressive_small_caps', 'small_cap_gainers', 'portfolio_anchors']).default('day_gainers'),
+  count: intParam(1, 100).default(25),
+  sector: shortText(50).default(''),
+  minPE: numParam(-1e6, 1e6).default(0),
+  maxPE: numParam(-1e6, 1e6).default(999),
+  minMCap: numParam(0, 1e15).default(0),
+})
 
 // Representative universe of liquid stocks for screener
 const SCREENER_UNIVERSE = [
@@ -27,13 +38,9 @@ const SCREENER_IDS = [
 ]
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const scrId   = searchParams.get('scrId')   || 'day_gainers'
-  const count   = parseInt(searchParams.get('count') || '25')
-  const sector  = searchParams.get('sector')  || ''
-  const minPE   = parseFloat(searchParams.get('minPE') || '0')
-  const maxPE   = parseFloat(searchParams.get('maxPE') || '999')
-  const minMCap = parseFloat(searchParams.get('minMCap') || '0')
+  const q = parseQuery(req, Query)
+  if (q.error) return q.error
+  const { scrId, count, sector, minPE, maxPE, minMCap } = q.data
 
   const cacheKey = `screener_v2_${scrId}_${count}_${sector}`
   const cached = await getCache(cacheKey)

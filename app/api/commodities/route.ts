@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { setCache, getCache } from '@/lib/cache'
 import { priorSessionClose } from '@/lib/apis/yahoo'
+import { z } from 'zod'
+import { parseQuery } from '@/lib/validation'
+import '@/lib/feedHealth' // registers axios feed-health interceptors
+
+const Query = z.object({ type: z.enum(['all']).default('all') })
 
 const COMMODITY_TICKERS = {
   'WTI': 'CL=F',
@@ -19,12 +24,14 @@ const COMMODITY_TICKERS = {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'all'
+  // `type` feeds the cache key — free-form values would mint unbounded entries.
+  const q = parseQuery(request, Query)
+  if (q.error) return q.error
+  const { type } = q.data
 
   const key = `commodities_${type}`
   const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   try {
     const tickers = Object.values(COMMODITY_TICKERS)
