@@ -10,7 +10,7 @@
 ### Files Created / Updated
 - `lib/hooks/useAlpacaStream.ts` — **NEW**: WebSocket client for `wss://stream.data.alpaca.markets/v2/iex`. Handles `T:'q'` (quotes) and `T:'t'` (trades). Mid-price from bid/ask. Auto-reconnect with 5s backoff. prevClose fetched from prevclose API on mount.
 - `lib/hooks/useFlash.ts` — **UPDATED**: Added `'use client'` directive, extended duration to 400ms. Flash direction (`'up'` | `'down'`) on price changes.
-- `app/api/stocks/prevclose/route.ts` — **NEW**: Fetches `regularMarketPreviousClose` from yahoo-finance2. 4-hour in-memory cache keyed by sorted symbol list.
+- `app/api/stocks/prevclose/route.ts` — *(removed 2026-10-04: useAlpacaStream now gets prevClose from /api/stocks/live)* — Fetches `regularMarketPreviousClose` from yahoo-finance2. 4-hour in-memory cache keyed by sorted symbol list.
 - `lib/utils/format.ts` — **UPDATED**: Added `fmtChange()` — formats price change as `+$1.23` / `-$0.45`.
 
 ### Environment Variables Required
@@ -124,7 +124,7 @@ npm run build       → 91 pages, 0 errors
 | `/api/stripe/checkout` | Dynamic | Stripe checkout |
 | `/api/stripe/portal` | Dynamic | Billing portal |
 | `/api/stripe/webhook` | Dynamic | Stripe webhooks |
-| `/api/stocks/prevclose` | Dynamic | Previous close cache |
+| ~~`/api/stocks/prevclose`~~ | removed | Superseded by `/api/stocks/live` |
 
 ---
 
