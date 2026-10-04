@@ -6,7 +6,7 @@
 2. Go to Extensions → Apps Script
 3. Delete any starter code, paste the entire contents of `Code.gs`
 4. Replace `YOUR-VERCEL-URL` with your actual deployed URL
-5. Replace `YOUR_GV_SHEETS_API_KEY` with the value from your `.env.local` GV_SHEETS_API_KEY
+5. Replace `YOUR_GV_SHEETS_API_KEY` with your personal key from the /sheets page (shown once; regenerate there if lost)
 6. Save (Ctrl+S), name the project "GOD's Vision"
 7. Return to your sheet — you can now use:
 

@@ -103,7 +103,11 @@ const header: React.CSSProperties = {
 
 export default function SheetsPage() {
   const { data: session, status } = useSession();
+  // Raw key: only present right after it was created/regenerated (never stored server-side).
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [keyCreatedAt, setKeyCreatedAt] = useState<string | null>(null);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -115,9 +119,30 @@ export default function SheetsPage() {
     if (status !== 'authenticated') return;
     fetch('/api/user/gv-key')
       .then(r => r.json())
-      .then(d => { if (d.key) setApiKey(d.key); })
-      .catch(() => {});
+      .then(d => {
+        if (d.key) setApiKey(d.key);
+        if (d.createdAt) setKeyCreatedAt(d.createdAt);
+        if (d.error) setKeyError(d.error);
+      })
+      .catch(() => setKeyError('Could not load your key — network error'));
   }, [status]);
+
+  const regenerate = async () => {
+    if (!confirm('Generate a new key? Your current key stops working immediately — every sheet using it must be updated.')) return;
+    setRegenerating(true);
+    setKeyError(null);
+    try {
+      const res = await fetch('/api/user/gv-key', { method: 'POST' });
+      const d = await res.json();
+      if (!res.ok || !d.key) throw new Error(d.error || 'Failed');
+      setApiKey(d.key);
+      setKeyCreatedAt(d.createdAt);
+    } catch {
+      setKeyError('Could not generate a new key — try again');
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const copyCode = async () => {
     const code = buildCodeGs(baseUrl || 'https://YOUR-VERCEL-URL.vercel.app', apiKey ?? 'YOUR_GV_SHEETS_API_KEY');
@@ -147,7 +172,7 @@ export default function SheetsPage() {
             ) : !session ? (
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                  Sign in to view your GV_SHEETS_API_KEY.
+                  Sign in to get your personal Sheets API key.
                 </div>
                 <Link href="/auth/signin" style={{
                   display: 'inline-block', background: 'var(--text-accent)', color: '#000',
@@ -159,20 +184,34 @@ export default function SheetsPage() {
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '6px' }}>GV_SHEETS_API_KEY</div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  YOUR PERSONAL KEY{keyCreatedAt ? ` · created ${new Date(keyCreatedAt).toLocaleString()}` : ''}
+                </div>
                 <div style={{
-                  fontSize: '12px', color: 'var(--text-positive)', background: 'var(--bg-input)',
+                  fontSize: '12px', color: apiKey ? 'var(--text-positive)' : 'var(--text-muted)', background: 'var(--bg-input)',
                   border: '1px solid var(--border-color)', borderRadius: '3px', padding: '8px 10px',
-                  wordBreak: 'break-all', marginBottom: '10px',
+                  wordBreak: 'break-all', marginBottom: '6px',
                 }}>
-                  {apiKey ?? 'Loading…'}
+                  {apiKey ?? (keyError ?? (keyCreatedAt ? '•••••••• (hidden — shown only once)' : 'Loading…'))}
+                </div>
+                <div style={{ fontSize: '9px', color: apiKey ? 'var(--text-warning)' : 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
+                  {apiKey
+                    ? 'Copy it now — for your security it will not be shown again. Lost it? Regenerate below.'
+                    : 'Your key is stored only as a hash and cannot be shown again. Regenerate to get a new one.'}
                 </div>
                 <button onClick={copyCode} style={{
                   width: '100%', padding: '9px', background: copied ? 'var(--text-positive)' : 'var(--text-accent)',
                   border: 'none', color: '#000', fontWeight: 700, fontSize: '10px',
                   borderRadius: '3px', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace',
                 }}>
-                  {copied ? '✓ COPIED TO CLIPBOARD' : 'COPY Code.gs (with your key filled in)'}
+                  {copied ? '✓ COPIED TO CLIPBOARD' : apiKey ? 'COPY Code.gs (with your key filled in)' : 'COPY Code.gs (paste your key into GV_API_KEY)'}
+                </button>
+                <button onClick={regenerate} disabled={regenerating} style={{
+                  width: '100%', padding: '7px', marginTop: '6px', background: 'transparent',
+                  border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '10px',
+                  borderRadius: '3px', cursor: regenerating ? 'wait' : 'pointer', fontFamily: 'IBM Plex Mono, monospace',
+                }}>
+                  {regenerating ? 'GENERATING…' : '↻ REGENERATE KEY'}
                 </button>
                 <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5 }}>
                   Base URL used: <span style={{ color: 'var(--text-secondary)' }}>{baseUrl}</span><br />

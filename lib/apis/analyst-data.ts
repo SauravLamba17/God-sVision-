@@ -169,31 +169,24 @@ export function matchNewsForTicker(articles: NewsArticle[], ticker: string, limi
 }
 
 // ── Synthetic options chain (NSE/US live chains aren't reliably available
-// without paid data — this is a model-derived approximation for UI purposes) ─
-export function generateSyntheticOptionsChain(price: number, atrVal: number | null, ticker: string) {
+// without paid data — this is a model-derived approximation for UI purposes).
+// No open interest: there is nothing to model OI from, and the seeded-random
+// numbers that used to fill those columns read as real exchange data. ─
+export function generateSyntheticOptionsChain(price: number, atrVal: number | null) {
   const strikeStep = price > 5000 ? 100 : price > 1000 ? 50 : price > 200 ? 10 : price > 50 ? 5 : 1
   const atmStrike = Math.round(price / strikeStep) * strikeStep
   const ivBase = atrVal ? Math.min(60, Math.max(15, (atrVal / price) * 100 * 6)) : 28
-  // Deterministic pseudo-random seeded by ticker char codes so values are stable per render cycle
-  let seed = 0
-  for (const ch of ticker) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
-  const rand = (i: number) => {
-    const x = Math.sin(seed + i * 137.13) * 10000
-    return x - Math.floor(x)
-  }
 
   const strikes = []
   for (let i = -4; i <= 4; i++) {
     const strike = atmStrike + i * strikeStep
     const dist = Math.abs(strike - price) / price
-    const iv = +(ivBase + dist * 40 + rand(i) * 3).toFixed(1)
-    const callOI = Math.round((1 - dist * 3) * 50000 * (1 + rand(i + 10)) )
-    const putOI = Math.round((1 - dist * 3) * 50000 * (1 + rand(i + 20)))
+    const iv = +(ivBase + dist * 40).toFixed(1) // simple smile: IV rises away from ATM
     strikes.push({
       strike,
-      call: { oi: Math.max(500, callOI), iv, ltp: +Math.max(0.5, (price - strike) + price * iv / 100 * 0.08).toFixed(2) },
-      put:  { oi: Math.max(500, putOI),  iv, ltp: +Math.max(0.5, (strike - price) + price * iv / 100 * 0.08).toFixed(2) },
+      call: { iv, ltp: +Math.max(0.5, (price - strike) + price * iv / 100 * 0.08).toFixed(2) },
+      put:  { iv, ltp: +Math.max(0.5, (strike - price) + price * iv / 100 * 0.08).toFixed(2) },
     })
   }
-  return { atmStrike, strikeStep, ivBase: +ivBase.toFixed(1), strikes, note: 'Indicative model-derived chain — not live exchange data' }
+  return { atmStrike, strikeStep, ivBase: +ivBase.toFixed(1), strikes, note: 'SYNTHETIC CHAIN — IV AND PREMIUMS ARE ESTIMATED FROM SPOT PRICE & ATR, NOT EXCHANGE-QUOTED. NO OPEN INTEREST DATA.' }
 }

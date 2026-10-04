@@ -58,7 +58,7 @@ configured) from the production report.
 | `GV_SHEETS_API_KEY` | `app/api/public/gv`, `app/api/public/gv-history`, `app/api/user/gv-key` | Shared app-wide key. Auth layer verified working |
 | `OPENWEATHER_KEY` | `lib/apis/openweather.ts` | Verified live in production |
 | `WINDY_WEBCAM_KEY` | `lib/apis/windy.ts` | Verified live in production |
-| `AISSTREAM_KEY` | `app/api/ships/route.ts` | Set, but `/api/ships` returns `connected:false` — worth a look |
+| `AISSTREAM_KEY` | — (unused) | `/api/ships` was removed 2026-10-04 (no UI used it; it served mock vessels without a key). Safe to unset |
 | `ALPACA_API_KEY` | `app/api/sparkline/route.ts` | `/api/sparkline` currently returns empty for all tickers |
 | `ALPACA_SECRET_KEY` | `app/api/sparkline/route.ts` | Same |
 | `NEXT_PUBLIC_ALPACA_API_KEY` | `lib/hooks/useAlpacaStream.ts` | ⚠️ `NEXT_PUBLIC_` = **shipped to the browser**. See security note below |

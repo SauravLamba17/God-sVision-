@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChartRange } from '@/lib/apis/yahoo';
-
-const VALID_KEYS = new Set([process.env.GV_SHEETS_API_KEY ?? 'godsvision-demo-key']);
+import { isValidSheetsKey } from '@/lib/sheetsKey';
 
 export async function GET(req: NextRequest) {
   try {
     const apiKey = req.nextUrl.searchParams.get('key');
-    if (!apiKey || !VALID_KEYS.has(apiKey)) {
+    if (!(await isValidSheetsKey(apiKey))) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
     }
 

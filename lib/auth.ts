@@ -38,6 +38,17 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = (user as any).id;
         token.plan = (user as any).plan ?? 'free';
+        return token;
+      }
+      // A JWT outlives its user: without this a deleted account kept a working
+      // session until the cookie expired. Throwing makes NextAuth clear the
+      // cookie and getServerSession() return null. A DB error fails open — a
+      // Neon blip must not sign every user out.
+      if (token.id) {
+        const exists = await prisma.user
+          .findUnique({ where: { id: token.id as string }, select: { id: true } })
+          .catch(() => true);
+        if (!exists) throw new Error('Session user no longer exists');
       }
       return token;
     },

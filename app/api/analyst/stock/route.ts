@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       news = matchNewsForTicker(articles, ticker, 5)
     }
 
-    const optionsChain = generateSyntheticOptionsChain(snapshot.price, snapshot.atr, ticker)
+    const optionsChain = generateSyntheticOptionsChain(snapshot.price, snapshot.atr)
 
     let fundamentals: any = null
     try {

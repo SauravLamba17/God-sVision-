@@ -24,7 +24,7 @@ interface StockSnapshot {
 interface NewsArticle { title: string; url: string; source: string; publishedAt: string; summary?: string }
 interface OptionsChain {
   atmStrike: number; strikeStep: number; ivBase: number; note: string
-  strikes: { strike: number; call: { oi: number; iv: number; ltp: number }; put: { oi: number; iv: number; ltp: number } }[]
+  strikes: { strike: number; call: { iv: number; ltp: number }; put: { iv: number; ltp: number } }[]
 }
 interface DeepDiveData {
   snapshot: StockSnapshot; news: NewsArticle[]; optionsChain: OptionsChain; fundamentals: any
@@ -224,18 +224,16 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
 
               {tab === 'options' && (
                 <div>
-                  <div style={{ fontSize: 8, color: 'var(--text-warning)', marginBottom: 8 }}>⚠ {data.optionsChain.note}</div>
+                  <div style={{ fontSize: 9, color: 'var(--text-warning)', letterSpacing: '0.03em', marginBottom: 8 }}>⚠ {data.optionsChain.note}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9 }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid #1b2e1b' }}>
                         {([
-                          ['CALL_OPTION', 'CALL OI'],
-                          ['IV', 'CALL IV'],
-                          ['PREMIUM', 'CALL LTP'],
+                          ['IV', 'CALL IV (EST)'],
+                          ['PREMIUM', 'CALL PREM (EST)'],
                           ['STRIKE_PRICE', 'STRIKE'],
-                          ['PREMIUM', 'PUT LTP'],
-                          ['IV', 'PUT IV'],
-                          ['PUT_OPTION', 'PUT OI'],
+                          ['PREMIUM', 'PUT PREM (EST)'],
+                          ['IV', 'PUT IV (EST)'],
                         ] as [string, string][]).map(([glossaryKey, h]) => (
                           <th key={h} style={{ fontSize: 7, color: 'var(--text-muted)', padding: '4px 6px', textAlign: 'center' }}>
                             <GlossaryTooltip term={glossaryKey}>{h}</GlossaryTooltip>
@@ -246,13 +244,11 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     <tbody>
                       {data.optionsChain.strikes.map(s => (
                         <tr key={s.strike} style={{ borderBottom: '1px solid #0d1a0d', background: s.strike === data.optionsChain.atmStrike ? `${accent}10` : 'transparent' }}>
-                          <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-positive)' }}>{s.call.oi.toLocaleString()}</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-secondary)' }}>{s.call.iv}%</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-primary)' }}>{currency}{s.call.ltp}</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 700, color: s.strike === data.optionsChain.atmStrike ? accent : 'var(--text-primary)' }}>{s.strike}</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-primary)' }}>{currency}{s.put.ltp}</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-secondary)' }}>{s.put.iv}%</td>
-                          <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-negative)' }}>{s.put.oi.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>

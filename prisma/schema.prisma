@@ -17,6 +17,10 @@ model User {
   password          String?            @db.Text
   plan              String             @default("free")
   stripeCustomerId  String?            @unique
+  // Per-user Google Sheets API key: SHA-256 of the raw key (shown to the user
+  // once on /sheets). Unique so /api/public/gv can look a key up by its hash.
+  sheetsKeyHash      String?           @unique
+  sheetsKeyCreatedAt DateTime?
   accounts          Account[]
   sessions          Session[]
   watchlists        Watchlist[]

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
 import { getQuotes } from '@/lib/apis/yahoo';
-
-// Simple API key check (basic auth layer, not full public API system)
-const VALID_KEYS = new Set([
-  process.env.GV_SHEETS_API_KEY ?? 'godsvision-demo-key',
-]);
+import { isValidSheetsKey } from '@/lib/sheetsKey';
 
 // Fields the crumb-free query1 chart quote carries. Everything else (P/E, EPS,
 // market cap…) still needs yahoo-finance2's query2 quote, which 429s under load.
@@ -17,7 +13,7 @@ const TTL = 30 * 1000;
 export async function GET(req: NextRequest) {
   try {
     const apiKey = req.nextUrl.searchParams.get('key');
-    if (!apiKey || !VALID_KEYS.has(apiKey)) {
+    if (!(await isValidSheetsKey(apiKey))) {
       return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
     }
 
