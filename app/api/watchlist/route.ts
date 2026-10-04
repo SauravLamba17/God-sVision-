@@ -13,9 +13,11 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
 
     const items = await prisma.watchlist.findMany({
-      where: userId ? { userId } : { userId: null },
+      where: { userId },
       orderBy: { addedAt: 'asc' },
     })
     if (items.length === 0) return NextResponse.json({ data: [] }, { headers: PRIVATE })
@@ -41,11 +43,11 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
 
     const item = await prisma.watchlist.upsert({
-      where: userId
-        ? { userId_ticker: { userId, ticker: ticker.toUpperCase() } }
-        : { userId_ticker: { userId: null as any, ticker: ticker.toUpperCase() } },
+      where: { userId_ticker: { userId, ticker: ticker.toUpperCase() } },
       update: { name: name || ticker, assetType: assetType || 'STOCK', note: note || '' },
       create: { ticker: ticker.toUpperCase(), name: name || ticker, assetType: assetType || 'STOCK', note: note || '', userId },
     })
@@ -61,6 +63,8 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
 
     await prisma.watchlist.deleteMany({
       where: { ticker, userId },

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import axios from 'axios'
 import { getCache, setCache } from '@/lib/cache'
+import { priorSessionClose } from '@/lib/apis/yahoo'
 
 const YF_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -15,7 +16,7 @@ async function fetchQ(ticker: string) {
   if (!result) throw new Error(`no data: ${ticker}`)
   const meta   = result.meta
   const closes = (result.indicators?.quote?.[0]?.close || []).filter(Boolean) as number[]
-  const prev   = meta.chartPreviousClose || meta.previousClose || meta.regularMarketPreviousClose || meta.regularMarketPrice
+  const prev   = priorSessionClose(result) || meta.regularMarketPrice
   const price  = meta.regularMarketPrice as number
   const change = price - prev
   return {
@@ -31,11 +32,9 @@ async function fetchQ(ticker: string) {
 
 async function fetchBatch(tickers: string[]) {
   const settled = await Promise.allSettled(tickers.map(t => fetchQ(t)))
-  return settled.map((r, i) =>
-    r.status === 'fulfilled'
-      ? r.value
-      : { symbol: tickers[i], shortName: tickers[i], price: 0, change: 0, changePct: 0, volume: 0, sparkline: [], failed: true }
-  )
+  // Drop failures. They used to come back as price 0 / change 0, which the
+  // strip rendered as a real "0 +0.00%" quote (badged "DELAYED").
+  return settled.flatMap(r => (r.status === 'fulfilled' ? [r.value] : []))
 }
 
 const INDEX_TICKERS  = ['^GSPC', '^IXIC', '^DJI', '^VIX', '^RUT']
@@ -92,14 +91,13 @@ export async function GET() {
     ...q, label: GLOBAL_LABELS[q.symbol] || q.symbol, region: GLOBAL_REGION[q.symbol] || 'AMER',
   }))
 
-  // Approximate S&P 500 breadth from sector ETFs (~45 stocks each)
+  // Sector breadth: how many of the 11 SPDR sector ETFs are up / down / flat.
+  // This used to multiply each sector by 45 and print the result as S&P 500
+  // advancer/decliner STOCK counts ("405 ADV 0 DEC") — numbers no feed produced.
   const sectors = secR.status === 'fulfilled' ? secR.value : []
-  let advancing = 0, declining = 0
-  sectors.forEach(s => {
-    if (s.changePct > 0.1) advancing += 45
-    else if (s.changePct < -0.1) declining += 45
-  })
-  const unchanged = Math.max(0, 500 - advancing - declining)
+  const advancing = sectors.filter(s => s.changePct > 0.1).length
+  const declining = sectors.filter(s => s.changePct < -0.1).length
+  const unchanged = sectors.length - advancing - declining
 
   const data = { indices, commodities, globalMarkets, breadth: { advancing, declining, unchanged }, fetchedAt: Date.now() }
   await setCache(cacheKey, data, 30)

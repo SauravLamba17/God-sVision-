@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 
 const AIButton = dynamic(() => import('@/components/terminal/AIButton'), { ssr: false })
 
-interface Rate { bank: string; country: string; rate: number; lastChange: string; direction: 'UP' | 'DOWN' | 'HOLD'; nextMeeting: string; color: string }
+interface Rate { bank: string; country: string; rate: number; lastChange: string; direction: 'UP' | 'DOWN' | 'HOLD'; color: string }
 interface Speech { id: string; bank: string; speaker: string; title: string; date: string; link: string; sentiment: 'HAWKISH' | 'DOVISH' | 'NEUTRAL'; keyWords: string[] }
 
 const SENT_COLORS = { HAWKISH: 'var(--text-negative)', DOVISH: 'var(--text-positive)', NEUTRAL: 'var(--text-warning)' }
@@ -33,6 +33,7 @@ function HawkDoveMeter({ speeches }: { speeches: Speech[] }) {
 
 export default function CentralBanksPage() {
   const [rates, setRates] = useState<Rate[]>([])
+  const [ratesError, setRatesError] = useState<string | null>(null)
   const [speeches, setSpeeches] = useState<Speech[]>([])
   const [loading, setLoading] = useState(true)
   const [bankFilter, setBankFilter] = useState('ALL')
@@ -44,6 +45,7 @@ export default function CentralBanksPage() {
         const res = await fetch('/api/centralbanks')
         const j = await res.json()
         if (j.rates) setRates(j.rates)
+        if (j.ratesError) setRatesError(j.ratesError)
         if (j.speeches) setSpeeches(j.speeches)
       } finally { setLoading(false) }
     }
@@ -64,7 +66,10 @@ export default function CentralBanksPage() {
       </div>
 
       {/* Rate Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1, padding: '1px 0', background: 'var(--border-color)', borderBottom: '1px solid #1b2e1b' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 1, padding: '1px 0', background: 'var(--border-color)', borderBottom: '1px solid #1b2e1b' }}>
+        {ratesError && (
+          <div style={{ gridColumn: '1 / -1', background: 'var(--bg-terminal)', padding: '10px 12px', fontSize: 10, color: 'var(--text-muted)' }}>{ratesError}</div>
+        )}
         {rates.map(r => (
           <div key={r.bank} onClick={() => setBankFilter(bankFilter === r.bank ? 'ALL' : r.bank)}
             style={{ background: bankFilter === r.bank ? 'var(--bg-panel)' : 'var(--bg-terminal)', padding: '10px 12px', cursor: 'pointer', transition: 'background 0.2s', borderBottom: bankFilter === r.bank ? `2px solid ${r.color}` : '2px solid transparent' }}>
@@ -76,7 +81,7 @@ export default function CentralBanksPage() {
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{r.rate.toFixed(2)}%</div>
             <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 6 }}>{r.country}</div>
-            <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>Next: {r.nextMeeting.slice(5)}</div>
+            <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>As of {r.lastChange}</div>
           </div>
         ))}
       </div>

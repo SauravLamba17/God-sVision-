@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchSeries } from '@/lib/apis/fred';
 import { getQuotes } from '@/lib/apis/yahoo';
 
 // Values are null when the upstream did not return them. They were previously
@@ -83,35 +84,20 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === 'spread') {
-      // Credit spreads from FRED (fallback to static if no key)
-      const FRED_KEY = process.env.FRED_API_KEY;
+      // Credit spreads from FRED (API with a key, keyless CSV without one).
       const spreads: any = {};
-      if (FRED_KEY) {
-        const series = [
-          { id: 'BAMLC0A0CM', label: 'Investment Grade Spread' },
-          { id: 'BAMLH0A0HYM2', label: 'High Yield Spread' },
-          { id: 'T10Y2Y', label: '10Y-2Y Spread' },
-          { id: 'T10Y3M', label: '10Y-3M Spread' },
-        ];
-        await Promise.allSettled(
-          series.map(async (s) => {
-            try {
-              const r = await fetch(
-                `https://api.stlouisfed.org/fred/series/observations?series_id=${s.id}&api_key=${FRED_KEY}&limit=1&sort_order=desc&file_type=json`
-              );
-              const d = await r.json();
-              const latest = d.observations?.[0];
-              if (latest) {
-                spreads[s.id] = {
-                  label: s.label,
-                  value: parseFloat(latest.value),
-                  date: latest.date,
-                };
-              }
-            } catch { /* silent per-series */ }
-          })
-        );
-      }
+      const series = [
+        { id: 'BAMLC0A0CM', label: 'Investment Grade Spread' },
+        { id: 'BAMLH0A0HYM2', label: 'High Yield Spread' },
+        { id: 'T10Y2Y', label: '10Y-2Y Spread' },
+        { id: 'T10Y3M', label: '10Y-3M Spread' },
+      ];
+      await Promise.allSettled(
+        series.map(async (s) => {
+          const latest = (await fetchSeries(s.id, 10)).find((o: any) => o.value !== '.');
+          if (latest) spreads[s.id] = { label: s.label, value: parseFloat(latest.value), date: latest.date };
+        })
+      );
       // No live FRED data -> report each series as unavailable. This previously
       // substituted four hardcoded numbers (0.98 / 3.21 / 0.18 / -0.42) carrying
       // date:'N/A', which the page rendered as real percentages. FRED_API_KEY is

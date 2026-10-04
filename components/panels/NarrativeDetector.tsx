@@ -49,14 +49,10 @@ export default function NarrativeDetector({ compact = false }: { compact?: boole
         AI narratives unavailable — GEMINI_API_KEY not configured
       </div>
     )
+    // Not loading and nothing to show: say so rather than an endless skeleton.
     return (
-      <div style={{ padding: compact ? 8 : 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
-          Analyzing market headlines for emerging narratives...
-        </div>
-        {[100, 85, 92].map((w, i) => (
-          <div key={i} className="skeleton" style={{ height: 10, width: `${w}%`, borderRadius: 2 }} />
-        ))}
+      <div style={{ padding: compact ? 8 : 12, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
+        AI narratives unavailable right now — not enough live headlines to analyse{data ? ` (${data.headlinesAnalyzed} received)` : ''}.
       </div>
     )
   }

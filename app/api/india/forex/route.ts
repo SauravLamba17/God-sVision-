@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
-import { fetchIndiaForex } from '@/lib/apis/india'
+import { fetchIndiaForex, getUsdInr } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_forex'
   const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
-  // Fetch live USD/INR first
-  let exchangeRate = 83.5
-  try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(5000) })
-    const d = await r.json()
-    if (d.rates?.INR) exchangeRate = d.rates.INR
-  } catch { /* keep fallback */ }
+  const exchangeRate = await getUsdInr()
 
   try {
     const pairs = await fetchIndiaForex(exchangeRate)

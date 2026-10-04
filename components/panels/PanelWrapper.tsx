@@ -43,7 +43,11 @@ export default function PanelWrapper({
 
   // Compute data age badge
   const ageMs   = lastUpdated ? Date.now() - lastUpdated.getTime() : null
-  const ageBadge = (ageMs === null || hideAgeBadge) ? null
+  // The age badge measures when the CLIENT last fetched, so it must never claim
+  // LIVE for a panel showing an error/unavailable state or non-live data —
+  // financials/options showed "● LIVE" right above "DATA UNAVAILABLE".
+  const ageBadge = (ageMs === null || hideAgeBadge || error || source === 'static' || source === 'empty') ? null
+    : source === 'stale' ? { label: '● STALE', color: 'var(--text-warning)' }
     : ageMs < 5 * 60_000  ? { label: '● LIVE',    color: 'var(--text-positive)' }
     : ageMs < 30 * 60_000 ? { label: '● RECENT',  color: 'var(--text-warning)' }
     : { label: '⚠ DELAYED', color: 'var(--text-accent)' }
@@ -97,7 +101,7 @@ export default function PanelWrapper({
               {ageBadge.label}
             </span>
           )}
-          {!ageBadge && !hideAgeBadge && isLive && (
+          {!ageBadge && !hideAgeBadge && !error && isLive && (
             <span className="badge-live">
               <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 2s ease-in-out infinite' }} />
               LIVE

@@ -48,11 +48,13 @@ const convictionColor = (c: string) => c === 'HIGH' ? 'var(--text-positive)' : c
 const trendColor = (t: string) => t === 'INFLOW' ? 'var(--text-positive)' : t === 'OUTFLOW' ? 'var(--text-negative)' : 'var(--text-muted)'
 
 function BeginnerCardExplainer({ pick, currency }: { pick: TopPick; currency: string }) {
-  const rr = pick.entry > 0
-    ? ((pick.target1 - pick.entry) / (pick.entry - pick.stopLoss)).toFixed(2)
+  // Magnitudes, so SELL setups (target below entry, stop above) read correctly
+  // instead of producing negative reward/risk.
+  const rr = pick.entry > 0 && pick.entry !== pick.stopLoss
+    ? (Math.abs(pick.target1 - pick.entry) / Math.abs(pick.entry - pick.stopLoss)).toFixed(2)
     : '–'
-  const gainPerShare = (pick.target1 - pick.entry).toFixed(2)
-  const lossPerShare = (pick.entry - pick.stopLoss).toFixed(2)
+  const gainPerShare = Math.abs(pick.target1 - pick.entry).toFixed(2)
+  const lossPerShare = Math.abs(pick.entry - pick.stopLoss).toFixed(2)
 
   return (
     <div style={{
@@ -268,7 +270,8 @@ export default function AnalystPanel() {
                         <GlossaryTooltip term="RISK_REWARD" showIcon={isBeginnerMode}>R:R</GlossaryTooltip>{' '}
                         <b style={{ color: 'var(--text-secondary)' }}>
                           {p.entry > 0 && p.stopLoss > 0
-                            ? `1:${((p.target1 - p.entry) / Math.max(p.entry - p.stopLoss, 0.01)).toFixed(1)}`
+                            // abs(): a SELL's stop sits ABOVE entry — this printed "1:-4071.0"
+                            ? `1:${(Math.abs(p.target1 - p.entry) / Math.max(Math.abs(p.entry - p.stopLoss), 0.01)).toFixed(1)}`
                             : '–'}
                         </b>
                       </span>

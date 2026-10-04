@@ -211,7 +211,7 @@ function SignInForm() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <a href="/dashboard" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to Terminal</a>
+          <a href="/" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to home</a>
         </div>
       </div>
     </div>

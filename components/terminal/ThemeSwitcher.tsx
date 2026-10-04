@@ -12,7 +12,7 @@ const THEME_OPTIONS: Array<{
   colors: string[];
 }> = [
   { id: 'dark',          label: 'Dark',          icon: '🌙', desc: '',                      colors: ['var(--bg-terminal)', 'var(--bg-terminal)', 'var(--text-accent)'] },
-  { id: 'dark-contrast', label: 'High Contrast',  icon: 'â¬›', desc: 'Maximum accessibility', colors: ['var(--bg-terminal)', '#0a0a0a', '#ff8c00'] },
+  { id: 'dark-contrast', label: 'High Contrast',  icon: '⬛', desc: 'Maximum accessibility', colors: ['var(--bg-terminal)', '#0a0a0a', '#ff8c00'] },
   { id: 'light',         label: 'Light',          icon: '☀️', desc: 'Clean daytime theme',   colors: ['#f0f4f0', '#ffffff', '#cc4400'] },
   { id: 'system',        label: 'System',         icon: '💻', desc: 'Follows your OS',       colors: ['#1a1a1a', '#f0f4f0', 'var(--text-muted)'] },
 ];

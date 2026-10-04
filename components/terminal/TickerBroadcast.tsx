@@ -12,7 +12,11 @@ export default function TickerBroadcast() {
 
   useEffect(() => {
     if (activeTicker && activeTicker !== prevRef.current) {
+      const isInitial = prevRef.current === '';
       prevRef.current = activeTicker;
+      // Only announce real changes — the default ticker on first mount flashed
+      // "LINKED PANELS → AAPL" on every page load, sign-in page included.
+      if (isInitial) return;
       setVisible(true);
       clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setVisible(false), 1500);

@@ -36,7 +36,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           position: 'fixed',
           top: 100,
           left: 0,
-          right: 0,
+          // Clear the fixed 22px ★ watchlist handle on the right edge — it sat
+          // on top of the last table column (e.g. the alert delete ✕ buttons).
+          right: 22,
           bottom: 26,
           overflowY: 'auto',
           background: 'var(--bg-terminal)',

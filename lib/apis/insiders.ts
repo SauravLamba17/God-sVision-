@@ -89,7 +89,7 @@ function buildTxFromSummary(summary: string, link: string, updated: string, comp
 }
 
 export async function fetchInsiderTransactions(minValue = 100000): Promise<InsiderTx[]> {
-  const cacheKey = `insiders_${minValue}`
+  const cacheKey = `insiders_v2_${minValue}`
   const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as InsiderTx[]
 
@@ -98,7 +98,7 @@ export async function fetchInsiderTransactions(minValue = 100000): Promise<Insid
       // owner=only restricts to ownership filings. With owner=include, EDGAR's
       // `type=4` prefix-matches and the feed comes back full of 424B2/487/497
       // prospectuses and zero actual Form 4s.
-      'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&dateb=&owner=only&count=40&search_text=&output=atom',
+      'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&dateb=&owner=only&count=100&search_text=&output=atom',
       {
         headers: { 'User-Agent': 'GodVision/1.0 operations@myhealthiq.io' },
         signal: AbortSignal.timeout(10000),
@@ -108,16 +108,24 @@ export async function fetchInsiderTransactions(minValue = 100000): Promise<Insid
     const xml = await res.text()
     const entries = parseAtomEntries(xml)
 
-    const txs: InsiderTx[] = entries
-      // EDGAR's `type=4` prefix-matches, so the feed also returns 424B2, 487,
-      // 497 etc. Keep only genuine Form 4 entries, whose titles start "4 - ".
-      .filter(e => /^4\s*-\s/.test(e.title))
-      .map(e => {
-        const { company, ticker, filer } = parseFormTitle(e.title)
-        const tx = buildTxFromSummary(e.summary, e.link, e.updated, company, filer)
-        tx.ticker = ticker
-        return tx
-      })
+    // EDGAR lists every Form 4 twice — once under the issuer ("(Issuer)") and
+    // once per reporting owner ("(Reporting)") — sharing one accession number.
+    // Read separately, the person landed in COMPANY and the literal word
+    // "Issuer"/"Reporting" in INSIDER. Pair them into one row per filing.
+    const filings = new Map<string, { issuer?: string; reporters: string[]; e: typeof entries[number] }>()
+    // EDGAR's `type=4` prefix-matches, so the feed also returns 424B2, 487,
+    // 497 etc. Keep only genuine Form 4 entries, whose titles start "4 - ".
+    for (const e of entries.filter(e => /^4\s*-\s/.test(e.title))) {
+      const accession = e.link.split('/').pop() ?? e.link
+      const f = filings.get(accession) ?? { reporters: [], e }
+      const name = /^4\s*-\s*(.+?)\s*\(\d{10}\)/.exec(e.title)?.[1] ?? parseFormTitle(e.title).company
+      if (/\(Issuer\)\s*$/.test(e.title)) { f.issuer = name; f.e = e } else f.reporters.push(name)
+      filings.set(accession, f)
+    }
+
+    const txs: InsiderTx[] = [...filings.values()]
+      .filter(f => f.issuer) // the issuer half can fall off the 40-entry page
+      .map(f => buildTxFromSummary(f.e.summary, f.e.link, f.e.updated, f.issuer!, f.reporters.join(', ')))
       // Keep filings whose value EDGAR didn't disclose — they're real Form 4s,
       // just without a parseable amount. The floor only filters known values.
       .filter(tx => tx.totalValue === null || tx.totalValue >= minValue)

@@ -12,6 +12,8 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
     const holdings = await prisma.portfolioHolding.findMany({
       where: { userId },
       orderBy: { createdAt: 'asc' },
@@ -27,6 +29,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
     const body = await request.json()
     const { ticker, name, quantity, buyPrice, buyDate } = body
     const holding = await prisma.portfolioHolding.create({
@@ -47,6 +51,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
     const { searchParams } = new URL(request.url)
     const id = parseInt(searchParams.get('id') || '0')
     await prisma.portfolioHolding.deleteMany({ where: { id, userId } })

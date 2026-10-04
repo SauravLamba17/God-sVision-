@@ -120,7 +120,7 @@ export default function AlertsPage() {
       </div>
 
       <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span>● Price checks every 30 seconds — global AlertChecker running in background</span>
+        <span>● Price checks every 60 seconds — global AlertChecker running in background</span>
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           <span style={{ fontSize: 8, color: 'var(--text-muted)', alignSelf: 'center' }}>SOUND TEST:</span>
           {[

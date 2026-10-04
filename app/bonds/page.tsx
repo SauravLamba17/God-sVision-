@@ -351,7 +351,7 @@ export default function BondsPage() {
                 {s.value === null ? DASH : `${s.value > 0 ? '+' : ''}${s.value.toFixed(2)}%`}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {s.value === null ? 'Unavailable — FRED_API_KEY not configured' : `As of ${s.date} · Source: FRED`}
+                {s.value === null ? 'Unavailable — FRED not reachable' : `As of ${s.date} · Source: FRED`}
               </div>
               {/* No verdict without a real number: these lines previously
                   interpreted four hardcoded fallback values as live FRED data. */}

@@ -9,23 +9,11 @@ interface TickerItem {
   changePct: number
 }
 
-const FALLBACK_TICKERS: TickerItem[] = [
-  { symbol: 'SPY', price: 543.27, change: 2.14, changePct: 0.39 },
-  { symbol: 'QQQ', price: 470.85, change: 3.21, changePct: 0.69 },
-  { symbol: 'BTC', price: 67234.50, change: 892.30, changePct: 1.34 },
-  { symbol: 'ETH', price: 3521.40, change: -42.10, changePct: -1.18 },
-  { symbol: 'AAPL', price: 192.35, change: 1.25, changePct: 0.65 },
-  { symbol: 'MSFT', price: 429.17, change: -2.44, changePct: -0.57 },
-  { symbol: 'NVDA', price: 131.38, change: 4.72, changePct: 3.73 },
-  { symbol: 'TSLA', price: 248.42, change: -5.18, changePct: -2.04 },
-  { symbol: 'EUR/USD', price: 1.0821, change: 0.0012, changePct: 0.11 },
-  { symbol: 'GBP/USD', price: 1.2734, change: -0.0034, changePct: -0.27 },
-  { symbol: 'GOLD', price: 2381.20, change: 12.40, changePct: 0.52 },
-  { symbol: 'OIL', price: 80.34, change: -0.87, changePct: -1.07 },
-]
 
 export default function TickerTape() {
-  const [tickers, setTickers] = useState<TickerItem[]>(FALLBACK_TICKERS)
+  // Empty until live quotes arrive. A hardcoded 2024 tape (SPY 543.27, BTC
+  // 67,234…) used to show first and stayed whenever the fetch failed.
+  const [tickers, setTickers] = useState<TickerItem[]>([])
 
   useEffect(() => {
     const fetchTickers = async () => {
@@ -47,7 +35,7 @@ export default function TickerTape() {
           setTickers(items)
         }
       } catch {
-        // use fallback
+        // keep the last live tape (or none)
       }
     }
     fetchTickers()
@@ -56,6 +44,7 @@ export default function TickerTape() {
   }, [])
 
   const doubled = [...tickers, ...tickers]
+  if (!tickers.length) return <div style={{ flex: 1, margin: '0 12px' }} />
 
   return (
     <div style={{ overflow: 'hidden', flex: 1, margin: '0 12px' }}>

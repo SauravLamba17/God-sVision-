@@ -142,7 +142,7 @@ export default function WatchlistSidebar() {
                 <button
                   onClick={() => removeTicker(item.ticker)}
                   style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', padding: '0 2px' }}
-                >Ã—</button>
+                >×</button>
               </div>
             )
           })}

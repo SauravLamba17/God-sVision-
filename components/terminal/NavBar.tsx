@@ -102,7 +102,7 @@ export default function NavBar() {
 
   const navItemStyle = (isActive: boolean) => ({
     display: 'flex', alignItems: 'center', gap: 5,
-    height: 34, padding: '0 8px',
+    height: 34, padding: '0 5px',
     fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: isActive ? 600 : 400,
     textDecoration: 'none', whiteSpace: 'nowrap' as const,
     color: isActive ? activeAccent : 'var(--text-muted)',
@@ -150,7 +150,7 @@ export default function NavBar() {
                   onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)' } }}
                   onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' } }}
                 >
-                  <span style={{ fontSize: 'var(--fs-meta)', color: isActive ? (isIndia ? 'rgba(255,153,51,0.31)' : 'rgba(255,109,0,0.31)') : 'var(--border-bright)', fontWeight: 400 }}>{item.key}</span>
+                  <span className="gv-fkey" style={{ fontSize: 'var(--fs-meta)', color: isActive ? (isIndia ? 'rgba(255,153,51,0.31)' : 'rgba(255,109,0,0.31)') : 'var(--border-bright)', fontWeight: 400 }}>{item.key}</span>
                   <span style={{ fontSize: 'var(--fs-body)', letterSpacing: '0.06em' }}>{item.label}</span>
                 </Link>
               )
@@ -158,7 +158,7 @@ export default function NavBar() {
           </div>
 
           {/* Right controls */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, paddingRight: 8, flexShrink: 0 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, paddingRight: 8, flexShrink: 0 }}>
             {/* India/USA Mode Toggle */}
             <ModeToggle />
 

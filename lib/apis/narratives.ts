@@ -1,5 +1,6 @@
 import { getCache, setCache } from '@/lib/cache'
 import { geminiGenerate } from '@/lib/gemini'
+import { fetchRSSFeeds } from '@/lib/apis/news'
 
 export interface Narrative {
   title: string
@@ -24,43 +25,18 @@ export async function detectNarratives(): Promise<NarrativeData> {
 
   const keyValid = !!process.env.GEMINI_API_KEY
 
-  // Always fetch live headlines — used for headlinesAnalyzed count even in fallback
-  let headlines: string[] = []
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3001'
-    const res = await fetch(`${baseUrl}/api/news`, { signal: AbortSignal.timeout(8000) })
-    if (res.ok) {
-      const j = await res.json()
-      headlines = (j.data ?? []).slice(0, 100).map((n: any) => n.title as string)
-    }
-  } catch {}
+  // Live headlines only. This used to HTTP-fetch our own /api/news, which the
+  // auth middleware redirects to the sign-in page (no session cookie on a
+  // server-to-server call); the JSON parse then failed and five hardcoded
+  // "headlines" were substituted, so the panel showed AI analysis of invented
+  // news. Read the news cache, or the feeds directly, instead.
+  const newsCache = await getCache<{ items: { title: string }[] }>('news_all')
+  const items = newsCache?.data?.items ?? await fetchRSSFeeds().catch(() => [])
+  const headlines = items.slice(0, 100).map(n => n.title).filter(Boolean)
 
-  if (headlines.length < 5) {
-    headlines = [
-      'Federal Reserve signals potential rate cut timeline uncertainty',
-      'AI chip demand continues to drive semiconductor sector gains',
-      'China economic data disappoints, emerging market concerns rise',
-      'Oil prices volatile amid geopolitical tensions',
-      'US Treasury yields rise as inflation data remains sticky',
-      ...headlines,
-    ]
-  }
-
-  if (!keyValid) {
-    const fallback: NarrativeData = {
-      narratives: [
-        { title: 'FED POLICY PIVOT', description: 'Markets pricing in rate cuts as inflation cools toward target', sentiment: 'BULLISH', intensity: 'HIGH', relatedTickers: ['TLT', 'QQQ', 'GLD'], headlineCount: 18 },
-        { title: 'AI CAPEX SUPERCYCLE', description: 'Mega-cap tech spending on AI infrastructure accelerating', sentiment: 'BULLISH', intensity: 'HIGH', relatedTickers: ['NVDA', 'MSFT', 'GOOGL'], headlineCount: 24 },
-        { title: 'CHINA SLOWDOWN', description: 'Property sector stress weighing on global growth outlook', sentiment: 'BEARISH', intensity: 'MEDIUM', relatedTickers: ['FXI', 'EEM', 'CLF'], headlineCount: 11 },
-        { title: 'DOLLAR STRENGTH', description: 'DXY rising on resilient US economy vs global peers', sentiment: 'NEUTRAL', intensity: 'MEDIUM', relatedTickers: ['UUP', 'GLD', 'EEM'], headlineCount: 9 },
-        { title: 'ENERGY TRANSITION', description: 'Renewables investment outpacing fossil fuel capex globally', sentiment: 'BULLISH', intensity: 'LOW', relatedTickers: ['ICLN', 'ENPH', 'XOM'], headlineCount: 7 },
-      ],
-      generatedAt: Date.now(),
-      headlinesAnalyzed: headlines.length,
-      keyConfigured: false,
-    }
-    await setCache(cacheKey, fallback, 900)
-    return fallback
+  if (!keyValid || headlines.length < 5) {
+    // Honest empty state — never invented narratives or headlines.
+    return { narratives: [], generatedAt: Date.now(), headlinesAnalyzed: headlines.length, keyConfigured: keyValid }
   }
 
   const prompt = `You are a macro market analyst. Analyze these ${headlines.length} financial news headlines and identify the TOP 5 dominant market narratives driving investor attention.

@@ -821,3 +821,9 @@ body::after {
 .gv-dash-scroll > * {
   flex-shrink: 0;
 }
+
+/* Nav F-key hints (F1…F12). Below 1600px the row overflowed its hidden-scrollbar
+   container and pushed THEME / LEARN / SPLIT / GOD off-screen at 1280–1440px. */
+@media (max-width: 1599px) {
+  .gv-fkey { display: none; }
+}

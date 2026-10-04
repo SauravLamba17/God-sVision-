@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
-import { INDIA_MACRO, INDIA_MACRO_VINTAGE, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS } from '@/lib/apis/india'
+import { INDIA_MACRO, INDIA_MACRO_VINTAGE, INDIA_YIELD_CURVE, RBI_MPC_MEETINGS, getUsdInr } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_macro'
@@ -8,24 +8,19 @@ export async function GET() {
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
   // Live USD/INR
-  let usdInr = 83.5
-  try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(5000) })
-    const d = await r.json()
-    if (d.rates?.INR) usdInr = d.rates.INR
-  } catch { /* keep fallback */ }
+  const usdInr = await getUsdInr()
 
   // Next MPC meeting
   const now       = new Date()
-  const nextMPC   = RBI_MPC_MEETINGS.find(m => new Date(m.date) > now) ?? RBI_MPC_MEETINGS[RBI_MPC_MEETINGS.length - 1]
-  const msToMPC   = new Date(nextMPC.date).getTime() - now.getTime()
-  const daysToMPC = Math.ceil(msToMPC / 86_400_000)
+  // null once the hand-maintained schedule runs out — it used to fall back to
+  // the LAST (past) meeting and render "-123d away".
+  const nextMPC   = RBI_MPC_MEETINGS.find(m => new Date(m.date) > now) ?? null
 
   const result = {
     ...INDIA_MACRO,
     usdInr,
     yieldCurve: INDIA_YIELD_CURVE,
-    nextMPC: { ...nextMPC, daysAway: daysToMPC },
+    nextMPC: nextMPC && { ...nextMPC, daysAway: Math.ceil((new Date(nextMPC.date).getTime() - now.getTime()) / 86_400_000) },
     rbiStance: 'NEUTRAL',
     lastPolicyAction: 'HOLD at 6.50% — Jun 2025',
     // Everything except usdInr on this response is a manually maintained

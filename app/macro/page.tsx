@@ -4,38 +4,38 @@ import PanelWrapper from '@/components/panels/PanelWrapper'
 import MacroPanel from '@/components/panels/MacroPanel'
 import YieldCurve from '@/components/charts/YieldCurve'
 import LineChartComponent from '@/components/charts/LineChart'
-import { CENTRAL_BANK_RATES } from '@/lib/apis/forex'
+import { usePolicyRates } from '@/lib/hooks/usePolicyRates'
 
 interface FedBalancePoint {
   date: string
   value: number | null
 }
 
-const ECONOMIC_CALENDAR = [
-  { date: '2024-07-26', event: 'Fed FOMC Meeting', importance: 'HIGH', consensus: '5.25-5.50%' },
-  { date: '2024-07-30', event: 'GDP Q2 Advance', importance: 'HIGH', consensus: '1.4%' },
-  { date: '2024-08-01', event: 'ISM Manufacturing PMI', importance: 'MED', consensus: '48.9' },
-  { date: '2024-08-02', event: 'US Jobs Report (NFP)', importance: 'HIGH', consensus: '190K' },
-  { date: '2024-08-13', event: 'CPI (July)', importance: 'HIGH', consensus: '3.0%' },
-  { date: '2024-08-14', event: 'PPI (July)', importance: 'MED', consensus: '2.6%' },
-  { date: '2024-08-15', event: 'Retail Sales (July)', importance: 'MED', consensus: '0.3%' },
-  { date: '2024-09-06', event: 'US Jobs Report (Aug)', importance: 'HIGH', consensus: '185K' },
-  { date: '2024-09-11', event: 'CPI (August)', importance: 'HIGH', consensus: '2.8%' },
-  { date: '2024-09-18', event: 'Fed FOMC (Rate Decision)', importance: 'HIGH', consensus: '5.00-5.25%' },
-]
+interface CalEvent { date: string; time: string; event: string; currency: string; impact: string; forecast: string }
 
 export default function MacroPage() {
   const [fedBalance, setFedBalance] = useState<FedBalancePoint[]>([])
   const [loading, setLoading] = useState(true)
   const [spread, setSpread] = useState<number | null>(null)
+  // Upcoming US high-impact releases from the live calendar feed (replaced a
+  // hardcoded list of July–September 2024 events).
+  const [events, setEvents] = useState<CalEvent[] | null>(null)
+  const { rates: cbRates, error: cbError } = usePolicyRates()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [balRes, yieldRes] = await Promise.allSettled([
+        const [balRes, yieldRes, calThis, calNext] = await Promise.allSettled([
           fetch('/api/macro?type=fed_balance'),
           fetch('/api/macro?type=yield_curve'),
+          fetch('/api/calendar?week=this').then(r => r.json()),
+          fetch('/api/calendar?week=next').then(r => r.json()),
         ])
+        const today = new Date().toISOString().slice(0, 10)
+        setEvents([calThis, calNext]
+          .flatMap(r => (r.status === 'fulfilled' && Array.isArray(r.value?.data) ? r.value.data : []))
+          .filter((e: CalEvent) => e.currency === 'USD' && e.impact === 'high' && e.date >= today)
+          .slice(0, 10))
         if (balRes.status === 'fulfilled') {
           const j = await balRes.value.json()
           if (j.data) {
@@ -62,7 +62,8 @@ export default function MacroPage() {
     fetchData()
   }, [])
 
-  const recessionProb = spread !== null ? (spread < 0 ? Math.min(85, 50 + Math.abs(spread) * 40) : Math.max(5, 20 - spread * 10)) : 20
+  // null when there's no live spread — previously defaulted to a made-up 20%.
+  const recessionProb = spread !== null ? (spread < 0 ? Math.min(85, 50 + Math.abs(spread) * 40) : Math.max(5, 20 - spread * 10)) : null
 
   return (
     <div className="p-2 flex gap-2 h-full">
@@ -105,16 +106,16 @@ export default function MacroPage() {
             <div className="mb-1">
               <div className="flex justify-between mb-1">
                 <span className="font-mono text-[9px] text-muted">12-MONTH PROBABILITY</span>
-                <span className={`font-mono text-[11px] font-bold ${recessionProb > 50 ? 'text-negative' : 'text-positive'}`}>
-                  {recessionProb.toFixed(0)}%
+                <span className={`font-mono text-[11px] font-bold ${recessionProb === null ? 'text-muted' : recessionProb > 50 ? 'text-negative' : 'text-positive'}`}>
+                  {recessionProb === null ? '—' : `${recessionProb.toFixed(0)}%`}
                 </span>
               </div>
               <div style={{ background: 'var(--border-color)', height: 8, borderRadius: 2 }}>
                 <div
                   style={{
                     height: '100%',
-                    width: `${recessionProb}%`,
-                    background: recessionProb > 50 ? 'var(--text-negative)' : recessionProb > 30 ? 'var(--text-accent)' : 'var(--text-positive)',
+                    width: `${recessionProb ?? 0}%`,
+                    background: recessionProb === null ? 'transparent' : recessionProb > 50 ? 'var(--text-negative)' : recessionProb > 30 ? 'var(--text-accent)' : 'var(--text-positive)',
                     borderRadius: 2,
                     transition: 'width 0.5s',
                   }}
@@ -128,7 +129,7 @@ export default function MacroPage() {
         </div>
 
         {/* Global Central Bank Rates */}
-        <PanelWrapper title="GLOBAL CB RATES">
+        <PanelWrapper title="GLOBAL CB RATES" error={cbError}>
           <table className="data-table">
             <thead>
               <tr>
@@ -139,8 +140,8 @@ export default function MacroPage() {
               </tr>
             </thead>
             <tbody>
-              {CENTRAL_BANK_RATES.map(cb => (
-                <tr key={cb.bank}>
+              {cbRates.map(cb => (
+                <tr key={cb.bank} title={`as of ${cb.asOf}`}>
                   <td style={{ textAlign: 'left' }}>
                     <span className="text-primary text-[10px]">{cb.bank}</span>
                   </td>
@@ -158,20 +159,16 @@ export default function MacroPage() {
         {/* Economic Calendar */}
         <PanelWrapper title="ECONOMIC CALENDAR">
           <div className="divide-y" style={{ borderColor: 'var(--border-dim)' }}>
-            {ECONOMIC_CALENDAR.map((ev, i) => (
+            {events === null && <div className="px-2 py-1.5 font-mono text-[9px] text-muted">Loading…</div>}
+            {events?.length === 0 && <div className="px-2 py-1.5 font-mono text-[9px] text-muted">No upcoming high-impact US releases in the calendar feed.</div>}
+            {events?.map((ev, i) => (
               <div key={i} className="px-2 py-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[9px] text-muted">{ev.date}</span>
-                  <span className={`font-mono text-[8px] px-1 py-0.5 ${
-                    ev.importance === 'HIGH'
-                      ? 'text-negative border border-negative'
-                      : 'text-neutral border border-neutral'
-                  }`}>
-                    {ev.importance}
-                  </span>
+                  <span className="font-mono text-[9px] text-muted">{ev.date} {ev.time} ET</span>
+                  <span className="font-mono text-[8px] px-1 py-0.5 text-negative border border-negative">HIGH</span>
                 </div>
                 <p className="text-primary text-[10px] mt-0.5">{ev.event}</p>
-                <p className="text-accent text-[9px]">Consensus: {ev.consensus}</p>
+                {ev.forecast && <p className="text-accent text-[9px]">Forecast: {ev.forecast}</p>}
               </div>
             ))}
           </div>

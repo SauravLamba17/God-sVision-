@@ -113,6 +113,24 @@ async function fetchQuotesByChart(tickers: string[]): Promise<any[]> {
     .map(r => (r as PromiseFulfilledResult<any>).value)
 }
 
+// Close of the session BEFORE the one regularMarketPrice belongs to, from a
+// v8 chart result. On a multi-day range chartPreviousClose is the close before
+// the whole window (so "daily" change was really a 5-day change), and exchange
+// holidays appear as bars with null closes, so walk the bars by local date.
+export function priorSessionClose(result: any): number | undefined {
+  const meta = result?.meta ?? {}
+  const ts: number[] = result?.timestamp ?? []
+  const closes: (number | null)[] = result?.indicators?.quote?.[0]?.close ?? []
+  const day = (sec: number) => new Date((sec + (meta.gmtoffset ?? 0)) * 1000).toISOString().slice(0, 10)
+  if (meta.regularMarketTime) {
+    const today = day(meta.regularMarketTime)
+    for (let i = ts.length - 1; i >= 0; i--) {
+      if (closes[i] != null && day(ts[i]) < today) return closes[i]!
+    }
+  }
+  return meta.chartPreviousClose
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 // Batch quote: chart-based query1 first (fast, no crumb), query2 as fallback
@@ -136,13 +154,31 @@ export async function getQuote(ticker: string): Promise<any> {
   return withRetry(() => (yahooFinance as any).quote(ticker))
 }
 
-// Chart data — query1 is tried in the technicals route directly; this is query2 path
+// Chart data. query1 v8 first (no crumb); yahoo-finance2's chart() goes to
+// query2, which 429s under load and was failing every backtest. Returns the
+// same { meta, quotes } shape as yahoo-finance2 either way.
+export async function getChartRange(ticker: string, period1: Date, period2: Date, interval = '1d'): Promise<any> {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${Math.floor(+period1 / 1000)}&period2=${Math.floor(+period2 / 1000)}&interval=${interval}&includePrePost=false`
+    const res = await axios.get(url, { headers: YF_HEADERS, timeout: 10000 })
+    const r = (res.data as any).chart?.result?.[0]
+    const q = r?.indicators?.quote?.[0]
+    if (r?.timestamp?.length && q) {
+      const adj = r.indicators.adjclose?.[0]?.adjclose
+      return {
+        meta: r.meta,
+        quotes: r.timestamp.map((t: number, i: number) => ({
+          date: new Date(t * 1000), open: q.open[i], high: q.high[i], low: q.low[i],
+          close: q.close[i], volume: q.volume[i], adjclose: adj?.[i],
+        })),
+      }
+    }
+  } catch { /* fall through to query2 */ }
+  return withRetry(() => (yahooFinance as any).chart(ticker, { period1, period2, interval }))
+}
+
 export async function getChartData(ticker: string, period = '3mo', interval = '1d'): Promise<any> {
-  return withRetry(() => (yahooFinance as any).chart(ticker, {
-    period1: getStartDate(period),
-    period2: new Date(),
-    interval,
-  }))
+  return getChartRange(ticker, getStartDate(period), new Date(), interval)
 }
 
 function getStartDate(period: string): Date {

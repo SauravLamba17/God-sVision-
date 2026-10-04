@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = `yield-curve:${mode}`
   const cached = await getCache(cacheKey)
-  if (cached) return NextResponse.json({ data: cached, source: 'cache' })
+  // getCache returns an envelope { data, stale }. Returning the envelope itself
+  // handed the page an object where it expected an array, and every cached
+  // load crashed /yield-curve to a white screen (history.slice is not a function).
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
     if (mode === 'current') {

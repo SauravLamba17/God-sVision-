@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 import { setCache, getCache } from '@/lib/cache'
+import { priorSessionClose } from '@/lib/apis/yahoo'
 
 const COMMODITY_TICKERS = {
   'WTI': 'CL=F',
@@ -39,11 +40,14 @@ export async function GET(request: NextRequest) {
       if (res.status === 'fulfilled') {
         const chart = res.value.data?.chart?.result?.[0]
         const meta = chart?.meta || {}
-        const price = meta.regularMarketPrice
-        const prevClose = meta.chartPreviousClose || meta.regularMarketPreviousClose
+        // Grain futures (ZC/ZW/ZS) are quoted in US cents ('USX'); without this
+        // corn at 497.75¢ rendered as $497.75/bu.
+        const scale = meta.currency === 'USX' ? 0.01 : 1
+        const price = meta.regularMarketPrice != null ? meta.regularMarketPrice * scale : meta.regularMarketPrice
+        const prevClose = (priorSessionClose(chart) ?? NaN) * scale
         const change = price && prevClose ? price - prevClose : 0
         const changePct = prevClose ? (change / prevClose) * 100 : 0
-        return { name, ticker, price, change, changePct, currency: meta.currency || 'USD', unit: getUnit(name) }
+        return { name, ticker, price, change, changePct, currency: meta.currency === 'USX' ? 'USD' : (meta.currency || 'USD'), unit: getUnit(name) }
       }
       return { name, ticker, price: null, change: null, changePct: null, currency: 'USD', unit: getUnit(name) }
     })

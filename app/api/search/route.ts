@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = `search:${q.toLowerCase()}`
   const cached = await getCache(cacheKey)
-  if (cached) return NextResponse.json({ data: cached, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   try {
     const res = await axios.get('https://query2.finance.yahoo.com/v1/finance/search', {

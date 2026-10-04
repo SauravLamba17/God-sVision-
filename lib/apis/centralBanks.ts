@@ -11,16 +11,6 @@ export interface CentralBankSpeech {
   keyWords: string[]
 }
 
-export interface CentralBankRate {
-  bank: string
-  country: string
-  rate: number
-  lastChange: string
-  direction: 'UP' | 'DOWN' | 'HOLD'
-  nextMeeting: string
-  color: string
-}
-
 const CENTRAL_BANKS = [
   {
     name: 'FED',
@@ -31,7 +21,7 @@ const CENTRAL_BANKS = [
   {
     name: 'ECB',
     label: 'European Central Bank',
-    rssUrl: 'https://www.ecb.europa.eu/rss/speeches.rss',
+    rssUrl: 'https://www.ecb.europa.eu/rss/press.html',
     color: '#22c55e',
   },
   {
@@ -43,38 +33,39 @@ const CENTRAL_BANKS = [
   {
     name: 'BOC',
     label: 'Bank of Canada',
-    rssUrl: 'https://www.bankofcanada.ca/feed/?post_type=press',
+    rssUrl: 'https://www.bankofcanada.ca/content_type/speeches/feed/',
     color: '#fb923c',
   },
 ]
 
-// Static rate data — updated manually from major bank announcements
-// These will be overridden when real data is available
-export const RATE_CARDS: CentralBankRate[] = [
-  { bank: 'FED', country: 'United States', rate: 5.25, lastChange: '2023-07-26', direction: 'HOLD', nextMeeting: '2026-07-30', color: '#38bdf8' },
-  { bank: 'ECB', country: 'Eurozone', rate: 4.50, lastChange: '2023-09-14', direction: 'HOLD', nextMeeting: '2026-07-24', color: '#22c55e' },
-  { bank: 'BOE', country: 'United Kingdom', rate: 5.25, lastChange: '2023-08-03', direction: 'HOLD', nextMeeting: '2026-08-07', color: '#a78bfa' },
-  { bank: 'BOJ', country: 'Japan', rate: -0.10, lastChange: '2016-01-29', direction: 'HOLD', nextMeeting: '2026-07-31', color: '#f59e0b' },
-  { bank: 'BOC', country: 'Canada', rate: 5.00, lastChange: '2023-07-12', direction: 'HOLD', nextMeeting: '2026-07-30', color: '#fb923c' },
-  { bank: 'RBI', country: 'India', rate: 6.50, lastChange: '2023-04-06', direction: 'HOLD', nextMeeting: '2026-08-08', color: '#ef4444' },
-]
+// Rate cards come from FRED via getPolicyRates() (lib/apis/fred.ts). The
+// hardcoded 2023 RATE_CARDS that lived here were shown as current rates.
+export const BANK_COLORS: Record<string, string> = {
+  FED: '#38bdf8', ECB: '#22c55e', BOE: '#a78bfa', BOJ: '#f59e0b', BOC: '#fb923c', RBA: '#2dd4bf', SNB: '#f472b6', RBI: '#ef4444',
+}
 
 const HAWKISH_WORDS = ['hike','tighten','restrictive','inflation','concern','risk','vigilant','higher for longer','not cutting','remain elevated']
 const DOVISH_WORDS = ['cut','ease','accommodative','support','growth','slowdown','below target','dovish','loosen','lower rates']
 
 function parseRSSItems(xml: string, bankName: string): CentralBankSpeech[] {
   const items: CentralBankSpeech[] = []
-  const itemRegex = /<item>([\s\S]*?)<\/item>/g
+  // `<item rdf:about=…>` (RSS 1.0, Bank of Canada) as well as plain `<item>`.
+  const itemRegex = /<item[\s>]([\s\S]*?)<\/item>/g
   let match
   while ((match = itemRegex.exec(xml)) !== null) {
     const item = match[1]
     const title = (/<title[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(item)?.[1] ?? /<title[^>]*>([\s\S]*?)<\/title>/.exec(item)?.[1] ?? '').trim()
     const link = (/<link>([\s\S]*?)<\/link>/.exec(item)?.[1] ?? /<link[^>]+href="([^"]+)"/.exec(item)?.[1] ?? '').trim()
-    const dateStr = (/<pubDate>([\s\S]*?)<\/pubDate>/.exec(item)?.[1] ?? /<dc:date>([\s\S]*?)<\/dc:date>/.exec(item)?.[1] ?? '').trim()
+    // The Fed wraps pubDate in CDATA; unstripped, new Date() was Invalid and
+    // toISOString() threw, which dropped the entire Fed feed.
+    const dateStr = (/<pubDate>([\s\S]*?)<\/pubDate>/.exec(item)?.[1] ?? /<dc:date>([\s\S]*?)<\/dc:date>/.exec(item)?.[1] ?? '').replace(/<!\[CDATA\[|\]\]>/g, '').trim()
+    const parsed = new Date(dateStr)
     const desc = (/<description[^>]*><!\[CDATA\[([\s\S]*?)\]\]>/.exec(item)?.[1] ?? /<description[^>]*>([\s\S]*?)<\/description>/.exec(item)?.[1] ?? '')
       .replace(/<[^>]+>/g, '').trim()
 
-    if (!title) continue
+    // Skip undated items, and future-dated ones (BoC's feed lists upcoming
+    // holidays and conferences, which sorted above every real speech).
+    if (!title || isNaN(parsed.getTime()) || parsed.getTime() > Date.now() + 86400000) continue
     const fullText = (title + ' ' + desc).toLowerCase()
     const hawks = HAWKISH_WORDS.filter(w => fullText.includes(w)).length
     const doves = DOVISH_WORDS.filter(w => fullText.includes(w)).length
@@ -88,7 +79,7 @@ function parseRSSItems(xml: string, bankName: string): CentralBankSpeech[] {
       bank: bankName,
       speaker: bankName + ' Official',
       title: title.slice(0, 120),
-      date: dateStr ? new Date(dateStr).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      date: parsed.toISOString().slice(0, 10),
       link,
       sentiment,
       keyWords,
@@ -110,7 +101,7 @@ async function fetchBankSpeeches(bank: typeof CENTRAL_BANKS[0]): Promise<Central
 }
 
 export async function getCentralBankSpeeches(): Promise<CentralBankSpeech[]> {
-  const cacheKey = 'cb_speeches'
+  const cacheKey = 'cb_speeches_v2'
   const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CentralBankSpeech[]
 

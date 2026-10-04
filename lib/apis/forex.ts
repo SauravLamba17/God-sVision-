@@ -21,18 +21,6 @@ export const MAJOR_PAIRS = [
   { pair: 'USD/BRL', base: 'USD', quote: 'BRL' },
 ]
 
-export const CENTRAL_BANK_RATES = [
-  { bank: 'Fed (US)', rate: 5.33, currency: 'USD', nextMeeting: '2024-09-18', trend: 'hold' },
-  { bank: 'ECB (EU)', rate: 4.25, currency: 'EUR', nextMeeting: '2024-09-12', trend: 'cut' },
-  { bank: 'BOE (UK)', rate: 5.25, currency: 'GBP', nextMeeting: '2024-08-01', trend: 'hold' },
-  { bank: 'BOJ (JP)', rate: 0.10, currency: 'JPY', nextMeeting: '2024-08-01', trend: 'hike' },
-  { bank: 'RBA (AU)', rate: 4.35, currency: 'AUD', nextMeeting: '2024-08-06', trend: 'hold' },
-  { bank: 'BOC (CA)', rate: 4.75, currency: 'CAD', nextMeeting: '2024-07-24', trend: 'cut' },
-  { bank: 'SNB (CH)', rate: 1.25, currency: 'CHF', nextMeeting: '2024-09-26', trend: 'cut' },
-  { bank: 'PBOC (CN)', rate: 3.45, currency: 'CNY', nextMeeting: '2024-08-20', trend: 'cut' },
-  { bank: 'RBI (IN)', rate: 6.50, currency: 'INR', nextMeeting: '2024-08-08', trend: 'hold' },
-]
-
 export async function getForexRates(base = 'USD') {
   const { data } = await axios.get(`https://api.exchangerate-api.com/v4/latest/${base}`, { timeout: 8000 })
   return data

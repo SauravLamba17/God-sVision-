@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { getChartRange } from '@/lib/apis/yahoo';
 
 interface OHLCV {
   date: Date;
@@ -168,12 +168,15 @@ function runBacktest(
   const winningTrades = tradeReturns.filter(r => r > 0).length;
   const winRate = tradeReturns.length > 0 ? (winningTrades / tradeReturns.length) * 100 : 0;
 
-  // Sharpe ratio approximation
-  const avgReturn = tradeReturns.length > 0
-    ? tradeReturns.reduce((a, b) => a + b, 0) / tradeReturns.length : 0;
-  const stdReturn = tradeReturns.length > 1
-    ? Math.sqrt(tradeReturns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (tradeReturns.length - 1))
-    : 1;
+  // Annualised Sharpe (rf = 0) from DAILY equity returns. It used to annualise
+  // per-trade returns with sqrt(252) as if each trade lasted a day, which turned
+  // a 66% / 6-year SMA run into a Sharpe of 6.5.
+  const dailyReturns = equityCurve.slice(1).map((p, i) => p.value / equityCurve[i].value - 1);
+  const avgReturn = dailyReturns.length > 0
+    ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length : 0;
+  const stdReturn = dailyReturns.length > 1
+    ? Math.sqrt(dailyReturns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (dailyReturns.length - 1))
+    : 0;
   const sharpeRatio = stdReturn > 0 ? (avgReturn / stdReturn) * Math.sqrt(252) : 0;
 
   // Buy and hold return
@@ -212,11 +215,7 @@ export async function POST(req: NextRequest) {
       params = {},
     } = body;
 
-    const chart = await yahooFinance.chart(ticker, {
-      period1: new Date(startDate),
-      period2: new Date(endDate),
-      interval: '1d',
-    });
+    const chart = await getChartRange(ticker, new Date(startDate), new Date(endDate), '1d');
 
     const data: OHLCV[] = (chart.quotes ?? [])
       .filter((q: any) => q.close && q.open && q.high && q.low)

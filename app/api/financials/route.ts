@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = `financials:${ticker}:${period}`
   const cached = await getCache(cacheKey)
-  if (cached) return NextResponse.json({ data: cached, source: 'cache' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cache' })
 
   const moduleArr = period === 'quarterly'
     ? ['incomeStatementHistoryQuarterly', 'balanceSheetHistoryQuarterly', 'cashflowStatementHistoryQuarterly', 'financialData', 'defaultKeyStatistics', 'summaryDetail']

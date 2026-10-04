@@ -1,6 +1,5 @@
 import { getCache, setCache } from '@/lib/cache'
 import { getChartData } from '@/lib/apis/yahoo'
-import axios from 'axios'
 
 export const ASSETS = [
   { symbol: 'SPY', name: 'S&P 500', type: 'equity' },
@@ -38,55 +37,47 @@ function pearson(a: number[], b: number[]): number {
   return denom === 0 ? 0 : Math.round((num / denom) * 100) / 100
 }
 
-async function fetchReturns(symbol: string): Promise<number[]> {
-  try {
-    // Use query1 directly for historical data
-    const encoded = encodeURIComponent(symbol)
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?range=3mo&interval=1d&includePrePost=false`
-    const res = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://finance.yahoo.com/' },
-      timeout: 8000,
-    })
-    const closes: number[] = res.data?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? []
-    // Compute daily log returns
-    const returns: number[] = []
-    for (let i = 1; i < closes.length; i++) {
-      if (closes[i] && closes[i - 1]) {
-        returns.push(Math.log(closes[i] / closes[i - 1]))
-      }
-    }
-    return returns
-  } catch {
-    try {
-      const chart = await getChartData(symbol, '3mo', '1d')
-      const quotes = chart?.quotes ?? []
-      const returns: number[] = []
-      for (let i = 1; i < quotes.length; i++) {
-        if (quotes[i]?.close && quotes[i - 1]?.close) {
-          returns.push(Math.log(quotes[i].close / quotes[i - 1].close))
-        }
-      }
-      return returns
-    } catch { return [] }
+// Daily closes keyed by UTC date. Crypto trades 7 days a week and equities 5,
+// so returns must be computed on the dates BOTH series share — pairing them by
+// array index (as before) correlated SPY's Monday with BTC's Saturday and
+// pushed every crypto/equity cell to ~0.
+async function fetchCloses(symbol: string): Promise<Record<string, number>> {
+  const chart = await getChartData(symbol, '3mo', '1d').catch(() => null)
+  const out: Record<string, number> = {}
+  for (const q of chart?.quotes ?? []) {
+    if (q?.close) out[new Date(q.date).toISOString().slice(0, 10)] = q.close
   }
+  return out
+}
+
+function alignedReturns(a: Record<string, number>, b: Record<string, number>): [number[], number[]] {
+  const dates = Object.keys(a).filter(d => d in b).sort()
+  const ra: number[] = [], rb: number[] = []
+  for (let i = 1; i < dates.length; i++) {
+    ra.push(Math.log(a[dates[i]] / a[dates[i - 1]]))
+    rb.push(Math.log(b[dates[i]] / b[dates[i - 1]]))
+  }
+  return [ra, rb]
+}
+
+function ownReturns(c: Record<string, number>): number[] {
+  return alignedReturns(c, c)[0]
 }
 
 export async function getCorrelationMatrix(): Promise<CorrelationData> {
-  const cacheKey = 'correlation_matrix'
+  const cacheKey = 'correlation_matrix_v2'
   const cached = await getCache(cacheKey)
   if (cached && !cached.stale) return cached.data as CorrelationData
 
   const symbols = ASSETS.map(a => a.symbol)
-  const returnSets = await Promise.allSettled(symbols.map(s => fetchReturns(s)))
+  const closeSets = await Promise.all(symbols.map(s => fetchCloses(s)))
   const returns: Record<string, number[]> = {}
-  symbols.forEach((s, i) => {
-    returns[s] = returnSets[i].status === 'fulfilled' ? returnSets[i].value : []
-  })
+  symbols.forEach((s, i) => { returns[s] = ownReturns(closeSets[i]) })
 
   const n = symbols.length
   const matrix: number[][] = Array.from({ length: n }, (_, i) =>
     Array.from({ length: n }, (_, j) =>
-      i === j ? 1 : pearson(returns[symbols[i]], returns[symbols[j]])
+      i === j ? 1 : pearson(...alignedReturns(closeSets[i], closeSets[j]))
     )
   )
 

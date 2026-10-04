@@ -10,7 +10,7 @@ interface MacroData {
   rbiStance: string
   lastPolicyAction: string
   rateHistory: { date: string; rate: number; action: string }[]
-  nextMPC: { date: string; resolution: string; daysAway: number }
+  nextMPC: { date: string; resolution: string; daysAway: number } | null
   fetchedAt: number
   // Set by /api/india/macro: every field here except usdInr is a manually
   // maintained constant, not a live reading.
@@ -38,9 +38,9 @@ export default function RBIPolicyTracker() {
   }, [load])
 
   if (loading) return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="Loading RBI data…" />
-  // rateHistory/nextMPC are read unguarded below, so a partial payload is as
-  // unusable as no payload at all.
-  if (!data?.rateHistory?.length || !data.nextMPC) {
+  // rateHistory is read unguarded below, so a payload without it is unusable.
+  // nextMPC may be null (schedule exhausted) — that's rendered explicitly.
+  if (!data?.rateHistory?.length) {
     return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="RBI policy data temporarily unavailable" onRetry={load} />
   }
 
@@ -54,7 +54,7 @@ export default function RBIPolicyTracker() {
       {/* Header */}
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-header)' }}>
         <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
-        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC.daysAway}d to next</span>
+        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC ? `${data.nextMPC.daysAway}d to next` : 'schedule not updated'}</span>
       </div>
 
       {/* These rates are hand-maintained constants, so the panel says so rather
@@ -94,9 +94,11 @@ export default function RBIPolicyTracker() {
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.08em' }}>STANCE</div>
           <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: stanceColor, marginBottom: 8 }}>{data.rbiStance}</div>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>NEXT MPC</div>
+          {data.nextMPC ? <>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-primary)' }}>{new Date(data.nextMPC.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 2 }}>Resolution: {new Date(data.nextMPC.resolution).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
           <div style={{ fontSize: 'var(--fs-meta)', color: '#FF9933', marginTop: 4 }}>{data.nextMPC.daysAway}d away</div>
+          </> : <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Schedule not available</div>}
         </div>
       </div>
 

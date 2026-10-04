@@ -63,6 +63,13 @@ export default function YieldCurve() {
     </div>
   )
 
+  if (data.length === 0) return (
+    <div>
+      <div className="panel-header"><span className="panel-header-title">US TREASURY YIELD CURVE</span></div>
+      <div className="p-3 font-mono text-[11px] text-muted">Yield curve unavailable — FRED data not reachable right now.</div>
+    </div>
+  )
+
   return (
     <div>
       <div className="panel-header">

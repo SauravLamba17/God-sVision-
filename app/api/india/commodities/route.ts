@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
-import { fetchMCXCommodities } from '@/lib/apis/india'
+import { fetchMCXCommodities, getUsdInr } from '@/lib/apis/india'
 
 export async function GET() {
   const key    = 'india_commodities'
   const cached = await getCache(key)
   if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
 
-  let usdInr = 83.5
-  try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(5000) })
-    const d = await r.json()
-    if (d.rates?.INR) usdInr = d.rates.INR
-  } catch { /* keep fallback */ }
+  const usdInr = await getUsdInr()
+  if (usdInr === null) {
+    // No live FX rate → no INR conversion, rather than converting at a guess.
+    if (cached) return NextResponse.json({ data: cached.data, source: 'stale' })
+    return NextResponse.json({ error: 'USD/INR rate unavailable' })
+  }
 
   try {
     const commodities = await fetchMCXCommodities(usdInr)

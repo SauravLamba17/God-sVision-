@@ -44,6 +44,7 @@ export interface WeatherData {
   icon: string
   sunrise: number
   sunset: number
+  tzOffset: number  // seconds east of UTC for the CITY, so sunrise renders in its local time
   uvIndex?: number
 }
 
@@ -69,6 +70,7 @@ export async function getWeather(lat: number, lon: number, cityName: string): Pr
       icon: data.weather[0]?.icon || '01d',
       sunrise: data.sys.sunrise,
       sunset: data.sys.sunset,
+      tzOffset: data.timezone ?? 0,
     }
   } catch {
     return getOpenMeteoWeather(lat, lon, cityName)
@@ -80,7 +82,7 @@ async function getOpenMeteoWeather(lat: number, lon: number, cityName: string): 
     const { data } = await axios.get('https://api.open-meteo.com/v1/forecast', {
       params: {
         latitude: lat, longitude: lon,
-        current: ['temperature_2m', 'relative_humidity_2m', 'wind_speed_10m', 'weather_code', 'surface_pressure', 'apparent_temperature'],
+        current: ['temperature_2m', 'relative_humidity_2m', 'wind_speed_10m', 'weather_code', 'surface_pressure', 'apparent_temperature', 'visibility'],
         temperature_unit: 'fahrenheit',
         wind_speed_unit: 'mph',
         forecast_days: 1
@@ -96,11 +98,12 @@ async function getOpenMeteoWeather(lat: number, lon: number, cityName: string): 
       windSpeed: Math.round(c.wind_speed_10m),
       windDeg: 0,
       pressure: Math.round(c.surface_pressure),
-      visibility: 10,
+      visibility: Math.round((c.visibility ?? 0) / 1609),
       description: wmoToDescription(c.weather_code),
       icon: wmoToIcon(c.weather_code),
       sunrise: 0,
       sunset: 0,
+      tzOffset: 0,
     }
   } catch {
     return null
@@ -116,7 +119,8 @@ export async function getForecast(lat: number, lon: number) {
         hourly: ['temperature_2m', 'precipitation_probability'],
         temperature_unit: 'fahrenheit',
         wind_speed_unit: 'mph',
-        forecast_days: 7
+        forecast_days: 7,
+        timezone: 'auto', // city-local days and hours; the default is GMT
       },
       timeout: 8000
     })

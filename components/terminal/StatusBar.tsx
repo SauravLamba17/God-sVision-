@@ -25,12 +25,9 @@ const DOT_COLORS = {
 export default function StatusBar() {
   const { isIndia, exchangeRate } = useMode()
   const [statuses, setStatuses] = useState<ApiStatus[]>(INITIAL_STATUSES)
-  const [refresh, setRefresh] = useState(30)
-
-  useEffect(() => {
-    const id = setInterval(() => setRefresh(r => (r <= 1 ? 30 : r - 1)), 1000)
-    return () => clearInterval(id)
-  }, [])
+  // Time of the last real health check. This used to be a 30s countdown that
+  // refreshed nothing — the checks below run every 5 minutes.
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null)
 
   useEffect(() => {
     const checks = [
@@ -51,6 +48,7 @@ export default function StatusBar() {
           ? (results[i].value as Response).ok ? 'live' : 'delayed'
           : 'down',
       })))
+      setCheckedAt(new Date())
     }
     checkApis()
     const id = setInterval(checkApis, 300000) // 5 min — 6 full payloads per tick, on every page; dots do not need 60s
@@ -87,17 +85,17 @@ export default function StatusBar() {
         ))}
       </div>
 
-      {/* Center: feed health + refresh countdown */}
+      {/* Center: feed health + time of last check */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)' }}>
         <span style={{
           color: liveCount === 6 ? 'var(--text-positive)' : liveCount >= 4 ? 'var(--text-warning)' : 'var(--text-negative)',
           letterSpacing: '0.06em',
         }}>
-          {liveCount}/{statuses.length} FEEDS LIVE
+          {checkedAt ? `${liveCount}/${statuses.length} FEEDS LIVE` : 'CHECKING FEEDS…'}
         </span>
         <span style={{ color: 'var(--border-bright)' }}>│</span>
         <span style={{ color: 'var(--text-muted)' }}>
-          REFRESH <span style={{ color: 'var(--text-accent)' }}>{String(refresh).padStart(2, '0')}s</span>
+          CHECKED <span style={{ color: 'var(--text-accent)' }}>{checkedAt ? checkedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}</span>
         </span>
       </div>
 
@@ -113,7 +111,7 @@ export default function StatusBar() {
             <span style={{ color: '#FF9933' }}>🇮🇳 IN MARKETS</span>
             <span style={{ color: 'var(--border-bright)' }}>│</span>
             <span suppressHydrationWarning style={{ color: 'var(--text-muted)' }}>
-              1 USD = ₹{exchangeRate.toFixed(2)}
+              1 USD = ₹{exchangeRate?.toFixed(2) ?? '—'}
             </span>
             <span style={{ color: 'var(--border-bright)' }}>│</span>
           </>

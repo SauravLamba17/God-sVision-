@@ -45,7 +45,7 @@ function fmtPct(n: number) {
 interface QuoteTick {
   symbol: string; label: string; price: number; change: number
   changePct: number; sparkline: number[]; unit?: string
-  region?: string; failed?: boolean
+  region?: string
   // Set only by the India-mode MCX overlay below. Absent → the USD default.
   currency?: string
 }
@@ -130,7 +130,6 @@ function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; reg
             <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: pos ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
               {fmtPrice(q.price, '')} <span style={{ fontSize: 'var(--fs-meta)' }}>{fmtPct(q.changePct)}</span>
             </span>
-            {(q as any).failed && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', background: 'var(--border-color)', padding: '0 3px', borderRadius: 2 }}>DELAYED</span>}
           </span>
         )
       })}
@@ -140,13 +139,13 @@ function GlobalMarketRow({ markets, region, label }: { markets: QuoteTick[]; reg
 
 /* ── Section D — breadth bar ────────────────────────────────────────────── */
 function BreadthBar({ breadth }: { breadth: Breadth }) {
-  const total   = breadth.advancing + breadth.declining + breadth.unchanged || 500
+  const total   = breadth.advancing + breadth.declining + breadth.unchanged || 1
   const advPct  = (breadth.advancing / total) * 100
   const decPct  = (breadth.declining / total) * 100
   const unchPct = (breadth.unchanged / total) * 100
   return (
     <div style={{ padding: '6px 10px' }}>
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>S&P 500 BREADTH (SECTOR APPROX)</div>
+      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.08em' }}>S&P 500 SECTORS — {breadth.advancing + breadth.declining + breadth.unchanged} SPDR ETFs</div>
       {/* Stacked bar */}
       <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
         <div style={{ width: `${advPct}%`, background: 'var(--text-positive)' }} />
@@ -223,7 +222,7 @@ export default function MarketOverviewStrip() {
   const commodities: QuoteTick[] = (data?.commodities ?? []).map(q => {
     const m = mcx[q.symbol]
     if (!m || q.unit === '%') return q
-    return { ...q, price: m.price, unit: m.unit, currency: '₹', label: `${q.label} MCX` }
+    return { ...q, price: m.price, unit: m.unit, currency: '₹', label: `${q.label} ₹` } // COMEX/NYMEX × USD/INR — not an MCX quote (MCX adds import duty)
   })
 
   const indices = (data?.indices ?? []).filter(q => isIndia || !HERO_DUPLICATES.has(q.symbol))

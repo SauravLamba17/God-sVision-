@@ -13,7 +13,7 @@ interface ModeContextType {
   timezone: string
   timezoneLabel: string
   locale: string
-  exchangeRate: number
+  exchangeRate: number | null // null until the live USD/INR rate arrives
   formatCurrency: (usdAmount: number) => string
   formatTime: (date: Date | string) => string
   formatDate: (date: Date | string) => string
@@ -23,7 +23,9 @@ const ModeContext = createContext<ModeContextType | null>(null)
 
 export function ModeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<TerminalMode>('USA')
-  const [exchangeRate, setExchangeRate] = useState<number>(83.5)
+  // No hardcoded default: 83.5 was ~15% off the real rate and stayed whenever
+  // the fetch failed.
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null)
 
   useEffect(() => {
     try {
@@ -66,6 +68,7 @@ export function ModeProvider({ children }: { children: ReactNode }) {
 
   const formatCurrency = (usdAmount: number): string => {
     if (isIndia) {
+      if (exchangeRate === null) return '—'
       const inr = usdAmount * exchangeRate
       if (inr >= 10_000_000) return '₹' + (inr / 10_000_000).toFixed(2) + ' Cr'
       if (inr >= 100_000)    return '₹' + (inr / 100_000).toFixed(2) + ' L'

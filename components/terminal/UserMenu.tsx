@@ -11,6 +11,7 @@ export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, right: 0 });
 
   useEffect(() => { setMounted(true); }, []);
@@ -18,7 +19,11 @@ export default function UserMenu() {
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
+      // The menu is portalled to <body>, so it must be exempted too: otherwise
+      // mousedown on SIGN OUT closed (unmounted) the menu before its click fired,
+      // and signing out from the menu silently did nothing.
+      const t = e.target as Node;
+      if (!btnRef.current?.contains(t) && !menuRef.current?.contains(t)) setOpen(false);
     };
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', close);
@@ -57,7 +62,7 @@ export default function UserMenu() {
   }
 
   const dropdown = open && mounted && createPortal(
-    <div style={{
+    <div ref={menuRef} style={{
       position: 'fixed', top: pos.top, right: pos.right,
       width: 200, background: 'var(--bg-panel)',
       border: '1px solid var(--border-color)', borderTop: '2px solid var(--text-accent)',

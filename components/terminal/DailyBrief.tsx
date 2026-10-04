@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useMode } from '@/lib/context/ModeContext'
 
 function isAfter9AmET(): boolean {
   const now = new Date()
@@ -8,6 +9,7 @@ function isAfter9AmET(): boolean {
 }
 
 export default function DailyBrief() {
+  const { mode } = useMode()
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -23,7 +25,7 @@ export default function DailyBrief() {
     setError('')
 
     try {
-      const res = await fetch('/api/ai/brief')
+      const res = await fetch(`/api/ai/brief?mode=${mode}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.brief) {
@@ -113,7 +115,7 @@ export default function DailyBrief() {
         }}
       >
         {error ? (
-          <span style={{ color: 'var(--text-negative)' }}>⚠ {error}</span>
+          <span style={{ color: 'var(--text-muted)' }}>⚠ {error}</span>
         ) : text ? (
           text
         ) : (

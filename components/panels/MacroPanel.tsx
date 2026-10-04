@@ -25,6 +25,8 @@ export default function MacroPanel() {
         setIndicators(json.data)
         setSource(json.source)
         setError(null)
+      } else if (json.error) {
+        setError(`Macro data unavailable — ${json.error}`)
       }
     } catch {
       setError('Failed to fetch macro data')
@@ -60,7 +62,7 @@ export default function MacroPanel() {
                 {ind.value !== null ? `${formatValue(ind.value, ind.unit)}${ind.unit === '%' || ind.unit === 'bps' ? ind.unit : ''}` : 'N/A'}
               </td>
               <td className={ind.change !== null ? (ind.change >= 0 ? 'positive' : 'negative') : 'neutral'}>
-                {ind.change !== null ? `${ind.change >= 0 ? '+' : ''}${ind.change.toFixed(2)}` : '—'}
+                {ind.change !== null ? `${ind.change >= 0 ? '+' : ''}${formatChange(ind.change, ind.unit)}` : '—'}
               </td>
               <td style={{ textAlign: 'left' }} className="text-muted text-[9px]">{ind.date}</td>
             </tr>
@@ -72,8 +74,20 @@ export default function MacroPanel() {
 }
 
 function formatValue(v: number, unit: string): string {
-  if (unit === 'T') return `${(v / 1e12).toFixed(2)}T`
-  if (unit === 'B') return `$${(v / 1e9).toFixed(1)}B`
-  if (unit === 'K') return `${(v / 1000).toFixed(0)}K`
+  // FRED units: WALCL and RSAFS are in $ millions, HOUST in thousands of units,
+  // T10Y2Y in percentage points.
+  if (unit === 'T') return `$${(v / 1e6).toFixed(2)}T`
+  if (unit === 'B') return `$${(v / 1e3).toFixed(1)}B`
+  if (unit === 'K') return `${v.toFixed(0)}K`
+  if (unit === 'bps') return (v * 100).toFixed(0)
+  return v.toFixed(2)
+}
+
+// Same FRED units as formatValue; the raw change printed "+8225.00" for a
+// $8.2B move in retail sales.
+function formatChange(v: number, unit: string): string {
+  if (unit === 'T' || unit === 'B') return `${(v / 1e3).toFixed(1)}B`
+  if (unit === 'K') return `${v.toFixed(0)}K`
+  if (unit === 'bps') return `${(v * 100).toFixed(0)}bps`
   return v.toFixed(2)
 }

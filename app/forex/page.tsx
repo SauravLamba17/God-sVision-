@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import ForexPanel from '@/components/panels/ForexPanel'
-import { CENTRAL_BANK_RATES, MAJOR_PAIRS } from '@/lib/apis/forex'
+import { MAJOR_PAIRS } from '@/lib/apis/forex'
+import { usePolicyRates } from '@/lib/hooks/usePolicyRates'
 
 const MATRIX_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY']
 
@@ -11,11 +12,7 @@ interface PairData {
   base: string
   quote: string
   rate: number
-  bid: number
-  ask: number
-  spread: number
-  change: number
-  changePct: number
+  changePct: number | null
 }
 
 export default function ForexPage() {
@@ -23,19 +20,30 @@ export default function ForexPage() {
   const [rates, setRates] = useState<Record<string, number>>({})
   const [selectedPair, setSelectedPair] = useState('EUR/USD')
   const [loading, setLoading] = useState(true)
-  const [carryBase, setCarryBase] = useState('JPY')
-  const [carryQuote, setCarryQuote] = useState('AUD')
+  const [carryBase, setCarryBase] = useState('EUR')
+  const [carryQuote, setCarryQuote] = useState('USD')
 
-  const cbRate = (currency: string) => {
-    const cb = CENTRAL_BANK_RATES.find(r => r.currency === currency)
-    return cb?.rate || 0
-  }
+  const { rates: cbRates, error: cbError } = usePolicyRates()
+  const cbRate = (currency: string) => cbRates.find(r => r.currency === currency)?.rate ?? null
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/forex?type=pairs')
+        // Daily change comes from Yahoo FX quotes. It used to be Math.random()
+        // (and BID/ASK/SPREAD were the mid ± a made-up 0.02%); the rates feed
+        // only carries a mid, so that's all the table shows now.
+        const yahooSym = (p: { base: string; quote: string }) => `${p.base}${p.quote}=X`
+        const [res, chgRes] = await Promise.all([
+          fetch('/api/forex?type=pairs'),
+          fetch(`/api/stocks?tickers=${MAJOR_PAIRS.map(yahooSym).join(',')}`).catch(() => null),
+        ])
         const json = await res.json()
+        const chg: Record<string, number> = {}
+        try {
+          for (const q of (await chgRes?.json())?.data ?? []) {
+            if (typeof q?.regularMarketChangePercent === 'number') chg[q.symbol] = q.regularMarketChangePercent
+          }
+        } catch { /* change stays null */ }
         if (json.data?.rates) {
           const r = json.data.rates
           setRates(r)
@@ -44,16 +52,7 @@ export default function ForexPage() {
             if (p.base === 'USD') rate = r[p.quote]
             else if (p.quote === 'USD') rate = 1 / r[p.base]
             else rate = r[p.quote] / r[p.base]
-            const spread = rate * 0.0002
-            return {
-              ...p,
-              rate: rate || 0,
-              bid: (rate || 0) - spread,
-              ask: (rate || 0) + spread,
-              spread: spread * 10000,
-              change: ((rate || 0) - (rate || 0) * 0.998) * (Math.random() > 0.5 ? 1 : -1),
-              changePct: (Math.random() - 0.5) * 0.4,
-            }
+            return { ...p, rate: rate || 0, changePct: chg[yahooSym(p)] ?? null }
           })
           setPairs(pairData)
         }
@@ -68,7 +67,8 @@ export default function ForexPage() {
     return () => clearInterval(id)
   }, [])
 
-  const carryReturn = cbRate(carryQuote) - cbRate(carryBase)
+  const borrowRate = cbRate(carryBase), investRate = cbRate(carryQuote)
+  const carryReturn = borrowRate !== null && investRate !== null ? investRate - borrowRate : null
 
   return (
     <div className="p-2 flex gap-2 h-full">
@@ -82,10 +82,8 @@ export default function ForexPage() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'left' }}>PAIR</th>
-                <th>BID</th>
-                <th>ASK</th>
-                <th>SPREAD (pips)</th>
-                <th>CHG%</th>
+                <th>RATE (MID)</th>
+                <th>CHG% (1D)</th>
               </tr>
             </thead>
             <tbody>
@@ -98,15 +96,11 @@ export default function ForexPage() {
                   <td style={{ textAlign: 'left' }}>
                     <span className={`font-bold ${selectedPair === p.pair ? 'text-accent' : 'text-primary'}`}>{p.pair}</span>
                   </td>
-                  <td className="font-mono text-positive">
-                    {p.rate >= 100 ? p.bid.toFixed(2) : p.rate >= 10 ? p.bid.toFixed(3) : p.bid.toFixed(4)}
+                  <td className="font-mono text-primary">
+                    {p.rate >= 100 ? p.rate.toFixed(2) : p.rate >= 10 ? p.rate.toFixed(3) : p.rate.toFixed(4)}
                   </td>
-                  <td className="font-mono text-negative">
-                    {p.rate >= 100 ? p.ask.toFixed(2) : p.rate >= 10 ? p.ask.toFixed(3) : p.ask.toFixed(4)}
-                  </td>
-                  <td className="font-mono text-neutral">{p.spread.toFixed(1)}</td>
-                  <td className={p.changePct >= 0 ? 'positive' : 'negative'}>
-                    {p.changePct >= 0 ? '+' : ''}{p.changePct.toFixed(2)}%
+                  <td className={p.changePct === null ? 'neutral' : p.changePct >= 0 ? 'positive' : 'negative'}>
+                    {p.changePct === null ? '—' : `${p.changePct >= 0 ? '+' : ''}${p.changePct.toFixed(2)}%`}
                   </td>
                 </tr>
               ))}
@@ -118,7 +112,7 @@ export default function ForexPage() {
       {/* Right Sidebar */}
       <div style={{ width: 260, flexShrink: 0 }} className="space-y-2">
         {/* Central Bank Rates */}
-        <PanelWrapper title="CENTRAL BANK RATES">
+        <PanelWrapper title="CENTRAL BANK RATES" error={cbError}>
           <table className="data-table">
             <thead>
               <tr>
@@ -128,8 +122,8 @@ export default function ForexPage() {
               </tr>
             </thead>
             <tbody>
-              {CENTRAL_BANK_RATES.map(cb => (
-                <tr key={cb.bank}>
+              {cbRates.map(cb => (
+                <tr key={cb.bank} title={`as of ${cb.asOf}`}>
                   <td style={{ textAlign: 'left' }}>
                     <span className="text-primary text-[13px]">{cb.bank}</span>
                   </td>
@@ -155,7 +149,7 @@ export default function ForexPage() {
                   className="input-terminal w-full"
                   style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}
                 >
-                  {CENTRAL_BANK_RATES.map(r => (
+                  {cbRates.map(r => (
                     <option key={r.currency} value={r.currency}>{r.currency} ({r.rate}%)</option>
                   ))}
                 </select>
@@ -168,7 +162,7 @@ export default function ForexPage() {
                   className="input-terminal w-full"
                   style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}
                 >
-                  {CENTRAL_BANK_RATES.map(r => (
+                  {cbRates.map(r => (
                     <option key={r.currency} value={r.currency}>{r.currency} ({r.rate}%)</option>
                   ))}
                 </select>
@@ -177,16 +171,16 @@ export default function ForexPage() {
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="font-mono text-[11px] text-muted">BORROW RATE</span>
-                <span className="font-mono text-[13px] text-negative">{cbRate(carryBase).toFixed(2)}%</span>
+                <span className="font-mono text-[13px] text-negative">{borrowRate !== null ? `${borrowRate.toFixed(2)}%` : '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-mono text-[11px] text-muted">INVEST RATE</span>
-                <span className="font-mono text-[13px] text-positive">{cbRate(carryQuote).toFixed(2)}%</span>
+                <span className="font-mono text-[13px] text-positive">{investRate !== null ? `${investRate.toFixed(2)}%` : '—'}</span>
               </div>
               <div className="flex justify-between" style={{ borderTop: '1px solid #1b2e1b', paddingTop: 4 }}>
                 <span className="font-mono text-[11px] text-accent font-bold">CARRY RETURN</span>
-                <span className={`font-mono text-[15px] font-bold ${carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
-                  {carryReturn >= 0 ? '+' : ''}{carryReturn.toFixed(2)}%
+                <span className={`font-mono text-[15px] font-bold ${carryReturn === null ? 'text-muted' : carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
+                  {carryReturn === null ? '—' : `${carryReturn >= 0 ? '+' : ''}${carryReturn.toFixed(2)}%`}
                 </span>
               </div>
             </div>

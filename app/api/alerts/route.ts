@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
   const check = searchParams.get('check')
   const session = await getServerSession(authOptions)
   const userId = (session?.user as any)?.id ?? null
+  // No session must never fall through to the shared ownerless (userId: null) rows.
+  if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
 
   try {
     if (check === 'prices') {
@@ -58,6 +60,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
     const body = await request.json()
     const { type, ticker, condition, targetPrice, keyword } = body
 
@@ -84,6 +88,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id ?? null
+    // No session must never fall through to the shared ownerless (userId: null) rows.
+    if (!userId) return NextResponse.json({ error: 'Sign in required' }, { status: 401, headers: PRIVATE })
     const { searchParams } = new URL(request.url)
     const id   = parseInt(searchParams.get('id') || '0')
     const type = searchParams.get('type') || 'price'

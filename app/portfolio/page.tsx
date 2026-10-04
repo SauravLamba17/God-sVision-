@@ -196,7 +196,7 @@ export default function PortfolioPage() {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
               <RiskBadge label="SHARPE" value={riskMetrics.sharpe.toFixed(2)} good={riskMetrics.sharpe > 1} warn={riskMetrics.sharpe > 0} />
-              <RiskBadge label="SORTINO" value={riskMetrics.sortino > 99 ? 'âˆž' : riskMetrics.sortino.toFixed(2)} good={riskMetrics.sortino > 1.5} warn={riskMetrics.sortino > 0.5} />
+              <RiskBadge label="SORTINO" value={riskMetrics.sortino > 99 ? '∞' : riskMetrics.sortino.toFixed(2)} good={riskMetrics.sortino > 1.5} warn={riskMetrics.sortino > 0.5} />
               <RiskBadge label="MAX DD" value={`${(riskMetrics.maxDD * 100).toFixed(1)}%`} warn={riskMetrics.maxDD < 0.15} good={false} />
               <RiskBadge label="VAR 95%" value={`${(riskMetrics.var95 * 100).toFixed(2)}%`} />
               <RiskBadge label="CVAR 95%" value={`${(riskMetrics.cvar95 * 100).toFixed(2)}%`} />

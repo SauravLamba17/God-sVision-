@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import yahooFinance from 'yahoo-finance2'
 import axios from 'axios'
+import { priorSessionClose } from '@/lib/apis/yahoo'
 
 // ── Indian index tickers (Yahoo Finance) ────────────────────────────────────
 export const INDIA_INDEX_TICKERS: Record<string, string> = {
@@ -150,7 +151,7 @@ async function fetchChart(ticker: string, range = '5d', interval = '1d'): Promis
     if (!result) return null
     const meta  = result.meta
     const closes = result.indicators?.quote?.[0]?.close ?? []
-    const prev  = meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice
+    const prev  = (interval === '1d' ? priorSessionClose(result) : meta.chartPreviousClose) || meta.regularMarketPrice
     const price = meta.regularMarketPrice
     return {
       symbol:    meta.symbol || ticker,
@@ -189,7 +190,19 @@ export async function fetchNifty50Quotes() {
     .map(r => (r as PromiseFulfilledResult<any>).value)
 }
 
-export async function fetchIndiaForex(exchangeRate: number) {
+// Live USD/INR, or null. Every India route used to fall back to a hardcoded
+// 83.5 — ~15% off the real rate — and convert commodity prices with it.
+export async function getUsdInr(): Promise<number | null> {
+  try {
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(5000) })
+    const d = await r.json()
+    if (d.rates?.INR) return d.rates.INR
+  } catch { /* try Yahoo */ }
+  const y = await fetchChart('INR=X', '1d', '1d')
+  return y?.price ?? null
+}
+
+export async function fetchIndiaForex(exchangeRate: number | null) {
   const tickers = INDIA_FOREX_PAIRS.map(p => p.ticker)
   const results = await Promise.allSettled(tickers.map(t => fetchChart(t, '1d', '1d')))
   return INDIA_FOREX_PAIRS.map((pair, i) => {
@@ -198,9 +211,9 @@ export async function fetchIndiaForex(exchangeRate: number) {
     return {
       pair: pair.pair,
       ticker: pair.ticker,
-      price: d?.price ?? (pair.ticker === 'USDINR=X' ? exchangeRate : 0),
-      change: d?.change ?? 0,
-      changePct: d?.changePct ?? 0,
+      price: d?.price ?? (pair.ticker === 'USDINR=X' ? exchangeRate : null),
+      change: d?.change ?? null,
+      changePct: d?.changePct ?? null,
     }
   })
 }

@@ -26,7 +26,8 @@ const AnalystPanel        = dynamic(() => import('@/components/panels/AnalystPan
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 interface Metric {
-  label: string; symbol: string; price: number; change: number; changePct: number
+  // null until a live quote arrives — never a placeholder number
+  label: string; symbol: string; price: number | null; change: number | null; changePct: number | null
   sparkline: number[]; accent: string; unit?: string
 }
 interface MoverRow {
@@ -39,20 +40,24 @@ interface MoverRow {
 // SPY is ~543 while the S&P 500 is ~5400, GLD is ~232 while gold is ~2400/oz.
 // The label names the instrument so the number can't be read as a second,
 // contradictory quote for what the market monitor and commodity strip show.
+// Cards start EMPTY ('—') and fill from live quotes. They used to start at
+// hardcoded 2024 prices (SPY $543, NIFTY 24,000, USD/INR 83.50) with up/down
+// arrows, which stayed on screen whenever a fetch failed.
+const NO_QUOTE = { price: null, change: null, changePct: null }
 const DEFAULT_METRICS: Metric[] = [
-  { label: 'S&P 500 · SPY', symbol: 'SPY',      price: 543.27,  change: 2.14,   changePct: 0.39,  sparkline: [], accent: 'var(--text-accent)' },
-  { label: 'NASDAQ · QQQ',  symbol: 'QQQ',      price: 466.18,  change: 3.22,   changePct: 0.69,  sparkline: [], accent: '#a78bfa' },
-  { label: 'BITCOIN',       symbol: 'BTC',      price: 67234.5, change: 892.3,  changePct: 1.34,  sparkline: [], accent: 'var(--text-warning)' },
-  { label: 'GOLD · GLD',    symbol: 'GLD',      price: 232.41,  change: -0.87,  changePct: -0.37, sparkline: [], accent: '#fde68a' },
-  { label: 'USD INDEX',     symbol: 'DX-Y.NYB', price: 104.22,  change: -0.12,  changePct: -0.11, sparkline: [], accent: '#34d399' },
+  { label: 'S&P 500 · SPY', symbol: 'SPY',      ...NO_QUOTE, sparkline: [], accent: 'var(--text-accent)' },
+  { label: 'NASDAQ · QQQ',  symbol: 'QQQ',      ...NO_QUOTE, sparkline: [], accent: '#a78bfa' },
+  { label: 'BITCOIN',       symbol: 'BTC',      ...NO_QUOTE, sparkline: [], accent: 'var(--text-warning)' },
+  { label: 'GOLD · GLD',    symbol: 'GLD',      ...NO_QUOTE, sparkline: [], accent: '#fde68a' },
+  { label: 'USD INDEX',     symbol: 'DX-Y.NYB', ...NO_QUOTE, sparkline: [], accent: '#34d399' },
 ]
 
 const DEFAULT_INDIA_METRICS: Metric[] = [
-  { label: 'NIFTY 50',   symbol: '^NSEI',    price: 24000,  change: 120,  changePct: 0.5,  sparkline: [], accent: '#FF9933' },
-  { label: 'SENSEX',     symbol: '^BSESN',   price: 79000,  change: 400,  changePct: 0.5,  sparkline: [], accent: '#138808' },
-  { label: 'BANK NIFTY', symbol: '^NSEBANK', price: 52000,  change: 200,  changePct: 0.4,  sparkline: [], accent: 'var(--text-warning)' },
-  { label: 'INDIA VIX',  symbol: '^INDIAVIX',price: 14.5,   change: -0.5, changePct: -3.3, sparkline: [], accent: 'var(--text-negative)' },
-  { label: 'USD/INR',    symbol: 'USDINR=X', price: 83.50,  change: 0.15, changePct: 0.18, sparkline: [], accent: '#34d399' },
+  { label: 'NIFTY 50',   symbol: '^NSEI',    ...NO_QUOTE, sparkline: [], accent: '#FF9933' },
+  { label: 'SENSEX',     symbol: '^BSESN',   ...NO_QUOTE, sparkline: [], accent: '#138808' },
+  { label: 'BANK NIFTY', symbol: '^NSEBANK', ...NO_QUOTE, sparkline: [], accent: 'var(--text-warning)' },
+  { label: 'INDIA VIX',  symbol: '^INDIAVIX',...NO_QUOTE, sparkline: [], accent: 'var(--text-negative)' },
+  { label: 'USD/INR',    symbol: 'USDINR=X', ...NO_QUOTE, sparkline: [], accent: '#34d399' },
 ]
 
 const TICKER_TAPE_SYMBOLS = [
@@ -77,24 +82,16 @@ const SPARKLINE_SYMBOL_MAP: Record<string, string> = {
 
 /* ── Metric card ──────────────────────────────────────────────────────── */
 function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
-  const isPos = m.changePct >= 0
+  const hasQuote = m.price !== null && m.change !== null && m.changePct !== null
+  const isPos = (m.changePct ?? 0) >= 0
   const { data: sparkData, loading: sparkLoading } = useSparklineData(SPARKLINE_SYMBOL_MAP[m.label] ?? m.symbol)
-  const cc = isPos ? 'var(--text-positive)' : 'var(--text-negative)'
-  // Currency symbol is driven ONLY by the explicit isIndia prop passed at the
-  // render site (USA cards never pass isIndia → always '$'). The 5 USA hero
-  // cards — S&P 500, NASDAQ, Bitcoin, Gold, USD Index — are always
-  // USD-denominated, so '$' is hardcoded here rather than routed through a
-  // shared/dynamic formatter that could ever resolve to '₹'.
-  const sym = isIndia ? '₹' : '$'
-  const displayPrice = (() => {
-    if (isIndia && m.price > 1000) {
-      if (m.price >= 1_000_000) return '₹' + (m.price / 100_000).toFixed(0) + ' L'
-      return '₹' + m.price.toFixed(2)
-    }
-    if (m.price >= 10000) return sym + m.price.toFixed(0)
-    if (m.price >= 1) return sym + m.price.toFixed(2)
-    return sym + m.price.toFixed(4)
-  })()
+  const cc = !hasQuote ? 'var(--text-muted)' : isPos ? 'var(--text-positive)' : 'var(--text-negative)'
+  // Only priced instruments get a currency sign: SPY/QQQ/GLD/BTC in $ and
+  // USD/INR in ₹. Index levels (NIFTY, SENSEX, India VIX, the dollar index)
+  // are points — they were rendered as "₹22421.95" and "$101.92".
+  const sym = m.symbol === 'USDINR=X' ? '₹' : (isIndia || m.symbol === 'DX-Y.NYB') ? '' : '$'
+  const fmt = (n: number) => n.toLocaleString(isIndia ? 'en-IN' : 'en-US', { minimumFractionDigits: n >= 1 ? 2 : 4, maximumFractionDigits: n >= 1 ? 2 : 4 })
+  const displayPrice = m.price === null ? '—' : sym + fmt(m.price)
   return (
     <div style={{ border: '1px solid var(--border-color)', borderTop: `2px solid ${m.accent}`, background: 'var(--bg-panel)', padding: '10px 14px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(ellipse at top right, ${m.accent}0a 0%, transparent 70%)`, pointerEvents: 'none' }} />
@@ -105,7 +102,7 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
             {displayPrice}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: cc, marginTop: 3 }}>
-            {isPos ? '▲ +' : '▼ '}{m.price >= 1 ? m.change.toFixed(2) : m.change.toFixed(4)} ({isPos ? '+' : ''}{m.changePct.toFixed(2)}%)
+            {hasQuote ? <>{isPos ? '▲ +' : '▼ '}{m.price! >= 1 ? m.change!.toFixed(2) : m.change!.toFixed(4)} ({isPos ? '+' : ''}{m.changePct!.toFixed(2)}%)</> : 'awaiting quote'}
           </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
@@ -389,7 +386,7 @@ function IndiaCryptoMini() {
     if (n >= 10_000_000) return '₹' + (n / 10_000_000).toFixed(2) + ' Cr'
     if (n >= 100_000)    return '₹' + (n / 100_000).toFixed(2) + ' L'
     if (n >= 1_000)      return '₹' + (n / 1_000).toFixed(2) + 'K'
-    return '₹' + n.toFixed(2)
+    return '₹' + (n >= 1 ? n.toFixed(2) : n.toPrecision(3)) // SHIB was ₹0.00
   }
 
   return (
@@ -597,7 +594,7 @@ export default function DashboardPage() {
         }
         if (!Object.keys(idxMap).length) return
 
-        let usdInr = { price: 83.50, change: 0.12, changePct: 0.14 }
+        let usdInr: { price: number | null; change: number | null; changePct: number | null } = NO_QUOTE
         if (fxRes.status === 'fulfilled') {
           const j = await fxRes.value.json()
           const pair = j.data?.pairs?.find((p: any) => p.ticker === 'USDINR=X')
@@ -605,10 +602,10 @@ export default function DashboardPage() {
         }
 
         const updated: Metric[] = [
-          { label: 'NIFTY 50',   symbol: '^NSEI',     price: idxMap['^NSEI']?.price     ?? 24000, change: idxMap['^NSEI']?.change     ?? 0, changePct: idxMap['^NSEI']?.changePct     ?? 0, sparkline: idxMap['^NSEI']?.sparkline     ?? [], accent: '#FF9933' },
-          { label: 'SENSEX',     symbol: '^BSESN',    price: idxMap['^BSESN']?.price    ?? 79000, change: idxMap['^BSESN']?.change    ?? 0, changePct: idxMap['^BSESN']?.changePct    ?? 0, sparkline: idxMap['^BSESN']?.sparkline    ?? [], accent: '#138808' },
-          { label: 'BANK NIFTY', symbol: '^NSEBANK',  price: idxMap['^NSEBANK']?.price  ?? 52000, change: idxMap['^NSEBANK']?.change  ?? 0, changePct: idxMap['^NSEBANK']?.changePct  ?? 0, sparkline: idxMap['^NSEBANK']?.sparkline  ?? [], accent: 'var(--text-warning)' },
-          { label: 'INDIA VIX',  symbol: '^INDIAVIX', price: idxMap['^INDIAVIX']?.price ?? 14.5,  change: idxMap['^INDIAVIX']?.change ?? 0, changePct: idxMap['^INDIAVIX']?.changePct ?? 0, sparkline: idxMap['^INDIAVIX']?.sparkline ?? [], accent: 'var(--text-negative)' },
+          { label: 'NIFTY 50',   symbol: '^NSEI',     price: idxMap['^NSEI']?.price     ?? null, change: idxMap['^NSEI']?.change     ?? null, changePct: idxMap['^NSEI']?.changePct     ?? null, sparkline: idxMap['^NSEI']?.sparkline     ?? [], accent: '#FF9933' },
+          { label: 'SENSEX',     symbol: '^BSESN',    price: idxMap['^BSESN']?.price    ?? null, change: idxMap['^BSESN']?.change    ?? null, changePct: idxMap['^BSESN']?.changePct    ?? null, sparkline: idxMap['^BSESN']?.sparkline    ?? [], accent: '#138808' },
+          { label: 'BANK NIFTY', symbol: '^NSEBANK',  price: idxMap['^NSEBANK']?.price  ?? null, change: idxMap['^NSEBANK']?.change  ?? null, changePct: idxMap['^NSEBANK']?.changePct  ?? null, sparkline: idxMap['^NSEBANK']?.sparkline  ?? [], accent: 'var(--text-warning)' },
+          { label: 'INDIA VIX',  symbol: '^INDIAVIX', price: idxMap['^INDIAVIX']?.price ?? null,  change: idxMap['^INDIAVIX']?.change ?? null, changePct: idxMap['^INDIAVIX']?.changePct ?? null, sparkline: idxMap['^INDIAVIX']?.sparkline ?? [], accent: 'var(--text-negative)' },
           { label: 'USD/INR',    symbol: 'USDINR=X',  price: usdInr.price, change: usdInr.change, changePct: usdInr.changePct, sparkline: [], accent: '#34d399' },
         ]
         setMetrics(updated)

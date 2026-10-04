@@ -5,27 +5,8 @@ const BASE = 'https://api.stlouisfed.org/fred'
 const KEY = process.env.FRED_API_KEY || ''
 const KEY_VALID = KEY && KEY !== 'your_fred_key_here' && KEY !== 'demo' && KEY.length > 8
 
-// MOCK DATA — used when FRED_API_KEY is not configured
-const MACRO_MOCK = [
-  { key: 'gdp',          label: 'GDP Growth',          series: 'A191RL1Q225SBEA', unit: '%', value: 2.8,   prevValue: 3.1,  change: -0.3,  date: '2024-10-01' },
-  { key: 'cpi',          label: 'CPI YoY',             series: 'CPIAUCSL',        unit: '%', value: 3.2,   prevValue: 3.4,  change: -0.2,  date: '2024-12-01' },
-  { key: 'core_cpi',     label: 'Core CPI',            series: 'CPILFESL',        unit: '%', value: 3.5,   prevValue: 3.6,  change: -0.1,  date: '2024-12-01' },
-  { key: 'unemployment', label: 'Unemployment',        series: 'UNRATE',          unit: '%', value: 4.2,   prevValue: 4.1,  change: 0.1,   date: '2024-12-01' },
-  { key: 'fed_funds',    label: 'Fed Funds Rate',      series: 'FEDFUNDS',        unit: '%', value: 5.33,  prevValue: 5.33, change: 0,     date: '2024-12-01' },
-  { key: 't10y2y',       label: '10Y-2Y Spread',       series: 'T10Y2Y',          unit: 'bps',value: -0.18,prevValue: -0.25,change: 0.07,  date: '2024-12-31' },
-  { key: 'retail_sales', label: 'Retail Sales',        series: 'RSAFS',           unit: 'B', value: 724.9, prevValue: 718.2,change: 6.7,   date: '2024-11-01' },
-  { key: 'housing',      label: 'Housing Starts',      series: 'HOUST',           unit: 'K', value: 1289,  prevValue: 1311, change: -22,   date: '2024-11-01' },
-  { key: 'consumer_conf',label: 'Consumer Confidence', series: 'UMCSENT',         unit: '',  value: 74.0,  prevValue: 71.8, change: 2.2,   date: '2024-12-01' },
-  { key: 'industrial',   label: 'Industrial Production',series: 'INDPRO',         unit: '',  value: 102.8, prevValue: 102.4,change: 0.4,   date: '2024-11-01' },
-  { key: 'fed_balance',  label: 'Fed Balance Sheet',   series: 'WALCL',           unit: 'T', value: 7.01,  prevValue: 7.12, change: -0.11, date: '2024-12-25' },
-]
-
-const YIELD_MOCK = [
-  { label: '1M', value: 5.27 }, { label: '3M', value: 5.32 }, { label: '6M', value: 5.20 },
-  { label: '1Y', value: 4.98 }, { label: '2Y', value: 4.43 }, { label: '5Y', value: 4.23 },
-  { label: '7Y', value: 4.28 }, { label: '10Y', value: 4.25 }, { label: '20Y', value: 4.55 },
-  { label: '30Y', value: 4.48 },
-]
+// No mock fallbacks: on failure these return nulls/throw and the UI shows an
+// unavailable state. (They used to return hardcoded 2024 numbers as 'live'.)
 
 export const FRED_SERIES = {
   GDP: 'GDP',
@@ -55,7 +36,20 @@ export const FRED_SERIES = {
   DGS20: 'DGS20',
 }
 
-async function fetchSeries(seriesId: string, limit = 12) {
+// Newest-first observations. With a key: the FRED API. Without one: FRED's
+// public CSV download (no key needed — /api/yield-curve already uses it).
+export async function fetchSeries(seriesId: string, limit = 12) {
+  if (!KEY_VALID) {
+    try {
+      const { data } = await axios.get(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${seriesId}`, { timeout: 15000, responseType: 'text' })
+      return (data as string).trim().split(/\r?\n/).slice(1).reverse().slice(0, limit).map(line => {
+        const [date, value] = line.split(',')
+        return { date: date.trim(), value: value?.trim() || '.' }
+      })
+    } catch {
+      return []
+    }
+  }
   try {
     const { data } = await axios.get(`${BASE}/series/observations`, {
       params: {
@@ -74,7 +68,6 @@ async function fetchSeries(seriesId: string, limit = 12) {
 }
 
 export async function getYieldCurve() {
-  if (!KEY_VALID) return YIELD_MOCK
   const maturities = [
     { label: '1M', series: 'DGS1MO' },
     { label: '3M', series: 'DGS3MO' },
@@ -100,7 +93,6 @@ export async function getYieldCurve() {
 }
 
 export async function getMacroIndicators() {
-  if (!KEY_VALID) return MACRO_MOCK
   const indicators = [
     { key: 'gdp', label: 'GDP Growth', series: 'A191RL1Q225SBEA', unit: '%' },
     { key: 'cpi', label: 'CPI YoY', series: 'CPIAUCSL', unit: '%' },
@@ -116,37 +108,59 @@ export async function getMacroIndicators() {
   ]
 
   const results = await Promise.allSettled(
-    indicators.map(i => fetchSeries(i.series, 13))
+    indicators.map(i => fetchSeries(i.series, 14))
   )
 
   return indicators.map((ind, i) => {
     const obs = results[i].status === 'fulfilled' ? results[i].value : []
-    const latest = obs?.[0]?.value
-    const prev = obs?.[1]?.value
-    const value = latest && latest !== '.' ? parseFloat(latest) : null
-    const prevValue = prev && prev !== '.' ? parseFloat(prev) : null
+    const num = (o: any) => (o?.value && o.value !== '.' ? parseFloat(o.value) : null)
+    // CPIAUCSL / CPILFESL are index levels, not rates — the "YoY" rows showed
+    // ~310%. Convert to year-over-year % using the observation 12 months back.
+    const yoy = (a: any, b: any) => (num(a) !== null && num(b) ? (num(a)! / num(b)! - 1) * 100 : null)
+    const isIndex = ind.key === 'cpi' || ind.key === 'core_cpi'
+    const value = isIndex ? yoy(obs?.[0], obs?.[12]) : num(obs?.[0])
+    const prevValue = isIndex ? yoy(obs?.[1], obs?.[13]) : num(obs?.[1])
     const change = value !== null && prevValue !== null ? value - prevValue : null
     return { ...ind, value, prevValue, change, date: obs?.[0]?.date || 'N/A' }
   })
 }
 
-const FED_BALANCE_MOCK = [
-  { date:'2021-01-01', value:7.35 }, { date:'2021-04-01', value:7.69 },
-  { date:'2021-07-01', value:8.06 }, { date:'2021-10-01', value:8.57 },
-  { date:'2022-01-01', value:8.87 }, { date:'2022-04-01', value:8.96 },
-  { date:'2022-07-01', value:8.89 }, { date:'2022-10-01', value:8.76 },
-  { date:'2023-01-01', value:8.49 }, { date:'2023-04-01', value:8.59 },
-  { date:'2023-07-01', value:8.17 }, { date:'2023-10-01', value:7.88 },
-  { date:'2024-01-01', value:7.66 }, { date:'2024-04-01', value:7.43 },
-  { date:'2024-07-01', value:7.18 }, { date:'2024-10-01', value:7.01 },
-]
-
 export async function getFedBalanceSheet() {
-  if (!KEY_VALID) return FED_BALANCE_MOCK
   const obs = await fetchSeries('WALCL', 104)
-  if (!obs.length) return FED_BALANCE_MOCK
+  if (!obs.length) throw new Error('FRED WALCL unavailable')
   return obs.map((o: { date: string; value: string }) => ({
     date: o.date,
     value: o.value !== '.' ? parseFloat(o.value) / 1e6 : null
   })).reverse()
+}
+
+// Central-bank policy rates. These were hardcoded 2023/2024 values (Fed 5.33%
+// vs a real 4.00%, BOJ at -0.10%, "next meeting" dates months in the past)
+// shown as current. FRED only carries CURRENT daily policy rates for the Fed
+// and ECB — the OECD IRSTCB01* series for other banks stopped in 2023 — so
+// those two are shown and the rest are omitted rather than shown stale.
+export const POLICY_RATE_SERIES = [
+  { code: 'FED', bank: 'Fed (US)', country: 'United States', currency: 'USD', series: 'DFEDTARU' },
+  { code: 'ECB', bank: 'ECB (EU)', country: 'Eurozone', currency: 'EUR', series: 'ECBDFR' },
+]
+
+export interface PolicyRate {
+  code: string; bank: string; country: string; currency: string
+  rate: number; asOf: string
+  trend: 'hike' | 'cut' | 'hold' // direction of the most recent change in the fetched window
+}
+
+export async function getPolicyRates(): Promise<PolicyRate[] | null> {
+  const rows = await Promise.all(POLICY_RATE_SERIES.map(async s => {
+    const obs = (await fetchSeries(s.series, 400)).filter((o: any) => o.value !== '.')
+    // Never present a stale series as the current rate.
+    if (!obs.length || Date.now() - new Date(obs[0].date).getTime() > 120 * 86400000) return null
+    const rate = parseFloat(obs[0].value)
+    const prev = obs.find((o: any) => parseFloat(o.value) !== rate)
+    const trend: PolicyRate['trend'] = !prev ? 'hold' : parseFloat(prev.value) < rate ? 'hike' : 'cut'
+    const { series, ...meta } = s
+    return { ...meta, rate, asOf: obs[0].date, trend }
+  }))
+  const live = rows.filter((r): r is PolicyRate => r !== null)
+  return live.length ? live : null
 }

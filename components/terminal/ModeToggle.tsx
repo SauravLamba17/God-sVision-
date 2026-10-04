@@ -4,7 +4,7 @@ import { useMode } from '@/lib/context/ModeContext'
 import { getIndianMarketStatus } from '@/lib/apis/india'
 import { getMarketStatus } from '@/lib/utils'
 
-function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: number; onDone: () => void }) {
+function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: number | null; onDone: () => void }) {
   const [visible, setVisible] = useState(false)
   const [istTime, setIstTime] = useState('')
   const [etTime,  setEtTime]  = useState('')
@@ -48,7 +48,7 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
         {isIndia && (
           <>
             <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)', marginBottom: 6 }}>
-              1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>₹{rate.toFixed(2)}</span>
+              1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>₹{rate?.toFixed(2) ?? '—'}</span>
             </div>
             <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated · {istTime} IST</div>
           </>

@@ -23,7 +23,7 @@ export default function WeatherModule({ compact }: Props) {
   }, [compact]);
 
   const toC = (f: number) => Math.round((f - 32) * 5 / 9);
-  const display = (fVal: number) => tempUnit === 'C' ? `${toC(fVal)}°C` : `${Math.round(fVal)}°F`;
+  const display = (fVal: number | null) => fVal === null ? '—' : tempUnit === 'C' ? `${toC(fVal)}°C` : `${Math.round(fVal)}°F`;
 
   const fs = compact ? '10px' : '11px';
 
@@ -44,7 +44,8 @@ export default function WeatherModule({ compact }: Props) {
         {loading ? (
           <div style={{ padding: 8, color: 'var(--text-muted)', fontSize: fs }}>Loading…</div>
         ) : weather.map((w: any, i: number) => {
-          const tempF = w.temperature ?? w.temp ?? w.current?.temperature_2m ?? 68;
+          // No made-up temperature (was ?? 68) when a city's reading is missing.
+          const tempF = w.temperature ?? w.temp ?? w.current?.temperature_2m ?? null;
           return (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: compact ? '4px 6px' : '6px 8px', borderBottom: '1px solid var(--border-dim)', fontSize: fs }}>
               <span style={{ color: 'var(--text-muted)', flex: 1 }}>{w.city ?? w.name ?? CITIES[i]}</span>

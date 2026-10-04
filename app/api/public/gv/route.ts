@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
+import { getQuotes } from '@/lib/apis/yahoo';
 
 // Simple API key check (basic auth layer, not full public API system)
 const VALID_KEYS = new Set([
   process.env.GV_SHEETS_API_KEY ?? 'godsvision-demo-key',
 ]);
+
+// Fields the crumb-free query1 chart quote carries. Everything else (P/E, EPS,
+// market cap…) still needs yahoo-finance2's query2 quote, which 429s under load.
+const CHART_FIELDS = new Set(['price', 'change', 'change_pct', 'volume', 'day_high', 'day_low', 'open', 'fifty_two_week_high', 'fifty_two_week_low', 'currency']);
 
 const cache = new Map<string, { data: any; ts: number }>();
 const TTL = 30 * 1000;
@@ -29,7 +34,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached.data);
     }
 
-    const quote = await yahooFinance.quote(ticker);
+    const quote: any = (CHART_FIELDS.has(field) && (await getQuotes([ticker]))[0]) || await yahooFinance.quote(ticker);
 
     const fieldMap: Record<string, any> = {
       price: quote.regularMarketPrice,

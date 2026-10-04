@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { getChartRange } from '@/lib/apis/yahoo';
 
 const VALID_KEYS = new Set([process.env.GV_SHEETS_API_KEY ?? 'godsvision-demo-key']);
 
@@ -17,11 +17,7 @@ export async function GET(req: NextRequest) {
 
     if (!ticker) return NextResponse.json({ error: 'ticker required' }, { status: 400 });
 
-    const chart = await yahooFinance.chart(ticker, {
-      period1: new Date(startDate),
-      period2: new Date(endDate),
-      interval: '1d',
-    });
+    const chart = await getChartRange(ticker, new Date(startDate), new Date(endDate), '1d');
 
     const rows = (chart.quotes ?? []).map((q: any) => ({
       date: new Date(q.date).toISOString().split('T')[0],

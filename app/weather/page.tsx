@@ -21,6 +21,7 @@ interface WeatherData {
   icon: string
   sunrise: number
   sunset: number
+  tzOffset?: number
 }
 
 interface ForecastData {
@@ -233,7 +234,8 @@ export default function WeatherPage() {
                   {
                     label: 'SUNRISE',
                     value: current.sunrise
-                      ? new Date(current.sunrise * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                      // City-local time: shift by the city's UTC offset, then format as UTC.
+                      ? new Date((current.sunrise + (current.tzOffset ?? 0)) * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })
                       : 'N/A',
                   },
                 ].map((row, i) => (
@@ -261,10 +263,10 @@ export default function WeatherPage() {
                 return (
                   <div key={date} className="flex-1 text-center p-2" title={dayCondition}>
                     <div className="font-mono text-[9px] text-muted">
-                      {new Date(date).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
+                      {new Date(date).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()}
                     </div>
                     <div className="font-mono text-[9px] text-muted mb-1">
-                      {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
                     </div>
                     <div className="text-lg mb-1">{dayIcon}</div>
                     <div className="font-mono text-[8px] text-muted mb-1 capitalize">{dayCondition}</div>
