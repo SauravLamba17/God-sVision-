@@ -55,9 +55,12 @@ const nextConfig = {
       { source: '/api/insiders',      headers: [{ key: 'Cache-Control', value: 's-maxage=1800, stale-while-revalidate=3600' }] },
       { source: '/api/calendar',      headers: [{ key: 'Cache-Control', value: 's-maxage=3600, stale-while-revalidate=7200' }] },
       { source: '/api/correlation',   headers: [{ key: 'Cache-Control', value: 's-maxage=14400, stale-while-revalidate=28800' }] },
-      // Public, unauthenticated endpoints — caching here is deliberate.
-      { source: '/api/public/gv',         headers: [{ key: 'Cache-Control', value: 's-maxage=30, stale-while-revalidate=60' }] },
-      { source: '/api/public/gv-history', headers: [{ key: 'Cache-Control', value: 's-maxage=60, stale-while-revalidate=120' }] },
+      // Sheets API: keyed by a per-user secret in the URL, so NO shared caching —
+      // a CDN-cached 200 kept a regenerated (revoked) key working for ~90s. The
+      // routes cache upstream data in-process, after the key check.
+      { source: '/api/public/gv',         headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      { source: '/api/public/gv-history', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      // Public, unauthenticated, no key — CDN caching here is deliberate.
       { source: '/api/public/ticker',     headers: [{ key: 'Cache-Control', value: 's-maxage=60, stale-while-revalidate=120' }] },
       // NO catch-all for /api/:path*. It used to set s-maxage=60 on EVERY API
       // route, including the session-scoped ones. s-maxage targets shared caches,

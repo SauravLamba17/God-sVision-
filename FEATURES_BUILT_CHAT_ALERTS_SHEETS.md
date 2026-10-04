@@ -92,12 +92,12 @@ The chat page hardcoded `height: calc(100vh - 92px)`, but the site's global `<ma
 ## Environment variables added to `.env.local`
 
 ```
-RESEND_API_KEY=get_free_from_resend.com          # placeholder — replace with a real key from resend.com
-VAPID_PUBLIC_KEY=BAge1N5lFxuy39xZKhSEIV8KNSivRTyrOc8CUUcxg-SgDP7LnAxa6-Zk3qyB9gLFWm7AokTAPC7fjdNdoahrFrw
-VAPID_PRIVATE_KEY=_x3ze4l3IggH8eABrT0Ua54C557Wj7YLojlRM-GdxSc
+RESEND_API_KEY=<redacted — set in Vercel / .env.local>
+VAPID_PUBLIC_KEY=<redacted — set in Vercel / .env.local>
+VAPID_PRIVATE_KEY=<redacted — set in Vercel / .env.local>
 VAPID_SUBJECT=mailto:operations@myhealthiq.io
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=BAge1N5lFxuy39xZKhSEIV8KNSivRTyrOc8CUUcxg-SgDP7LnAxa6-Zk3qyB9gLFWm7AokTAPC7fjdNdoahrFrw
-GV_SHEETS_API_KEY=9b2097bd14cff8f5a128853d3f91b373503233f72c9c0e76
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<redacted — set in Vercel / .env.local>
+GV_SHEETS_API_KEY=<redacted — set in Vercel / .env.local>
 ```
 
 VAPID keys are real and functional (generated via `npx web-push generate-vapid-keys`). `RESEND_API_KEY` is a placeholder — email sending is safely a no-op until replaced.

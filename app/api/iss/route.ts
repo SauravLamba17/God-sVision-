@@ -8,7 +8,7 @@ export const revalidate = 60
 export async function GET() {
   try {
     const data = await fetchISSData()
-    return NextResponse.json({ data, source: 'live' }, {
+    return NextResponse.json({ data, source: data.position ? 'live' : 'unavailable' }, {
       headers: { 'Cache-Control': 'no-store' },
     })
   } catch (err: any) {

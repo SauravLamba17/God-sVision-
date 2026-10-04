@@ -2,14 +2,15 @@
 import { useEffect, useState } from 'react'
 
 interface ISSData {
-  position: { lat: number; lng: number; altitude: number; velocity: number }
-  astronauts: { name: string; craft: string }[]
+  position: { lat: number; lng: number; altitude: number; velocity: number } | null
+  astronauts: { name: string; craft: string }[] | null
 }
 
 export default function ISSTracker() {
   const [data, setData] = useState<ISSData | null>(null)
   const [orbitCount, setOrbitCount] = useState(0)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     // ISS completes ~15.5 orbits per day
@@ -22,16 +23,18 @@ export default function ISSTracker() {
       try {
         const res = await fetch('/api/iss')
         const j = await res.json()
-        if (j.data) { setData(j.data); setLastUpdate(new Date()) }
-      } catch { /* silent */ }
+        if (j.data) { setData(j.data); setLastUpdate(new Date()); setFailed(false) }
+        else setFailed(true)
+      } catch { setFailed(true) }
     }
     fetchISS()
     const id = setInterval(fetchISS, 60000)
     return () => clearInterval(id)
   }, [])
 
-  const pos = data?.position
-  const crew = data?.astronauts || []
+  const pos = data?.position ?? null
+  const crew = data?.astronauts ?? null
+  const loaded = !!data || failed
 
   return (
     <div style={{ padding:'8px 10px', fontFamily:'IBM Plex Mono' }}>
@@ -40,10 +43,10 @@ export default function ISSTracker() {
         {[
           { label:'LATITUDE',  value: pos ? `${pos.lat.toFixed(3)}°` : '—' },
           { label:'LONGITUDE', value: pos ? `${pos.lng.toFixed(3)}°` : '—' },
-          { label:'ALTITUDE',  value: pos ? `${pos.altitude} km` : '408 km' },
-          { label:'VELOCITY',  value: pos ? `${pos.velocity.toLocaleString()} km/h` : '27,600 km/h' },
+          { label:'ALTITUDE',  value: pos ? `${pos.altitude} km` : '—' },
+          { label:'VELOCITY',  value: pos ? `${pos.velocity.toLocaleString()} km/h` : '—' },
           { label:'ORBIT #',   value: `${orbitCount} today` },
-          { label:'CREW',      value: `${crew.length} aboard` },
+          { label:'CREW',      value: crew ? `${crew.length} aboard` : '—' },
         ].map(item => (
           <div key={item.label}>
             <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', letterSpacing:'0.08em' }}>{item.label}</div>
@@ -51,6 +54,12 @@ export default function ISSTracker() {
           </div>
         ))}
       </div>
+
+      {loaded && !pos && (
+        <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-warning)', marginBottom:6 }}>
+          ISS position unavailable — tracking feed unreachable
+        </div>
+      )}
 
       {/* ISS position dot visualization */}
       <div style={{ position:'relative', height:60, background:'var(--bg-panel)', border:'1px solid #1b2e1b', borderRadius:2, overflow:'hidden', marginBottom:8 }}>
@@ -91,10 +100,16 @@ export default function ISSTracker() {
 
       {/* Crew list */}
       <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', marginBottom:3 }}>CREW ABOARD ISS:</div>
-      {crew.slice(0, 6).map(a => (
-        <div key={a.name} style={{ fontSize:'var(--fs-body)', color:'var(--text-secondary)', lineHeight:1.6 }}>• {a.name}</div>
-      ))}
-      {crew.length > 6 && <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>+{crew.length - 6} more</div>}
+      {crew ? (
+        <>
+          {crew.slice(0, 6).map(a => (
+            <div key={a.name} style={{ fontSize:'var(--fs-body)', color:'var(--text-secondary)', lineHeight:1.6 }}>• {a.name}</div>
+          ))}
+          {crew.length > 6 && <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>+{crew.length - 6} more</div>}
+        </>
+      ) : loaded && (
+        <div style={{ fontSize:'var(--fs-body)', color:'var(--text-muted)' }}>Crew data unavailable</div>
+      )}
 
       {lastUpdate && (
         <div style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)', marginTop:6 }}>

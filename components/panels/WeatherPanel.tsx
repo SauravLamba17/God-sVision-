@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from './PanelWrapper'
 import { getWeatherEmoji } from '@/lib/apis/openweather'
-import { AQI_COLORS, AQI_LABELS, type CityAqi } from '@/lib/apis/airQuality'
+import { AQI_COLORS, AQI_LABELS, type CityAqi } from '@/lib/aqi'
 import { useMode } from '@/lib/context/ModeContext'
 
 interface CityWeather {

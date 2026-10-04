@@ -1,5 +1,3 @@
-import { getCache, setCache } from '@/lib/cache'
-
 export interface ISSPosition {
   lat: number
   lng: number
@@ -14,11 +12,28 @@ export interface Astronaut {
 }
 
 export interface ISSData {
-  position: ISSPosition
-  astronauts: Astronaut[]
+  position: ISSPosition | null   // null = tracking feeds unreachable (never a placeholder)
+  astronauts: Astronaut[] | null // null = crew feed unreachable
 }
 
-export async function fetchISSPosition(): Promise<ISSPosition> {
+// Primary: wheretheiss.at (HTTPS; real altitude/velocity). Fallback: open-notify,
+// which is plain HTTP and fails from Vercel — kept only as a second chance.
+export async function fetchISSPosition(): Promise<ISSPosition | null> {
+  try {
+    const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544', {
+      next: { revalidate: 60 }, signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) throw new Error(`wheretheiss ${res.status}`)
+    const d = await res.json()
+    return {
+      lat: d.latitude,
+      lng: d.longitude,
+      timestamp: d.timestamp * 1000,
+      altitude: Math.round(d.altitude),
+      velocity: Math.round(d.velocity),
+    }
+  } catch { /* try the fallback */ }
+
   try {
     const res = await fetch('http://api.open-notify.org/iss-now.json', {
       next: { revalidate: 60 }, signal: AbortSignal.timeout(5000),
@@ -28,33 +43,27 @@ export async function fetchISSPosition(): Promise<ISSPosition> {
       lat: parseFloat(data.iss_position.latitude),
       lng: parseFloat(data.iss_position.longitude),
       timestamp: data.timestamp * 1000,
-      altitude: 408,    // constant ~408 km
-      velocity: 27600,  // constant ~27,600 km/h
+      altitude: 408,    // open-notify has no altitude — nominal ~408 km
+      velocity: 27600,  // nominal ~27,600 km/h
     }
   } catch {
-    return { lat: 0, lng: 0, timestamp: Date.now(), altitude: 408, velocity: 27600 }
+    return null
   }
 }
 
-export async function fetchAstronauts(): Promise<Astronaut[]> {
-  const cacheKey = 'iss_astronauts'
-  const cached = await getCache(cacheKey)
-  if (cached && !cached.stale) return cached.data as Astronaut[]
-
+// Current crew from the community-maintained people-in-space feed. open-notify's
+// astros.json is no longer updated (it still lists the 2024 crew).
+export async function fetchAstronauts(): Promise<Astronaut[] | null> {
   try {
-    const res = await fetch('http://api.open-notify.org/astros.json', {
+    const res = await fetch('https://corquaid.github.io/international-space-station-APIs/JSON/people-in-space.json', {
       next: { revalidate: 21600 }, signal: AbortSignal.timeout(5000),
     })
+    if (!res.ok) throw new Error(`people-in-space ${res.status}`)
     const data = await res.json()
-    const astronauts: Astronaut[] = data.people || []
-    await setCache(cacheKey, astronauts, 86400) // cache 24h
-    return astronauts
+    const people: any[] = data.people ?? []
+    return people.filter(p => p.iss).map(p => ({ name: p.name, craft: 'ISS' }))
   } catch {
-    return [
-      { name: 'Oleg Kononenko', craft: 'ISS' },
-      { name: 'Nikolai Chub', craft: 'ISS' },
-      { name: 'Tracy Dyson', craft: 'ISS' },
-    ]
+    return null
   }
 }
 

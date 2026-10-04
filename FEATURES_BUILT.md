@@ -15,10 +15,8 @@
 
 ### Environment Variables Required
 ```
-NEXT_PUBLIC_ALPACA_API_KEY=PK6NMHGZWWAVKWD2UGGDU4DI72
-NEXT_PUBLIC_ALPACA_SECRET_KEY=4DEUDv3xYNagJDngDqYhjqHyvb8jdG54mup8bh83Aung
-ALPACA_API_KEY=PK6NMHGZWWAVKWD2UGGDU4DI72
-ALPACA_SECRET_KEY=4DEUDv3xYNagJDngDqYhjqHyvb8jdG54mup8bh83Aung
+ALPACA_API_KEY=<redacted — set in Vercel / .env.local>
+ALPACA_SECRET_KEY=<redacted — set in Vercel / .env.local>
 ```
 
 ---
@@ -41,7 +39,7 @@ ALPACA_SECRET_KEY=4DEUDv3xYNagJDngDqYhjqHyvb8jdG54mup8bh83Aung
 
 ### Environment Variables Required
 ```
-NEXTAUTH_SECRET=tDvfPMoOMIfzscihdEI0QURi75SE7eGmwoX7lfaiwvY=
+NEXTAUTH_SECRET=<redacted — set in Vercel / .env.local>
 POSTGRES_PRISMA_URL=postgresql://...
 POSTGRES_URL_NON_POOLING=postgresql://...
 # Optional:

@@ -59,10 +59,8 @@ configured) from the production report.
 | `OPENWEATHER_KEY` | `lib/apis/openweather.ts` | Verified live in production |
 | `WINDY_WEBCAM_KEY` | `lib/apis/windy.ts` | Verified live in production |
 | `AISSTREAM_KEY` | — (unused) | `/api/ships` was removed 2026-10-04 (no UI used it; it served mock vessels without a key). Safe to unset |
-| `ALPACA_API_KEY` | `app/api/sparkline/route.ts` | `/api/sparkline` currently returns empty for all tickers |
-| `ALPACA_SECRET_KEY` | `app/api/sparkline/route.ts` | Same |
-| `NEXT_PUBLIC_ALPACA_API_KEY` | `lib/hooks/useAlpacaStream.ts` | ⚠️ `NEXT_PUBLIC_` = **shipped to the browser**. See security note below |
-| `NEXT_PUBLIC_ALPACA_SECRET_KEY` | `lib/hooks/useAlpacaStream.ts` | ⚠️ **A secret key exposed client-side.** See below |
+| `ALPACA_API_KEY` | `app/api/sparkline/route.ts`, `app/api/stocks/live/route.ts` | Server-only. `/api/stocks/live` serves the /markets LIVE quote |
+| `ALPACA_SECRET_KEY` | `app/api/sparkline/route.ts`, `app/api/stocks/live/route.ts` | Server-only |
 | `RESEND_API_KEY` | `lib/resend.ts` | Email delivery |
 | `VAPID_PUBLIC_KEY` | `lib/webpush.ts` | Web push |
 | `VAPID_PRIVATE_KEY` | `lib/webpush.ts` | Web push |
@@ -98,16 +96,13 @@ Safe to delete locally; do not add to Vercel.
 
 ---
 
-## 🔐 Security note — `NEXT_PUBLIC_ALPACA_SECRET_KEY`
+## 🔐 Security note — Alpaca keys (fixed 2026-10-04)
 
-Any `NEXT_PUBLIC_` variable is **inlined into the JavaScript bundle and readable by every visitor**.
-`lib/hooks/useAlpacaStream.ts` reads both the Alpaca key *and secret* this way, so your Alpaca API
-secret is currently shipped to every browser that loads the app.
-
-This wasn't in the production audit's scope, but it's the same class of problem as CRITICAL #1
-(credentials/data reaching people who shouldn't have them). The usual fix is to proxy the Alpaca
-WebSocket through a server route so the secret stays server-side. Flagging only — not fixing, per
-your instruction.
+`lib/hooks/useAlpacaStream.ts` used to read the Alpaca key *and secret* from `NEXT_PUBLIC_` variables,
+which are inlined into the JavaScript bundle and readable by every visitor. It now polls
+`/api/stocks/live`, which calls Alpaca server-side with `ALPACA_API_KEY` / `ALPACA_SECRET_KEY`.
+The old public-prefixed Alpaca variables are unused: delete them from Vercel and rotate the Alpaca
+keys (the old secret was public).
 
 ---
 
@@ -141,10 +136,8 @@ WINDY_WEBCAM_KEY                 ✅ have locally
 AISSTREAM_KEY                    ✅ have locally
 OPENSKY_USERNAME                 ⬜ missing — raises flights rate limit substantially
 OPENSKY_PASSWORD                 ⬜ missing
-ALPACA_API_KEY                   ✅ have locally
-ALPACA_SECRET_KEY                ✅ have locally
-NEXT_PUBLIC_ALPACA_API_KEY       ⚠️  browser-exposed
-NEXT_PUBLIC_ALPACA_SECRET_KEY    ⚠️  browser-exposed — see security note
+ALPACA_API_KEY                   ✅ have locally (server-only)
+ALPACA_SECRET_KEY                ✅ have locally (server-only)
 
 # Platform
 NEXT_PUBLIC_BASE_URL             🔴 missing — set to https://god-s-vision.vercel.app

@@ -1,3 +1,6 @@
+// Server-only: fails the build if a client component ever imports this (it
+// used to ship to browsers and log the Upstash warning in visitors' consoles).
+import 'server-only'
 import { Redis } from '@upstash/redis'
 import NodeCache from 'node-cache'
 

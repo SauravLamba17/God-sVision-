@@ -749,9 +749,12 @@ export default function DashboardPage() {
             once: a single-file weather list, and ~660px of empty grid beside it
             that read as blank space at the bottom of the page. India mode never
             showed either because it gives weather `minmax(0, 1fr)`; matching it
-            here fixes both. */}
+            here fixes both. A plain 1fr of FOUR columns was still too narrow
+            (2 card columns at 1280–1440 → 5 rows of cities, ~150px taller than
+            ISS, leaving dead space under Reddit/ISS/Seismic). 2fr gives weather
+            about the width India's three-column row does → 4+ card columns. */}
         {phase >= 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr)', gap: 6, minHeight: 200 }}>
             <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
               <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
                 <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>REDDIT SENTIMENT</span>
