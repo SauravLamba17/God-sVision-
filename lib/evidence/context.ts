@@ -17,7 +17,8 @@ import 'server-only'
 // Excluded (not reliable enough to attribute moves): weather (no per-company
 // mapping), flight data (no disruption signal), FII/DII (one-day lag), social.
 import type { Headline, LinkedEventInput, MarketContext, Market, Quote } from './types.ts'
-import { matchEntitiesInText, resolveEntity } from '@/lib/graph'
+import { getEntity, matchEntitiesInText, resolveEntity } from '@/lib/graph'
+import { coreName, sessionWindow } from './engine.ts'
 import { scoreHeadlines } from '@/lib/apis/newsSentiment'
 import { getDashboardOverview } from '@/lib/apis/overview'
 import { DEFAULT_TICKERS } from '@/lib/apis/yahoo'
@@ -29,6 +30,7 @@ import { fetchOutbreaks } from '@/lib/apis/whoOutbreaks'
 import { getUpcoming } from '@/lib/apis/earnings'
 import { fetchCalendarEvents } from '@/lib/apis/calendar'
 import { getCache } from '@/lib/cache'
+import { getTickerNewsCached } from '@/lib/apis/tickerNews'
 
 type Status = 'ok' | 'stale' | 'unavailable'
 async function load<T>(inputs: Record<string, Status>, name: string, fn: () => Promise<{ data: T; source?: string } | T>): Promise<T | null> {
@@ -66,10 +68,10 @@ function yahooToQuote(q: any, at: number): Quote | null {
 
 // Same story from two feeds counts once; a headline without a publish time is
 // dropped (it can't be placed inside or outside a session window).
-function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string }[], startId: number): Headline[] {
-  const seen = new Set<string>()
+const titleKey = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ')
+function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string }[], startId: number, seen = new Set<string>()): Headline[] {
   const items = raw.filter(i => {
-    const key = i.title.trim().toLowerCase().replace(/\s+/g, ' ')
+    const key = titleKey(i.title)
     if (!Date.parse(i.publishedAt ?? '') || seen.has(key)) return false
     seen.add(key)
     return true
@@ -81,6 +83,26 @@ function headlinesFrom(raw: { title: string; url?: string; link?: string; source
     entities: matchEntitiesInText(i.title).map(m => m.entity.id),
     sentiment: sentiments[k].sentiment,
   }))
+}
+
+/**
+ * A copy of ctx with per-ticker headlines (Google News, cached 10 min per ticker)
+ * merged in for these quotes only. Same rules as every other headline: the
+ * engine applies the session window, context, direction and duplicate checks.
+ */
+export async function withTickerNews(ctx: MarketContext, quotes: Quote[]): Promise<MarketContext> {
+  if (!quotes.length) return ctx
+  const results = await Promise.allSettled(quotes.map(q =>
+    getTickerNewsCached(q.symbol, getEntity(q.symbol)?.name ?? coreName(q.name), ctx.market, sessionWindow(q, ctx.market, ctx.builtAt))))
+  const ok = results.filter(r => r.status === 'fulfilled').length
+  const extra = results.flatMap(r => (r.status === 'fulfilled' ? r.value.data : []))
+    .map(i => ({ ...i, source: `${i.source} (Google News)` }))
+  const seen = new Set(ctx.headlines.map(h => titleKey(h.title)))
+  return {
+    ...ctx,
+    headlines: [...ctx.headlines, ...headlinesFrom(extra, ctx.headlines.length, seen)],
+    inputs: { ...ctx.inputs, 'ticker news': ok === results.length ? 'ok' : ok ? 'stale' : 'unavailable' },
+  }
 }
 
 function eventCountries(text: string): string[] {

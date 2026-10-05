@@ -17,8 +17,13 @@
 //               window  only headlines published after the previous session's close and
 //                       no later than the quote's market time (the last trade) attach —
 //                       news after the close belongs to the next session's move
+//               0 for recommendation lists ("stocks to buy", "top picks", "best shares for"),
+//                 valuation/opinion pieces, fund-holdings filings and move recaps
+//               near-duplicate titles (same story from two outlets) count once
 //               0 if it describes a move over months ("slump 27% YTD") with no cue for this session
 //               0 if the headline states a price direction opposite to the live move
+//               0 if its keyword tone is opposite (price target raised on a −6% day)
+//               capped at 0.25 for questions / opinion phrasing ("Can … ?", "risk:", "here's why")
 //               ("shares rise 2%" on a −2% day describes another session's move)
 //   related   0.3 × context × recency, same window — a headline names a linked company
 //             (labelled with its graph role: peer, supplier, customer, parent, subsidiary)
@@ -142,17 +147,72 @@ const MARKET_TERMS: Record<Market, Matcher> = {
   IN: { test: s => MARKET_ANY.test(s) || /\b(Dalal Street|Nifty|Sensex|NSE|BSE|RBI)\b/i.test(s) },
 }
 
+// Recommendation lists and listicles describe opinions, not a reason for a move.
+const LISTICLE = /\b(stocks?|shares?|picks?|bets?) (to|for) (buy|add|watch|sell|hold|consider|own|accumulate)\b|\b(top|best) (\w+ )?(stock |share )?picks?\b|\bbest (\w+ )?(stocks?|shares?)\b|\bstocks? (in focus|in (the )?news)\b|\bbetter buy\b|\bmultibaggers?\b|\btrading (ideas|picks)\b|\b\d+ (\w+ ){0,3}stocks?\b|\bround-?up\b/i
+// Valuation/opinion pieces and fund-holdings filings ("X Capital decreases stock holdings in Oracle").
+const OPINION = /\b(undervalued|overvalued|fair value|intrinsic value|priced below|(a|the) (screaming |strong |no-brainer )?buy|stock forecasts?|did you miss|should you (buy|sell)|is it (time|too late) to|worth buying|buying opportunity|price prediction|stock price today|(increases|decreases|raises|lowers|trims|boosts|cuts|acquires|sells|buys|takes|has) (its |new )?(stock )?(holdings?|position) in)\b|\bvs\.? /i
+// Recaps restate the move itself — circular, not a reason ("stocks making the biggest moves").
+const RECAP = /\b(out|under)performs (competitors|the market|market)\b|\b(strong|poor|weak) trading day\b|\bbiggest (moves|movers)\b|\btop (gainers|losers)\b|\bstocks making\b|\b(opening|closing) bell\b|\bmarket wrap\b|\bstocks? (trade|trading|traded) (up|down|higher|lower)\b|\bwhat you need to know\b|\bquote (&|and) history\b|\bstock price, news\b/i
+const NOT_A_REASON = { test: (s: string) => LISTICLE.test(s) || OPINION.test(s) || RECAP.test(s) }
+
+// ── Near-duplicate stories ("same story from NDTV and NDTV Profit") ─────────────
+const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'in', 'on', 'for', 'and', 'as', 'at', 'by', 'with', 'after', 'is', 'are', 'its', 'from', 'amid', 'over', 'check'])
+// Memoised: the same titles are compared across many explanations.
+const wordMemo = new Map<string, Set<string>>()
+const words = (t: string) => {
+  let w = wordMemo.get(t)
+  if (!w) {
+    if (wordMemo.size > 5000) wordMemo.clear()
+    wordMemo.set(t, (w = wordSet(t)))
+  }
+  return w
+}
+const wordSet = (t: string) => new Set(t.toLowerCase().replace(/[^\p{L}\p{N}.%]+/gu, ' ').split(' ')
+  .map(w => (w.length > 3 ? w.replace(/(es|s)$/, '') : w)).filter(w => w.length > 1 && !STOP.has(w)))
+/**
+ * Two titles are the same story when ≥50% of the shorter title's significant
+ * words appear in the other. Exported for tests.
+ * ponytail: word overlap, not semantics — rewritten headlines of one event can still count twice.
+ */
+export function sameStory(a: string, b: string): boolean {
+  const A = words(a), B = words(b), n = Math.min(A.size, B.size)
+  if (n < 4) return a.trim().toLowerCase() === b.trim().toLowerCase()
+  let common = 0
+  for (const w of A) if (B.has(w)) common++
+  return common / n >= 0.5
+}
+/** First k items (in the given order) that aren't the same story as one already kept. */
+function distinctTop<T extends { h: Headline }>(xs: T[], k: number): T[] {
+  const kept: T[] = []
+  for (const x of xs) {
+    if (!kept.some(y => sameStory(x.h.title, y.h.title))) kept.push(x)
+    if (kept.length === k) break
+  }
+  return kept
+}
+
 /** Relevance of one headline to a move (see SCORING). Exported for tests. */
 export function headlineScore(h: Headline, move: number, end: number, context: Matcher = FINANCIAL): number {
   const up = STATED_UP.test(h.title), down = STATED_DOWN.test(h.title)
   if ((up && !down && move < 0) || (down && !up && move > 0)) return 0
-  if (!context.test(h.title)) return 0
+  if (toneOpposes(h, move)) return 0
+  if (!context.test(h.title) || NOT_A_REASON.test(h.title)) return 0
   if (LONG_HORIZON.test(h.title) && !THIS_SESSION.test(h.title)) return 0
   const companies = h.entities.filter(id => getEntity(id)?.type === 'company').length
   const focus = companies <= 2 ? 1 : 0.6
   const tone = (h.sentiment === 'BULLISH' && move > 0) || (h.sentiment === 'BEARISH' && move < 0) ? 0.15 : 0
-  return r2(clamp01(0.55 * focus * recency(h.publishedAt, end) + tone))
+  const s = r2(clamp01(0.55 * focus * recency(h.publishedAt, end) + tone))
+  return OPINION_FORM.test(h.title) ? Math.min(s, OPINION_CAP) : s
 }
+
+/** Keyword tone clearly against the move: positive news on a drop, negative news on a rise. */
+const toneOpposes = (h: Headline, move: number) => (h.sentiment === 'BULLISH' && move < 0) || (h.sentiment === 'BEARISH' && move > 0)
+
+// Questions and opinion phrasing ("Can … ?", "Why … ?", "risk:", "here's why")
+// are commentary, not reported events: capped below the WEAK line (0.5) and
+// below CLEAR_THRESHOLD, so on their own they never make a clear driver.
+const OPINION_FORM = /^\s*(can|is|are|should|will|could|would|does|do|did|has|have|what|how|which|who|where|why)\b[^?]*\?|\?\s*$|\brisks?:|\bhere'?s why\b|\bwhat to know\b/i
+const OPINION_CAP = 0.25
 
 const BENCH_NAME: Record<string, string> = { '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq', '^NSEI': 'Nifty 50', '^BSESN': 'Sensex', '^NSEBANK': 'Bank Nifty' }
 
@@ -237,8 +297,10 @@ function stockDrivers(t: Quote, ctx: MarketContext): Driver[] {
 
   // news naming the stock, published within this move's session window
   const win = sessionWindow(t, ctx.market, now)
-  const direct = ctx.headlines.filter(h => inWindow(h, win) && mentionsTarget(h, t.symbol, t.name))
-    .map(h => ({ h, s: headlineScore(h, m, win.end) })).sort((a, b) => b.s - a.s).slice(0, 3)
+  const mentioned = ctx.headlines.filter(h => inWindow(h, win) && mentionsTarget(h, t.symbol, t.name))
+  const directAll = mentioned
+    .map(h => ({ h, s: headlineScore(h, m, win.end) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s)
+  const direct = distinctTop(directAll, 3)
   for (const { h, s } of direct) {
     out.push({ type: 'news', score: s, label: 'related headline', evidence: h.title,
       source: { name: h.source, url: h.url }, timestamp: h.publishedAt })
@@ -247,12 +309,14 @@ function stockDrivers(t: Quote, ctx: MarketContext): Driver[] {
   // news naming a directly linked company
   if (ent) {
     const linked = new Map(getLinks(t.symbol).filter(v => ['supplier_of', 'competitor_of', 'subsidiary_of'].includes(v.link.type)).map(v => [v.other.id, v]))
-    const rel = ctx.headlines.filter(h => inWindow(h, win) && FINANCIAL.test(h.title) && !direct.some(d => d.h.id === h.id) && h.entities.some(e => linked.has(e)))
+    // cheapest checks first: most headlines name no linked company
+    const rel = ctx.headlines.filter(h => h.entities.some(e => linked.has(e)) && inWindow(h, win) && !toneOpposes(h, m) && FINANCIAL.test(h.title) && !NOT_A_REASON.test(h.title) && !OPINION_FORM.test(h.title) &&!mentioned.some(d => d.id === h.id || sameStory(d.title, h.title)))
       .map(h => {
         const v = linked.get(h.entities.find(e => linked.has(e))!)!
         return { h, v, s: r2(0.3 * recency(h.publishedAt, win.end)) }
-      }).sort((a, b) => b.s - a.s).slice(0, 2)
-    for (const { h, v, s } of rel) {
+      }).sort((a, b) => b.s - a.s)
+    const relTop = distinctTop(rel, 2)
+    for (const { h, v, s } of relTop) {
       out.push({ type: 'related_news', score: s, label: `related: ${role(v)} ${v.other.name} in headlines`,
         evidence: `${h.title} — ${v.other.name} is a ${role(v)} (${v.link.reason}).`, source: { name: h.source, url: h.url }, timestamp: h.publishedAt })
     }
@@ -373,8 +437,8 @@ function indexDrivers(t: Quote, ctx: MarketContext): Driver[] {
   // headlines naming the index or its country, in a market context
   const country = ctx.market === 'US' ? 'country:us' : 'country:india'
   const win = sessionWindow(t, ctx.market, now)
-  const hs = ctx.headlines.filter(h => inWindow(h, win) && ((ent && h.entities.includes(ent.id)) || h.entities.includes(country)))
-    .map(h => ({ h, s: headlineScore(h, m, win.end, MARKET_TERMS[ctx.market]) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 2)
+  const hs = distinctTop(ctx.headlines.filter(h => inWindow(h, win) && ((ent && h.entities.includes(ent.id)) || h.entities.includes(country)))
+    .map(h => ({ h, s: headlineScore(h, m, win.end, MARKET_TERMS[ctx.market]) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s), 2)
   for (const { h, s } of hs) out.push({ type: 'news', score: r2(s * 0.8), label: 'related headline', evidence: h.title, source: { name: h.source, url: h.url }, timestamp: h.publishedAt })
 
   // India: crude oil (big importer) and the rupee

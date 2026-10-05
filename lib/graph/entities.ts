@@ -148,7 +148,7 @@ const INDIA_COMPANIES: Entity[] = [
   nse('BHARTIARTL.NS', 'Bharti Airtel', COM, 'Telecom', ['Bharti Airtel', 'Airtel']),
   nse('ASIANPAINT.NS', 'Asian Paints', MAT, 'Paints', ['Asian Paints']),
   nse('AXISBANK.NS', 'Axis Bank', FIN, 'Banking', ['Axis Bank']),
-  nse('ITC.NS', 'ITC', CS, 'FMCG & tobacco', ['ITC Ltd', 'ITC Limited'], { patterns: ['ITC(?= (shares|stock|Q[1-4]|results|Hotels))'] }),
+  nse('ITC.NS', 'ITC', CS, 'FMCG & tobacco', ['ITC Ltd', 'ITC Limited'], { patterns: ['ITC(?= (shares|stock|Q[1-4]|results))'], notFollowedBy: ['Hotels'] }), // ITC Hotels: separately listed since the Jan 2025 demerger
   nse('BAJFINANCE.NS', 'Bajaj Finance', FIN, 'Consumer finance', ['Bajaj Finance']),
   nse('MARUTI.NS', 'Maruti Suzuki', CD, 'Automobiles', ['Maruti Suzuki', 'Maruti']),
   nse('WIPRO.NS', 'Wipro', IT, 'IT services', ['Wipro']),

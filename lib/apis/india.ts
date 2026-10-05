@@ -91,12 +91,12 @@ export const INDIA_YIELD_CURVE = [
 ]
 
 // ── Indian news RSS feeds ────────────────────────────────────────────────────
+// Removed Oct 2026: Business Standard (403 to non-browser clients) and Financial
+// Express (RSS retired: /feed/ returns 410, the market feed serves HTML).
 export const INDIA_NEWS_FEEDS = [
   { name: 'Economic Times Markets', url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms' },
   { name: 'Economic Times',         url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms' },
-  { name: 'Business Standard',      url: 'https://www.business-standard.com/rss/markets-106.rss' },
   { name: 'Livemint',               url: 'https://www.livemint.com/rss/markets' },
-  { name: 'Financial Express',      url: 'https://www.financialexpress.com/market/feed/' },
   { name: 'NDTV Profit',            url: 'https://feeds.feedburner.com/ndtvprofit-latest' },
   { name: 'The Hindu Business',     url: 'https://www.thehindu.com/business/feeder/default.rss' },
 ]

@@ -70,6 +70,7 @@ const traps: [string, string[]][] = [
   ['Hong Kong dollar peg holds steady', []],
   ['US ITC rules on Apple Watch import ban', ['country:us', 'AAPL']],
   ['ITC shares rise after Q2 results beat estimates', ['ITC.NS']],
+  ['Q2 preview: ITC Hotels, Lemon Tree, Juniper shares', []],
   ['Bank Nifty hits record while Nifty 50 ends flat', ['index:banknifty', 'index:nifty50']],
   ['Tech Mahindra and Mahindra & Mahindra report earnings', ['TECHM.NS', 'M&M.NS']],
   ['Traders pile into $V and $LT ahead of results', ['V', 'LT.NS']],

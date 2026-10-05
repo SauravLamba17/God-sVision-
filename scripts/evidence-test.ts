@@ -2,11 +2,17 @@
  * Evidence Engine checks.   npm run test:evidence
  *  1. Fixtures → expected drivers (market, sector, stock news, linked event, no driver)
  *  2. False-attribution traps   3. Wording rule   4. Flip/drift → recompute
- *  5. Timing   6. Live: today's real movers via a LOCAL server (throwaway account,
- *     deleted afterwards). Start the app first; BASE_URL defaults to http://localhost:3001.
+ *  5. Timing   6. Live: today's real movers via a LOCAL server. Start the app first;
+ *     BASE_URL defaults to http://localhost:3001.
+ *  One throwaway account is reused across runs (sign-up is rate limited to 10/hour
+ *  per IP); its credentials sit in the OS temp dir. Delete it when done:
+ *     npm run test:evidence -- --cleanup
  */
 import crypto from 'node:crypto'
-import { explain, headlineScore, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { explain, headlineScore, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
 import { BANNED, formatLine } from '../lib/evidence/summary.ts'
 import { needsRecompute, isCurrent, isSameMarketDay } from '../lib/evidence/freshness.ts'
 import type { Explanation, Headline, MarketContext, Quote } from '../lib/evidence/types.ts'
@@ -163,6 +169,80 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
   check('trap: a long-horizon move ("27% YTD") is not evidence for today', headlineScore(ytd, -1.7, NOW) === 0 && headlineScore(today, 5.1, NOW) >= 0.3,
     `ytd ${headlineScore(ytd, -1.7, NOW)}, same-session ${headlineScore(today, 5.1, NOW)}`)
 
+  // Listicles / recommendations are opinions, not a reason for a move.
+  const lists = [
+    'TCS, HCL Tech to Mphasis: IT stocks to add in portfolio ahead of Q2 results | Check target price',
+    'Stocks to buy today: HCLTech, ITC among top picks for October 5',
+    'Best shares for Diwali 2026: ITC, Bajaj Finance and 3 more',
+    'Stocks to watch: Bajaj Finance, ITC, HCLTech in focus on Q2 updates',
+    'Accenture vs. Microsoft: Which Technology Stock Is a Better Buy in 2026?',
+    'Accenture And 2 Stocks That May Be Priced Below Their Estimated Value',
+    'Broadcom And 2 Other Top Growth Stocks',
+  ].map(t => headline(t, 1))
+  const scores = lists.map(h => headlineScore(h, -3.3, NOW))
+  const e14 = run(q('HCLTECH.NS', -3.3, 'HCLTech'), 'stock', ctx('IN', { headlines: [lists[0], lists[1], lists[3]] }))
+  check('trap: listicles ("stocks to add/buy/watch", "top picks", "best shares for") never explain a move',
+    scores.every(s => s === 0) && !types(e14).includes('news'), `scores ${scores.join(',')}; ${show(e14)}`)
+  // From the per-ticker news live run: opinion/valuation, holdings filings, move recaps.
+  const junk = [
+    'Did You Miss Accenture Stock?',
+    'Broadcom (AVGO) Could Be 46% Undervalued After Weaker Jobs Data Lifted Chip Stocks',
+    'Violich Capital Management Inc. Decreases Stock Holdings in Oracle Corporation $ORCL',
+    'Accenture vs. Microsoft: Which Technology Stock Is a Better Buy?',
+    'Stocks making the biggest moves midday: Bajaj Finance, HCLTech, Nykaa, DMart and more',
+    'Texas Instruments Inc. stock outperforms competitors on strong trading day',
+    'Opening Bell: Nifty 50, Sensex Rise Over 0.5% as Global Equities Advance; Bajaj Finance, Shriram Finance, ITC Lead',
+    'AI Custom Chip Stocks Roundup: Beyond Broadcom, Which Deserves More Attention Among Marvell Technology, TSMC',
+    'Broadcom: Sideways for Nearly Two Months After Earnings, Is Now a Buying Opportunity?',
+    'MACOM, Texas Instruments, Semtech, Amkor, and Teradyne Stocks Trade Up, What You Need To Know',
+    "Broadcom's 2028 Projection Makes the Stock a Screaming Buy",
+  ].map(t => headline(t, 1))
+  const jScores = junk.map((h, i) => headlineScore(h, i === 0 ? -6.3 : 3.0, NOW))
+  check('trap: opinion/valuation pieces, holdings filings and move recaps never explain a move', jScores.every(s => s === 0), `scores ${jScores.join(',')}`)
+  const real = headline('HCLTech shares crash 3.5% as investors turn nervous over deal slowdown', 1)
+  check('listicle rule keeps a real event headline', headlineScore(real, -3.3, NOW) >= 0.3, `score ${headlineScore(real, -3.3, NOW)}`)
+
+  // Near-duplicates: the same story from two outlets counts once.
+  const ndtv1 = headline('HCLTech Meltdown: Stock Crashes 3.5% As Investors Turn Nervous', 1, 'NDTV')
+  const ndtv2 = headline('HCLTech shares crash 3.5% as investors turn nervous', 2, 'NDTV Profit')
+  const other = headline('HCLTech wins $500 million deal from European bank', 1)
+  const e15 = run(q('HCLTECH.NS', -3.3, 'HCLTech'), 'stock', ctx('IN', { headlines: [ndtv1, ndtv2] }))
+  const acq1 = 'Accenture Completes Acquisition of Mjølner Informatics, Bringing Deep Software Engineering Expertise for Energy'
+  const acq2 = 'Accenture Completes Mjølner Acquisition, Adding 400 Specialists in Denmark'
+  const acq3 = 'Accenture Completes Acquisition of Cientra to Expand Semiconductor Design Capabilities'
+  const tsla1 = 'Tesla: Shares Rise on Third-Quarter Deliveries Ahead of Consensus Estimates'
+  const tsla2 = 'Tesla sales continue to soar amid lineup expansion'
+  check('near-duplicate titles count once; different stories stay separate',
+    sameStory(ndtv1.title, ndtv2.title) && sameStory(acq1, acq2) && !sameStory(ndtv1.title, other.title) && !sameStory(acq1, acq3) && !sameStory(tsla1, tsla2)
+      && e15.drivers.filter(d => d.type === 'news').length === 1, show(e15))
+
+  // Tone vs move: positive news on a big drop (and the reverse) is not a related headline.
+  const ptUp = headline('Berenberg Raises Price Target on Accenture to $235 From $220, Keeps Buy Rating', 1)
+  const ptUp2 = headline('Deutsche Bank Adjusts Price Target on Accenture to $200 From $175, Keeps Hold Rating', 1)
+  const ptDown = headline('UBS cuts price target on Accenture to $180 from $210', 1)
+  const lifted = headline('Accenture forecast boosts Indian IT stocks, lifts Nifty IT index', 1)
+  const e16 = run(q('ACN', -6.3, 'Accenture plc'), 'stock', ctx('US', { indices: { '^GSPC': q('^GSPC', 0.0) }, headlines: [ptUp, ptUp2, lifted] }))
+  const e17 = run(q('ACN', -6.3, 'Accenture plc'), 'stock', ctx('US', { indices: { '^GSPC': q('^GSPC', 0.0) }, headlines: [ptUp, ptDown] }))
+  const infyCut = headline('Jefferies cuts price target on Infosys to ₹1,500 from ₹1,750', 1)
+  const e18 = run(q('INFY.NS', 3.0, 'Infosys'), 'stock', ctx('IN', { headlines: [infyCut] }))
+  check('trap: ACN −6.3% with "price target raised" is not a related headline (tone opposite)',
+    !types(e16).includes('news') && e16.summary === 'no clear driver found', show(e16))
+  check('tone: a price-target cut still counts on a drop; a cut on a rise does not',
+    e17.drivers.filter(d => d.type === 'news').map(d => d.evidence).join('|') === ptDown.title && !types(e18).includes('news'), `${show(e17)} | ${show(e18)}`)
+
+  // Questions and opinion phrasing score below the WEAK line (0.5) and never make a clear driver.
+  const canQ = headline('Can Mid-Market Deals Save HCLTech From the Great AI Tech Squeeze?', 1)
+  const risk = headline('Billionaire Larry Ellison risk: Oracle and Paramount debt', 1)
+  const why = headline("ITC shares: Citi raises rating to 'Buy' despite headwinds, sees 17% upside; here's why", 1)
+  const e19 = run(q('HCLTECH.NS', -3.3, 'HCLTech'), 'stock', ctx('IN', { headlines: [canQ] }))
+  const e20 = run(q('ORCL', 3.1, 'Oracle Corporation'), 'stock', ctx('US', { indices: { '^GSPC': q('^GSPC', 0.0) }, headlines: [risk] }))
+  const oq = [headlineScore(canQ, -3.3, NOW), headlineScore(risk, 3.1, NOW), headlineScore(why, 5.1, NOW)]
+  check('trap: opinion questions / "risk:" / "here\'s why" score below the WEAK line (HCLTech, Oracle)',
+    oq.every(s => s < 0.5 && s < 0.3) && e19.summary === 'no clear driver found' && e20.summary === 'no clear driver found',
+    `scores ${oq.join(',')}; ${show(e19)} | ${show(e20)}`)
+  check('opinion rule keeps a reported "Why … shares jump" headline (no question mark)',
+    headlineScore(headline('Why Bajaj Finance shares jump 3% amid ₹17,500-cr capital raise plans', 1), 2.3, NOW) >= 0.5)
+
   // Relationship labels come from the graph, not "peers" for everything.
   const e8 = run(q('NVDA', -3.0, 'NVIDIA'), 'stock', ctx('US', { quotes: { TSM: q('TSM', -2.8, 'Taiwan Semiconductor Manufacturing'), AMD: q('AMD', -2.5, 'Advanced Micro Devices'), MSFT: q('MSFT', -1.5, 'Microsoft') } }))
   const peerLabel = e8.drivers.find(d => d.type === 'peers')?.label ?? ''
@@ -214,12 +294,16 @@ check('previous day is never current', !isSameMarketDay(NOW - 24 * H, NOW, 'US')
 
 // ── 6. Live: today's real movers via the local app ───────────────────────────
 const BASE = process.env.BASE_URL ?? 'http://localhost:3001'
+const ACCOUNT_FILE = path.join(os.tmpdir(), 'gv-evidence-test-account.json')
+const CLEANUP = process.argv.includes('--cleanup')
 async function live(): Promise<string[] | string> {
   if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) return `refusing non-local BASE_URL ${BASE}`
   try { await fetch(BASE + '/auth/signin') } catch { return `no server at ${BASE}` }
   const { PrismaClient } = await import('@prisma/client')
   const prisma = new PrismaClient()
-  const email = `gv-evidence-test-${Date.now()}@example.com`, password = 'Ev-' + crypto.randomBytes(9).toString('base64url')
+  // Reuse the throwaway account from an earlier run if there is one.
+  const saved = savedAccount()
+  const { email, password } = saved ?? { email: `gv-evidence-test-${Date.now()}@example.com`, password: 'Ev-' + crypto.randomBytes(9).toString('base64url') }
   let jar = ''
   const req = async (p: string, init: RequestInit = {}) => {
     const res = await fetch(BASE + p, { ...init, headers: { ...(init.headers as Record<string, string> ?? {}), cookie: jar }, redirect: 'manual' })
@@ -228,7 +312,10 @@ async function live(): Promise<string[] | string> {
   }
   const out: string[] = []
   try {
-    await req('/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })
+    if (!saved || !(await prisma.user.findUnique({ where: { email } }))) {
+      await req('/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })
+      fs.writeFileSync(ACCOUNT_FILE, JSON.stringify({ email, password }), { mode: 0o600 })
+    }
     const { csrfToken } = await (await req('/api/auth/csrf')).json()
     await req('/api/auth/callback/credentials', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ csrfToken, email, password, json: 'true' }) })
     for (const m of ['us', 'in']) {
@@ -249,20 +336,36 @@ async function live(): Promise<string[] | string> {
       if (fixed.length) {
         const r = await (await req('/api/why/recompute', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ market: m.toUpperCase(), symbols: fixed }) })).json()
         out.push(`  — comparison list (${fixed.join(', ')}) —`)
-        for (const sym of fixed) { const e = r.data?.explanations?.[sym]; if (e) { print(e); ex.push(e) } else out.push(`  ${sym}: no quote`) }
+        for (const sym of fixed) { const e = r.data?.explanations?.[sym] ?? r.data?.explanations?.[`${sym}.NS`]; if (e) { print(e); ex.push(e) } else out.push(`  ${sym}: no quote`) }
       }
       const bad = ex.flatMap(e => [e.summary, ...e.drivers.map(d => d.label)]).filter(t => BANNED.test(t))
       check(`live ${m.toUpperCase()}: explanations returned, wording clean`, ex.length > 0 && bad.length === 0, bad.join(' | '))
     }
     return out
   } finally {
-    const u = await prisma.user.findUnique({ where: { email } })
-    if (u) await prisma.user.delete({ where: { id: u.id } })
-    check('live: throwaway account deleted', !(await prisma.user.findUnique({ where: { email } })))
+    if (CLEANUP) await deleteAccount(prisma, email)
     await prisma.$disconnect()
   }
 }
+
+function savedAccount(): { email: string; password: string } | null {
+  try { return JSON.parse(fs.readFileSync(ACCOUNT_FILE, 'utf8')) } catch { return null }
+}
+
+async function deleteAccount(prisma: any, email: string) {
+  const u = await prisma.user.findUnique({ where: { email } })
+  if (u) await prisma.user.delete({ where: { id: u.id } })
+  fs.rmSync(ACCOUNT_FILE, { force: true })
+  check('live: throwaway account deleted', !(await prisma.user.findUnique({ where: { email } })))
+}
 const liveOut = await live()
+// --cleanup still removes the saved account when the live check couldn't run.
+if (CLEANUP && typeof liveOut === 'string' && savedAccount()) {
+  const { PrismaClient } = await import('@prisma/client')
+  const prisma = new PrismaClient()
+  await deleteAccount(prisma, savedAccount()!.email)
+  await prisma.$disconnect()
+}
 if (typeof liveOut === 'string') check('live check', false, `skipped: ${liveOut}`)
 
 // ── Report ───────────────────────────────────────────────────────────────────

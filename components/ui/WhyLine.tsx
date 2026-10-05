@@ -7,6 +7,7 @@ import { useWhy } from '@/lib/hooks/useWhy'
 // with its score, source link and time. The live move itself is shown by the
 // row/card it sits in — this line never repeats cached prices.
 const TZ: Record<Market, { tz: string; label: string }> = { US: { tz: 'America/New_York', label: 'ET' }, IN: { tz: 'Asia/Kolkata', label: 'IST' } }
+const WEAK = 0.5 // drivers below this are labelled WEAK in the expanded view
 const TYPE_LABEL: Record<string, string> = {
   market: 'MARKET', sector: 'SECTOR', peers: 'PEERS', news: 'NEWS', related_news: 'RELATED NEWS', linked_event: 'LINKED EVENT',
   commodity: 'COMMODITY', currency: 'CURRENCY', scheduled: 'SCHEDULED', volume: 'VOLUME', breadth: 'BREADTH', global: 'GLOBAL', no_clear_driver: 'NO CLEAR DRIVER',
@@ -52,6 +53,12 @@ export function WhyLine({ market, symbol, liveChangePct, variant = 'row' }: { ma
                 <span style={{ display: 'block', height: '100%', width: `${Math.round(d.score * 100)}%`, background: d.score >= 0.5 ? 'var(--text-positive)' : d.score >= 0.3 ? 'var(--text-warning)' : 'var(--text-muted)' }} />
               </span>
               <span style={{ fontSize: 8, color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>
+                {d.type !== 'no_clear_driver' && (
+                  <span title={`Evidence score ${d.score.toFixed(2)} of 1 — below 0.5 is a weak match, not strong evidence`}
+                    style={{ marginRight: 4, fontSize: 7, letterSpacing: '0.04em', color: d.score < WEAK ? 'var(--text-warning)' : 'var(--text-muted)' }}>
+                    {d.score < WEAK ? `WEAK ${d.score.toFixed(2)}` : d.score.toFixed(2)}
+                  </span>
+                )}
                 {d.evidence}{' '}
                 <span style={{ color: 'var(--text-muted)' }}>
                   — {d.source.url ? <a href={d.source.url} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>{d.source.name}</a> : d.source.name}
