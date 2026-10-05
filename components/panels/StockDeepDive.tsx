@@ -4,6 +4,7 @@ import CandlestickChart from '@/components/charts/CandlestickChart'
 import type { OHLCCandle, IndicatorPoint } from '@/components/charts/CandlestickChartInner'
 import { sma, bollingerBands, rsi, macd, Candle } from '@/lib/utils/technicals'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 interface StockSnapshot {
   ticker: string; name: string; price: number; changePct: number; weeklyChangePct: number; monthlyChangePct: number
@@ -26,19 +27,25 @@ interface OptionsChain {
   atmStrike: number; strikeStep: number; ivBase: number; note: string
   strikes: { strike: number; call: { iv: number; ltp: number }; put: { iv: number; ltp: number } }[]
 }
+interface Connections {
+  lastReviewed: string
+  groups: { title: string; items: { id: string; name: string; description: string; reason: string }[] }[]
+}
 interface DeepDiveData {
   snapshot: StockSnapshot; news: NewsArticle[]; optionsChain: OptionsChain; fundamentals: any
   ai: { analysis: string; verdict: string; confidence: number }
+  connections?: Connections | null
   generatedAt: number
 }
 
-type Tab = 'technical' | 'fundamentals' | 'options' | 'news' | 'ai'
+type Tab = 'technical' | 'fundamentals' | 'options' | 'news' | 'connections' | 'ai'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'technical',    label: 'TECHNICAL' },
   { id: 'fundamentals', label: 'FUNDAMENTALS' },
   { id: 'options',      label: 'OPTIONS' },
   { id: 'news',         label: 'NEWS' },
+  { id: 'connections',  label: 'CONNECTIONS' },
   { id: 'ai',           label: 'AI ANALYSIS' },
 ]
 
@@ -269,6 +276,36 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                       <div style={{ display: 'flex', gap: 8 }}>
                         <span style={{ fontSize: 7, color: accent }}>{n.source}</span>
                         <span style={{ fontSize: 7, color: 'var(--text-muted)' }}>{new Date(n.publishedAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {tab === 'connections' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* Curated Entity Graph — static reference data, never a live feed. */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <DataStatusBadge status="static-reference" source="GOD's Vision Entity Graph (curated)" />
+                    <span style={{ fontSize: 8, color: 'var(--text-muted)' }}>
+                      Reference data · last reviewed {data.connections ? new Date(`${data.connections.lastReviewed}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                    </span>
+                  </div>
+                  {!data.connections || data.connections.groups.length === 0 ? (
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>No curated connections for {ticker} yet.</div>
+                  ) : data.connections.groups.map(g => (
+                    <div key={g.title}>
+                      <div style={{ fontSize: 8, color: accent, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 4 }}>{g.title.toUpperCase()}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {g.items.map(it => (
+                          <div key={`${g.title}-${it.id}-${it.description}`} style={{ padding: '6px 10px', border: '1px solid #1e293b', minWidth: 0 }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-primary)', marginBottom: 2, overflowWrap: 'anywhere' }}>{it.description}</div>
+                            {/* Skip reasons that just repeat the row title ("headquartered in India"). */}
+                            {it.reason.toLowerCase() !== it.description.toLowerCase() && (
+                              <div style={{ fontSize: 8, color: 'var(--text-muted)', lineHeight: 1.5, overflowWrap: 'anywhere' }}>{it.reason}</div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}

@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic'
 import { useMode } from '@/lib/context/ModeContext'
 import { useBeginnerMode } from '@/lib/hooks/useBeginnerMode'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
+import { toDataStatus } from '@/lib/dataStatus'
+import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 const StockDeepDive = dynamic(() => import('@/components/panels/StockDeepDive'), { ssr: false })
 
@@ -27,7 +29,6 @@ interface AnalystData {
   market: 'IN' | 'US'
   marketStatus: string
   generatedAt: number
-  aiStale?: boolean
   nextRefresh: number
   universeSize: number
 }
@@ -177,14 +178,8 @@ export default function AnalystPanel() {
               ● {data.marketStatus}
             </span>
           )}
-          {source && (
-            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{source.toUpperCase()}</span>
-          )}
-          {data?.aiStale && (
-            <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-warning)' }}>
-              AI briefing generated {new Date(data.generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · quota used up
-            </span>
-          )}
+          {/* Rule-based synthesis of live technicals — the API labels it 'estimate'. */}
+          {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Rule-based synthesis of live technicals" asOf={data?.generatedAt} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Next: {refreshCountdown}</span>

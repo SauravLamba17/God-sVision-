@@ -10,6 +10,8 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "test:isolation": "node scripts/isolation-test.ts",
+    "test:graph": "node scripts/graph-test.ts",
+    "test:sentiment": "node scripts/sentiment-test.ts",
     "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml"
   },
   "dependencies": {

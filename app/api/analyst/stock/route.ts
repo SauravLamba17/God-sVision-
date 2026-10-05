@@ -8,6 +8,7 @@ import { getQuoteSummary } from '@/lib/apis/yahoo'
 import { z } from 'zod'
 import { parseQuery, ticker as tickerSchema } from '@/lib/validation'
 import { limiterId } from '@/lib/rateLimit'
+import { connectionsFor } from '@/lib/graph'
 
 const Query = z.object({ ticker: tickerSchema, market: z.string().trim().toUpperCase().pipe(z.enum(['US', 'IN'])).default('IN') })
 
@@ -97,7 +98,9 @@ export async function GET(req: NextRequest) {
     }
     if (!ai) ai = ruleBasedVerdict(snapshot, news)
 
-    const result = { snapshot, news, optionsChain, fundamentals, ai, generatedAt: Date.now(), aiGeneratedAt, aiStale: source === 'ai-stale' }
+    // Curated Entity Graph links (static reference data, no I/O).
+    const connections = connectionsFor(ticker)
+    const result = { snapshot, news, optionsChain, fundamentals, ai, connections, generatedAt: Date.now(), aiGeneratedAt, aiStale: source === 'ai-stale' }
     await setCache(cacheKey, result, 300)
     return NextResponse.json({ data: result, source })
   } catch (err) {

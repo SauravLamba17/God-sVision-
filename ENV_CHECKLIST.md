@@ -54,7 +54,7 @@ configured) from the production report.
 | `POSTGRES_URL_NON_POOLING` | `prisma/schema.prisma` (`directUrl`) | Direct connection for migrations |
 | `NEXTAUTH_SECRET` | `lib/auth.ts`, `middleware.ts` | JWT signing. Middleware fails safe to sign-in if this mismatches |
 | `NEXTAUTH_URL` | *(NextAuth internal — never via `process.env`)* | ⚠️ **Currently `http://localhost:3001`. MUST be `https://god-s-vision.vercel.app` on Vercel** |
-| `GEMINI_API_KEY` | 8 files — `lib/gemini.ts`, `lib/apis/narratives.ts`, `lib/apis/newsSentiment.ts`, `app/api/ai/brief`, `app/api/ai/sentiment`, `app/api/analyst`, `app/api/analyst/stock`, `app/api/reddit/sentiment` | Most-referenced var. Verified working in production |
+| `GEMINI_API_KEY` | `lib/gemini.ts` — used by the morning brief, narratives, per-stock deep dive and ⚡ AI analyze (see AI_BUDGET_PLAN.md) | Optional: every feature has a non-AI fallback |
 | `GV_SHEETS_API_KEY` | `app/api/public/gv`, `app/api/public/gv-history`, `app/api/user/gv-key` | Shared app-wide key. Auth layer verified working |
 | `OPENWEATHER_KEY` | `lib/apis/openweather.ts` | Verified live in production |
 | `WINDY_WEBCAM_KEY` | `lib/apis/windy.ts` | Verified live in production |

@@ -5,7 +5,7 @@ import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 
 const CATEGORIES = ['All', 'Business', 'Tech', 'World', 'Science', 'Politics', 'Health', 'Sports', 'Energy', 'India']
-const REFRESH_INTERVAL = 300 // seconds — each refresh also POSTs to /api/news/sentiment (Gemini + Prisma)
+const REFRESH_INTERVAL = 300 // seconds — each refresh also POSTs to /api/news/sentiment (keyword estimate, no AI)
 
 const SENTIMENT_COLORS = { positive: 'var(--text-positive)', negative: 'var(--text-negative)', neutral: 'var(--text-muted)' } as const
 const SENTIMENT_LABELS = { positive: 'POS', negative: 'NEG', neutral: 'NEU' } as const
@@ -44,7 +44,7 @@ function MarketMoodBar({ mood }: { mood: MarketMood }) {
   const color = mood.dominantSentiment === 'BULLISH' ? 'var(--text-positive)' : mood.dominantSentiment === 'BEARISH' ? 'var(--text-negative)' : 'var(--text-warning)'
   return (
     <div style={{ padding: '6px 12px', background: 'var(--bg-panel)', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 16 }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', flexShrink: 0 }}>AI MARKET MOOD:</span>
+      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', flexShrink: 0 }} title="Keyword-based estimate from the latest headlines — not AI">MARKET MOOD · KEYWORD ESTIMATE:</span>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color, letterSpacing: '0.1em' }}>{mood.dominantSentiment}</span>
       <div style={{ flex: 1, height: 4, background: 'var(--border-color)', borderRadius: 2, display: 'flex', overflow: 'hidden' }}>
         <div style={{ width: `${mood.bullish}%`, background: 'var(--text-positive)', transition: 'width 0.6s ease' }} />
@@ -95,7 +95,7 @@ export default function NewsPage() {
         if (json.meta) setMeta(json.meta)
         setLastFetched(new Date())
         setCountdown(REFRESH_INTERVAL)
-        // Score headlines with AI in background
+        // Keyword sentiment estimate for each headline (server-side, no AI)
         const headlines = incoming.slice(0, 30).map(n => n.title)
         fetch('/api/news/sentiment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ headlines }) })
           .then(r => r.json())
@@ -308,9 +308,10 @@ export default function NewsPage() {
                   style={{ borderBottom: '1px solid #0f1929' }}
                 >
                   <div className="flex items-start gap-2.5">
-                    {/* AI Sentiment Badge */}
+                    {/* Keyword sentiment estimate */}
                     {aiSentiments.get(item.title) ? (
                       <span
+                        title="Keyword-based estimate — not AI"
                         className="font-mono text-[8px] px-1 py-px flex-shrink-0 mt-0.5"
                         style={{
                           color: AI_COLORS[aiSentiments.get(item.title)!],

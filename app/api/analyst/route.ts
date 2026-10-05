@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { geminiGenerate } from '@/lib/gemini'
-import { cachedAI } from '@/lib/aiCache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getCache, setCache } from '@/lib/cache'
 import {
@@ -12,10 +10,8 @@ import { parseQuery } from '@/lib/validation'
 
 const MarketQuery = z.object({ market: z.string().trim().toUpperCase().pipe(z.enum(['US', 'IN'])).default('IN') })
 
-// Builds the full universe snapshot then calls Gemini; cold path can run tens of seconds.
+// Builds the full universe snapshot; cold path can run tens of seconds.
 export const maxDuration = 60
-
-const KEY_VALID = () => !!process.env.GEMINI_API_KEY
 
 const SECTOR_MAP_IN: Record<string, string> = {
   'TCS.NS': 'IT', 'INFY.NS': 'IT',
@@ -154,35 +150,13 @@ function buildRuleBasedSynthesis(snapshots: StockSnapshot[], market: 'IN' | 'US'
   }
 }
 
-const SYSTEM_PROMPT = `You are GOD's VISION ANALYST — a senior Palantir-grade quantitative analyst with 20 years of trading-desk experience, producing institutional-quality equity research.
-You will receive a JSON array of pre-computed technical snapshots (price, RSI, MACD, moving averages, Bollinger Bands, ATR, Supertrend, VWAP, support/resistance, Fibonacci levels, candlestick patterns, volume stats) for a basket of stocks, plus recent matched news headlines per ticker.
-Synthesize this into a structured trading briefing. Be specific and data-driven — reference actual indicator values from the input. Do not invent prices or news not present in the input.
-Respond with ONLY valid JSON (no markdown code fences, no commentary before or after) matching exactly this schema:
-{
-  "marketOutlook": { "bias": "BULLISH"|"BEARISH"|"NEUTRAL", "summary": string, "keyLevel": string },
-  "topPicks": [ { "ticker": string, "name": string, "action": "BUY"|"SELL"|"WATCH", "conviction": "HIGH"|"MEDIUM"|"LOW", "entry": number, "target1": number, "target2": number, "stopLoss": number, "technicalSummary": string, "newsCatalyst": string, "optionsStrategy": string } ],
-  "avoidList": [ { "ticker": string, "name": string, "reason": string } ],
-  "sectorRotation": [ { "sector": string, "trend": "INFLOW"|"OUTFLOW"|"NEUTRAL", "avgChangePct": number } ],
-  "optionsMarketView": string,
-  "dayTradingSetups": [ { "ticker": string, "name": string, "setup": string, "trigger": string } ],
-  "riskWarnings": [ string ]
-}
-topPicks must contain exactly 5 entries, ranked by conviction. Keep string fields concise (1-2 sentences).`
-
-const AI_TTL_SECONDS = 12 * 3600
-
-function parseJson(text: string): any {
-  const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  return JSON.parse(cleaned)
-}
-
 export async function GET(req: NextRequest) {
   const q = parseQuery(req, MarketQuery)
   if (q.error) return q.error
   const { market } = q.data
   const cacheKey = `analyst_${market}`
   const cached = await getCache<any>(cacheKey)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
+  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'estimate' })
 
   try {
     const universe = market === 'IN' ? ANALYST_UNIVERSE_IN : ANALYST_UNIVERSE_US
@@ -206,37 +180,19 @@ export async function GET(req: NextRequest) {
       } catch { /* news optional */ }
     }
 
-    let result: any = null
-    // 'ai-stale' = the last good AI briefing, served because Gemini is out of
-    // quota/unavailable (generatedAt says how old). 'rules' = deterministic
-    // synthesis of the same live snapshots (was labelled 'mock').
-    let source: 'live' | 'ai-stale' | 'rules' = 'rules'
-    let aiGeneratedAt: number | null = null
-
-    if (KEY_VALID()) {
-      // One AI briefing per market per 12h, shared by every user and instance
-      // (Postgres) → 4 Gemini calls/day for both markets.
-      const ai = await cachedAI(`ai:analyst:${market}`, AI_TTL_SECONDS, async () => {
-        const userPrompt = `Snapshot timestamp: ${new Date().toISOString()}\nMarket: ${market === 'IN' ? 'India NSE/BSE' : 'US NYSE/NASDAQ'}\n\nTechnical snapshots:\n${JSON.stringify(snapshots, null, 1)}\n\nMatched news headlines by ticker:\n${JSON.stringify(newsMap, null, 1)}\n\nProduce the trading briefing JSON now.`
-        return parseJson(await geminiGenerate(userPrompt, SYSTEM_PROMPT, 'scheduled'))
-      })
-      if (ai) {
-        result = ai.data
-        source = ai.stale ? 'ai-stale' : 'live'
-        aiGeneratedAt = ai.generatedAt
-      }
-    }
-    if (!result) result = buildRuleBasedSynthesis(snapshots, market, newsMap)
-
+    // Rule-based synthesis of the live snapshots, labelled 'estimate'. The
+    // Gemini briefing that used to run here never succeeded (its large JSON
+    // reply was cut off at the output-token limit, so every attempt failed and
+    // retried every 30 min, draining the shared daily AI budget).
+    const result: any = buildRuleBasedSynthesis(snapshots, market, newsMap)
     result.market = market
     result.marketStatus = market === 'IN' ? getIndianMarketStatus() : getUSMarketStatus()
-    result.generatedAt = aiGeneratedAt ?? Date.now()
-    result.aiStale = source === 'ai-stale' // survives the 15-min result cache, unlike `source`
-    result.nextRefresh = aiGeneratedAt && source === 'live' ? aiGeneratedAt + AI_TTL_SECONDS * 1000 : Date.now() + 15 * 60 * 1000
+    result.generatedAt = Date.now()
+    result.nextRefresh = Date.now() + 15 * 60 * 1000
     result.universeSize = snapshots.length
 
     await setCache(cacheKey, result, 900)
-    return NextResponse.json({ data: result, source })
+    return NextResponse.json({ data: result, source: 'estimate' })
   } catch (err) {
     const fallback = await getCache<any>(cacheKey)
     if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
