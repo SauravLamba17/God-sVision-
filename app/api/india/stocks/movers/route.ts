@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCache, setCache } from '@/lib/cache'
-import { fetchNifty50Quotes, getIndianMarketStatus } from '@/lib/apis/india'
+import { getNifty50QuotesCached } from '@/lib/apis/cachedLoaders'
 
 // ISR: regenerated at most every 60s (prices/tickers). Without this the route was
 // prerendered at build and served build-time data forever.
@@ -20,30 +19,19 @@ const toMoverRow = (q: any) => ({
 })
 
 export async function GET() {
-  const key    = 'india_movers'
-  const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
-
   try {
-    const status  = getIndianMarketStatus()
-    // A quote with no numeric price would otherwise sort as NaN and take a slot
-    // in the top 10 that a real mover should have had.
-    const quotes  = (await fetchNifty50Quotes())
-      .filter(q => Number.isFinite(q.price) && Number.isFinite(q.changePct))
-    const ttl     = status === 'OPEN' ? 30 : 300
-    const sorted  = [...quotes].sort((a, b) => b.changePct - a.changePct)
-    const result  = {
+    const { data, source } = await getNifty50QuotesCached()
+    const { quotes, marketStatus } = data
+    const sorted = [...quotes].sort((a, b) => b.changePct - a.changePct)
+    const result = {
       gainers: sorted.slice(0, 10).map(toMoverRow),
       losers:  sorted.slice(-10).reverse().map(toMoverRow),
       active:  [...quotes].sort((a, b) => b.volume - a.volume).slice(0, 10).map(toMoverRow),
-      marketStatus: status,
-      fetchedAt: Date.now(),
+      marketStatus,
+      fetchedAt: data.fetchedAt,
     }
-    await setCache(key, result, ttl)
-    return NextResponse.json({ data: result, source: 'live' })
+    return NextResponse.json({ data: result, source })
   } catch (err) {
-    const fallback = await getCache(key)
-    if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err) })
   }
 }

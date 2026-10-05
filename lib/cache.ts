@@ -96,6 +96,30 @@ export async function getCache<T>(key: string): Promise<{ data: T; stale: boolea
   return null
 }
 
+/**
+ * The pattern every data route repeats: fresh cache → serve it; else load,
+ * cache and serve 'live'; if the load throws, serve the stale entry or
+ * rethrow. Shared loaders use this so a route and the evidence engine read
+ * the SAME key and never fetch the same data twice.
+ */
+export async function readThrough<T>(
+  key: string,
+  ttlSeconds: number | ((data: T) => number),
+  load: () => Promise<T>,
+  staleGraceSeconds?: number,
+): Promise<{ data: T; source: 'cached' | 'live' | 'stale' }> {
+  const cached = await getCache<T>(key)
+  if (cached && !cached.stale) return { data: cached.data, source: 'cached' }
+  try {
+    const data = await load()
+    await setCache(key, data, typeof ttlSeconds === 'function' ? ttlSeconds(data) : ttlSeconds, staleGraceSeconds)
+    return { data, source: 'live' }
+  } catch (e) {
+    if (cached) return { data: cached.data, source: 'stale' }
+    throw e
+  }
+}
+
 export function isRedisAvailable(): boolean {
   return REDIS_AVAILABLE
 }

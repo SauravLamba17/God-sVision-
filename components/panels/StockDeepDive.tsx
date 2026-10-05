@@ -5,6 +5,7 @@ import type { OHLCCandle, IndicatorPoint } from '@/components/charts/Candlestick
 import { sma, bollingerBands, rsi, macd, Candle } from '@/lib/utils/technicals'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
+import { WhyLine } from '@/components/ui/WhyLine'
 
 interface StockSnapshot {
   ticker: string; name: string; price: number; changePct: number; weeklyChangePct: number; monthlyChangePct: number
@@ -120,6 +121,11 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
           </div>
           <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}>✕</button>
         </div>
+        {data && (
+          <div style={{ padding: '6px 16px', borderBottom: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+            <WhyLine market={market} symbol={ticker} liveChangePct={data.snapshot.changePct} variant="header" />
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, padding: '6px 10px', borderBottom: '1px solid #1b2e1b', background: 'var(--bg-panel)' }}>

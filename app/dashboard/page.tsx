@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Fragment } from 'react'
 import dynamic from 'next/dynamic'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import { Sparkline } from '@/components/ui/Sparkline'
@@ -8,6 +8,7 @@ import { useMode } from '@/lib/context/ModeContext'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { PanelEmpty } from '@/components/ui/Panel'
 import TickerLink from '@/components/ui/TickerLink'
+import { WhyLine } from '@/components/ui/WhyLine'
 
 const MarketOverviewStrip = dynamic(() => import('@/components/panels/MarketOverviewStrip'), { ssr: false })
 const CryptoPanel         = dynamic(() => import('@/components/panels/CryptoPanel'),         { ssr: false })
@@ -81,6 +82,10 @@ const SPARKLINE_SYMBOL_MAP: Record<string, string> = {
 }
 
 /* ── Metric card ──────────────────────────────────────────────────────── */
+// Index cards that get a "why" line, keyed by card symbol → the index explained
+// (the US cards show the SPY/QQQ ETFs, which track the S&P 500 / Nasdaq).
+const WHY_INDEX: Record<string, string> = { SPY: '^GSPC', QQQ: '^IXIC', '^NSEI': '^NSEI', '^BSESN': '^BSESN', '^NSEBANK': '^NSEBANK' }
+
 function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
   const hasQuote = m.price !== null && m.change !== null && m.changePct !== null
   const isPos = (m.changePct ?? 0) >= 0
@@ -109,6 +114,11 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
           <Sparkline data={sparkData} loading={sparkLoading} isPositive={isPos} width={80} height={36} />
         </div>
       </div>
+      {WHY_INDEX[m.symbol] && hasQuote && (
+        <div style={{ marginTop: 6 }}>
+          <WhyLine market={isIndia ? 'IN' : 'US'} symbol={WHY_INDEX[m.symbol]} liveChangePct={m.changePct} variant="card" />
+        </div>
+      )}
     </div>
   )
 }
@@ -211,16 +221,22 @@ function IndiaMarketMovers() {
               const pos = hasPct && q.regularMarketChangePercent >= 0
               const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
               return (
-                <tr key={q.symbol + i} style={{ borderBottom: '1px solid #0d1a0d', cursor: 'pointer' }}
-                  onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: '#FF9933' }}>{displaySymbol(q.symbol)}</TickerLink></td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume, true)}</td>
-                </tr>
+                <Fragment key={q.symbol + i}>
+                  <tr style={{ cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: '#FF9933' }}>{displaySymbol(q.symbol)}</TickerLink></td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume, true)}</td>
+                  </tr>
+                  {/* Evidence for this move (compact; click to expand) */}
+                  <tr style={{ borderBottom: '1px solid #0d1a0d' }}>
+                    <td colSpan={5} style={{ padding: '0 6px 3px', maxWidth: 0 }}><WhyLine market="IN" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
+                  </tr>
+                </Fragment>
               )
             })}
           </tbody>
@@ -318,16 +334,22 @@ function MarketMovers() {
               const pos = hasPct && q.regularMarketChangePercent >= 0
               const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
               return (
-                <tr key={q.symbol + i} style={{ borderBottom: '1px solid #0d1a0d', cursor: 'pointer' }}
-                  onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)', padding: '3px 6px', width: 60 }}>{q.symbol}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? formatCurrency(q.regularMarketPrice) : DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume)}</td>
-                </tr>
+                <Fragment key={q.symbol + i}>
+                  <tr style={{ cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)', padding: '3px 6px', width: 60 }}>{q.symbol}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? formatCurrency(q.regularMarketPrice) : DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume)}</td>
+                  </tr>
+                  {/* Evidence for this move (compact; click to expand) */}
+                  <tr style={{ borderBottom: '1px solid #0d1a0d' }}>
+                    <td colSpan={5} style={{ padding: '0 6px 3px', maxWidth: 0 }}><WhyLine market="US" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
+                  </tr>
+                </Fragment>
               )
             })}
           </tbody>

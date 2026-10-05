@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getQuotes, getQuote, getChartData, getQuoteSummary, getOptionsChain, getMarketMovers, DEFAULT_TICKERS } from '@/lib/apis/yahoo'
+import { getQuotes, getQuote, getChartData, getQuoteSummary, getOptionsChain, DEFAULT_TICKERS } from '@/lib/apis/yahoo'
+import { getMarketMoversCached } from '@/lib/apis/cachedLoaders'
 import { setCache, getCache } from '@/lib/cache'
 import { z } from 'zod'
 import { parseQuery, ticker, tickerList } from '@/lib/validation'
@@ -27,15 +28,10 @@ export async function GET(request: NextRequest) {
   const { ticker, type, period } = q.data
 
   if (type === 'movers') {
-    const cacheKey = 'market_movers'
-    const cached = await getCache(cacheKey)
-    if (cached && !cached.stale) return json({ data: cached.data, source: 'cached' })
     try {
-      const data = await getMarketMovers()
-      await setCache(cacheKey, data, 60)
-      return json({ data, source: 'live' })
+      const { data, source } = await getMarketMoversCached()
+      return json({ data, source })
     } catch {
-      if (cached) return json({ data: cached.data, source: 'stale' })
       return json({ data: { gainers: [], losers: [] }, source: 'unavailable' })
     }
   }

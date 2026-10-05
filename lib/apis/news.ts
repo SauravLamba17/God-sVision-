@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { readThrough } from '@/lib/cache'
 import Parser from 'rss-parser'
 import '@/lib/feedHealth' // registers axios feed-health interceptors
 
@@ -289,4 +290,47 @@ export async function fetchNewsAPI(category = 'business'): Promise<NewsItem[]> {
 
 export function getRSSFeedNames(): string[] {
   return [...new Set(RSS_FEEDS.map(f => f.name))]
+}
+
+// ── Aggregated feed, cached (shared by /api/news and the evidence engine) ────
+const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000
+export interface NewsPayload { items: NewsItem[]; meta: { total: number; sources: number; lastUpdated: string; feedNames: string[] } }
+
+export async function getAllNewsCached() {
+  return readThrough<NewsPayload>('news_all', 90, async () => {
+      const [rss, hn, reddit, newsapi] = await Promise.allSettled([
+        fetchRSSFeeds(),
+        fetchHackerNews(),
+        fetchRedditPosts(),
+        fetchNewsAPI('general'),
+      ])
+
+      const all = [
+        ...(rss.status === 'fulfilled' ? rss.value : []),
+        ...(hn.status === 'fulfilled' ? hn.value : []),
+        ...(reddit.status === 'fulfilled' ? reddit.value : []),
+        ...(newsapi.status === 'fulfilled' ? newsapi.value : []),
+      ]
+
+      const cutoff = Date.now() - MAX_ARTICLE_AGE_MS
+      const recent = all.filter(item => {
+        const t = new Date(item.publishedAt).getTime()
+        return !isNaN(t) && t >= cutoff
+      })
+
+      const sorted = recent.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      // Deduplicate on first 60 chars of title
+      const unique = sorted.filter((item, idx, self) =>
+        idx === self.findIndex(t => t.title.slice(0, 60) === item.title.slice(0, 60))
+      )
+
+      const sources = new Set(unique.map(u => u.source))
+      const meta = {
+        total: unique.length,
+        sources: sources.size,
+        lastUpdated: new Date().toISOString(),
+        feedNames: getRSSFeedNames(),
+      }
+    return { items: unique, meta }
+  }, 60)
 }

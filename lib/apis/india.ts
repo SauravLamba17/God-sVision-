@@ -144,6 +144,12 @@ const YF_HEADERS = {
   'Referer': 'https://finance.yahoo.com/',
 }
 
+function priorAvgVolume(result: any): number | null {
+  const vols: (number | null)[] = result?.indicators?.quote?.[0]?.volume ?? []
+  const earlier = vols.slice(0, -1).filter((v): v is number => typeof v === 'number' && v > 0)
+  return earlier.length >= 2 ? earlier.reduce((a, b) => a + b, 0) / earlier.length : null
+}
+
 async function fetchChart(ticker: string, range = '5d', interval = '1d'): Promise<any | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`
@@ -161,6 +167,10 @@ async function fetchChart(ticker: string, range = '5d', interval = '1d'): Promis
       change:    price - prev,
       changePct: prev ? ((price - prev) / prev) * 100 : 0,
       volume:    meta.regularMarketVolume || 0,
+      marketTime: meta.regularMarketTime ?? null, // unix seconds of the last trade
+      // Mean volume of the earlier sessions in this same 5-day response (no
+      // extra request). null when there aren't at least 2 earlier sessions.
+      avgVolume: priorAvgVolume(result),
       high:      meta.regularMarketDayHigh   || price,
       low:       meta.regularMarketDayLow    || price,
       open:      meta.regularMarketOpen      || price,

@@ -12,6 +12,7 @@
     "test:isolation": "node scripts/isolation-test.ts",
     "test:graph": "node scripts/graph-test.ts",
     "test:sentiment": "node scripts/sentiment-test.ts",
+    "test:evidence": "node scripts/evidence-test.ts",
     "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml"
   },
   "dependencies": {

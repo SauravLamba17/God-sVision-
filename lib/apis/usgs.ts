@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { readThrough } from '@/lib/cache'
 import '@/lib/feedHealth' // registers axios feed-health interceptors
 
 export interface Earthquake {
@@ -64,4 +65,9 @@ export async function getSignificantEarthquakes(): Promise<Earthquake[]> {
     tsunami: f.properties.tsunami,
     url: f.properties.url
   }))
+}
+
+// Cached under the keys /api/earthquakes has always used.
+export async function getEarthquakesCached(type: 'recent' | 'significant', minMag = 2.5) {
+  return readThrough(`earthquakes_${type}_${minMag}`, 60, () => (type === 'significant' ? getSignificantEarthquakes() : getRecentEarthquakes(minMag)))
 }

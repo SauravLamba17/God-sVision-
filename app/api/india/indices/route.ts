@@ -1,25 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getCache, setCache } from '@/lib/cache'
-import { fetchIndiaIndices, getIndianMarketStatus } from '@/lib/apis/india'
+import { getIndiaIndicesCached } from '@/lib/apis/cachedLoaders'
 
 // ISR: regenerated at most every 60s (prices/tickers). Without this the route was
 // prerendered at build and served build-time data forever.
 export const revalidate = 60
 export async function GET() {
-  const key    = 'india_indices'
-  const cached = await getCache(key)
-  if (cached && !cached.stale) return NextResponse.json({ data: cached.data, source: 'cached' })
-
   try {
-    const indices = await fetchIndiaIndices()
-    const status  = getIndianMarketStatus()
-    const ttl     = status === 'OPEN' ? 30 : 300
-    const result  = { indices, marketStatus: status, fetchedAt: Date.now() }
-    await setCache(key, result, ttl)
-    return NextResponse.json({ data: result, source: 'live' })
+    const { data, source } = await getIndiaIndicesCached()
+    return NextResponse.json({ data, source })
   } catch (err) {
-    const fallback = await getCache(key)
-    if (fallback) return NextResponse.json({ data: fallback.data, source: 'stale' })
     return NextResponse.json({ error: String(err), data: { indices: [], marketStatus: 'CLOSED', fetchedAt: Date.now() }, source: 'unavailable' })
   }
 }
