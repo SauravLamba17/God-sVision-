@@ -12,6 +12,14 @@ Rules — follow exactly:
 - If the evidence says no clear driver was found, say so plainly.
 - One or two sentences, at most 220 characters, per item.`
 
+const BRAIN_SYSTEM = `You turn a market summary built from data into one short, fluent paragraph for a trading terminal.
+Rules — follow exactly:
+- Use ONLY the facts given. Do not add any cause, fact, company, sector, country or event that is not in them.
+- Write NO numbers at all — no percentages, levels or counts. The screen shows every figure live. Names like "S&P 500" or "Nifty 50" are fine.
+- Correlation, not proof: use "moved with", "coincides with", "alongside", "related". Never write "because", "caused", "due to", "driven by", "thanks to", "triggered", "sparked" or "fuelled".
+- No predictions, expectations, outlooks, price targets or advice: never "will", "could", "may", "might", "expect", "likely", "should", "buy", "sell", "opportunity".
+- Plain text, 2–4 sentences, at most 600 characters.`
+
 export function geminiProvider(): AIProvider | null {
   if (!genAI) return null
   const model = genAI.getGenerativeModel({
@@ -45,6 +53,13 @@ export function geminiProvider(): AIProvider | null {
       const res = await track('Gemini', () => model.generateContent(prompt))
       const parsed = JSON.parse(res.response.text()) as { items?: { id: string; text: string }[] }
       return Object.fromEntries((parsed.items ?? []).map(i => [i.id, i.text]))
+    },
+    async narrateBrain(input) {
+      if (process.env.NEXT_PHASE === 'phase-production-build') throw new Error('AI disabled during build')
+      if (!(await reserveGeminiCall('scheduled'))) throw new Error('Gemini daily budget reached')
+      const prose = genAI!.getGenerativeModel({ model: 'gemini-2.5-flash-lite', generationConfig: { temperature: 0.2, maxOutputTokens: 400 } })
+      const res = await track('Gemini', () => prose.generateContent(`${BRAIN_SYSTEM}\n\nFacts (JSON):\n${JSON.stringify(input)}`))
+      return res.response.text().trim()
     },
   }
 }

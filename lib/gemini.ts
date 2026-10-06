@@ -19,7 +19,7 @@ export const geminiFlash = genAI?.getGenerativeModel({
   },
 });
 
-// `next build` prerenders static/ISR routes (e.g. /api/narratives), which used
+// `next build` prerenders static/ISR routes (e.g. /api/why/<market>), which used
 // to spend free-tier Gemini quota (20 req/day) on every deploy. Callers already
 // handle a thrown error with their cached/unavailable path.
 function assertNotBuilding() {
@@ -32,8 +32,8 @@ function assertNotBuilding() {
 // The free tier allows 20 generate calls/day (resets midnight Pacific). Two
 // global counters in Postgres (shared by every instance, unlike the in-memory
 // cache) cap usage at 10 scheduled + 8 on-demand = 18/day:
-//   scheduled — morning brief, narratives, analyst (cached globally, see lib/aiCache.ts)
-//   ondemand  — ⚡ AI buttons, per-stock analyst, headline sentiment
+//   scheduled — optional AI narration: why lines + Market Brain prose (lib/ai; off unless AI_PROVIDER is set)
+//   ondemand  — ⚡ AI buttons, per-stock analyst
 export type GeminiKind = 'scheduled' | 'ondemand';
 export const DAILY_CAP: Record<GeminiKind, number> = { scheduled: 10, ondemand: 8 };
 

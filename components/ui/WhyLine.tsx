@@ -2,12 +2,13 @@
 import { useState } from 'react'
 import type { Market } from '@/lib/evidence/types'
 import { useWhy } from '@/lib/hooks/useWhy'
+import { STRONG } from '@/lib/evidence/summary'
 
 // "Why" line: compact evidence summary for a mover, expandable to every driver
 // with its score, source link and time. The live move itself is shown by the
 // row/card it sits in — this line never repeats cached prices.
 const TZ: Record<Market, { tz: string; label: string }> = { US: { tz: 'America/New_York', label: 'ET' }, IN: { tz: 'Asia/Kolkata', label: 'IST' } }
-const WEAK = 0.5 // drivers below this are labelled WEAK in the expanded view
+const WEAK = STRONG // drivers below this are labelled WEAK in the expanded view
 const TYPE_LABEL: Record<string, string> = {
   market: 'MARKET', sector: 'SECTOR', peers: 'PEERS', news: 'NEWS', related_news: 'RELATED NEWS', linked_event: 'LINKED EVENT',
   commodity: 'COMMODITY', currency: 'CURRENCY', scheduled: 'SCHEDULED', volume: 'VOLUME', breadth: 'BREADTH', global: 'GLOBAL', no_clear_driver: 'NO CLEAR DRIVER',

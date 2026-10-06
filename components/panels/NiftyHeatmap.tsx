@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { PanelEmpty } from '@/components/ui/Panel'
+import { pct } from '@/lib/format'
 
 interface Stock {
   symbol: string
@@ -96,7 +97,7 @@ export default function NiftyHeatmap() {
                 const isPos = s.changePct >= 0
                 return (
                   <div key={t}
-                    title={`${displayName}: ₹${s.price?.toFixed(2)} (${s.changePct?.toFixed(2)}%)`}
+                    title={`${displayName}: ₹${s.price?.toFixed(2)} (${pct(s.changePct ?? 0, 2)})`}
                     onClick={() => window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } }))}
                     style={{
                       background: bg, border: '1px solid rgba(255,255,255,0.08)',
@@ -105,7 +106,7 @@ export default function NiftyHeatmap() {
                     }}>
                     <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: 'var(--text-primary)' }}>{displayName.slice(0, 8)}</div>
                     <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? '#86efac' : '#fca5a5', marginTop: 1 }}>
-                      {isPos ? '+' : ''}{s.changePct?.toFixed(1)}%
+                      {pct(s.changePct ?? 0, 1)}
                     </div>
                   </div>
                 )

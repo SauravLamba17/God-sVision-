@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { pct } from '@/lib/format';
 
 const STRATEGIES = [
   { id: 'sma_crossover', label: 'SMA Crossover', desc: 'Buy when short MA crosses above long MA, sell when crosses below' },
@@ -187,9 +188,9 @@ export default function BacktestPage() {
                 <div style={header}>{result.ticker} · {STRATEGIES.find(s => s.id === result.strategy)?.label}</div>
                 <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   {[
-                    { label: 'TOTAL RETURN', value: `${result.totalReturnPct > 0 ? '+' : ''}${result.totalReturnPct}%`, pos: result.totalReturnPct > 0 },
+                    { label: 'TOTAL RETURN', value: pct(result.totalReturnPct, 2), pos: result.totalReturnPct > 0 },
                     { label: 'FINAL CAPITAL', value: `$${result.finalCapital.toLocaleString()}`, pos: result.finalCapital > result.initialCapital },
-                    { label: 'vs BUY & HOLD', value: `${result.buyHoldReturn > 0 ? '+' : ''}${result.buyHoldReturn}%`, pos: result.totalReturnPct > result.buyHoldReturn },
+                    { label: 'vs BUY & HOLD', value: pct(result.buyHoldReturn, 2), pos: result.totalReturnPct > result.buyHoldReturn },
                     { label: 'SHARPE RATIO', value: result.sharpeRatio.toFixed(2), pos: result.sharpeRatio > 1 },
                     { label: 'MAX DRAWDOWN', value: `${result.maxDrawdown}%`, pos: false },
                     { label: 'WIN RATE', value: `${result.winRate}%`, pos: result.winRate > 50 },
@@ -224,7 +225,7 @@ export default function BacktestPage() {
                         <div style={{ height: '100%', width: `${Math.min(Math.abs(result.totalReturnPct), 100)}%`, background: result.totalReturnPct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', borderRadius: '2px' }} />
                       </div>
                       <div style={{ fontSize: '10px', color: result.totalReturnPct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontFamily: 'IBM Plex Mono, monospace', marginTop: '2px' }}>
-                        {result.totalReturnPct > 0 ? '+' : ''}{result.totalReturnPct}%
+                        {pct(result.totalReturnPct, 2)}
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>
@@ -233,7 +234,7 @@ export default function BacktestPage() {
                         <div style={{ height: '100%', width: `${Math.min(Math.abs(result.buyHoldReturn), 100)}%`, background: result.buyHoldReturn >= 0 ? 'var(--text-info)' : 'var(--text-negative)', borderRadius: '2px' }} />
                       </div>
                       <div style={{ fontSize: '10px', color: result.buyHoldReturn >= 0 ? 'var(--text-info)' : 'var(--text-negative)', fontFamily: 'IBM Plex Mono, monospace', marginTop: '2px' }}>
-                        {result.buyHoldReturn > 0 ? '+' : ''}{result.buyHoldReturn}%
+                        {pct(result.buyHoldReturn, 2)}
                       </div>
                     </div>
                   </div>

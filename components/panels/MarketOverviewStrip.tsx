@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 import { useMode } from '@/lib/context/ModeContext'
+import { arrow, pct, signed } from '@/lib/format'
 
 // The USA hero cards directly above this strip already carry S&P 500 and NASDAQ
 // (priced off SPY/QQQ). Repeating them here as ^GSPC/^IXIC put two different
@@ -39,8 +40,7 @@ function fmtPrice(n: number, unit: string) {
   return n.toFixed(3)
 }
 function fmtPct(n: number) {
-  const sign = n >= 0 ? '+' : ''
-  return `${sign}${n.toFixed(2)}%`
+  return pct(n, 2)
 }
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
@@ -76,10 +76,10 @@ function IndexCard({ q }: { q: QuoteTick }) {
             {fmtPrice(q.price, q.unit || '')}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, marginTop: 2 }}>
-            {pos ? '▲' : '▼'} {fmtPct(q.changePct)}
+            {arrow(q.changePct)} {fmtPct(q.changePct)}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: cc }}>
-            {q.change >= 0 ? '+' : ''}{q.change.toFixed(2)}
+            {signed(q.change, 2)}
           </div>
         </div>
         {q.sparkline.length > 1 && <Spark data={q.sparkline} positive={pos} w={64} h={32} />}

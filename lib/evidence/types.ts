@@ -54,7 +54,7 @@ export interface Explanation {
 
 // at = when the app fetched it; marketTime = the exchange time of the last trade
 // (bounds which headlines may attach to this move).
-export interface Quote { symbol: string; name: string; price: number | null; changePct: number; volume?: number | null; avgVolume?: number | null; at: number; marketTime?: number | null }
+export interface Quote { symbol: string; name: string; price: number | null; changePct: number; volume?: number | null; avgVolume?: number | null; at: number; marketTime?: number | null; change?: number | null }
 
 export interface Headline {
   id: number
@@ -64,6 +64,8 @@ export interface Headline {
   publishedAt: number
   entities: string[]        // graph entity ids matched in the title
   sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'   // keyword estimate
+  /** 'ticker' = from a per-ticker search for a mover (biased toward movers; not used for themes). */
+  via?: 'ticker'
 }
 
 export interface LinkedEventInput { kind: 'earthquake' | 'outbreak'; title: string; url?: string; at: number; countries: string[]; magnitude?: number }
@@ -88,6 +90,8 @@ export interface MarketContext {
   macro: MacroEventInput[]
   /** Other markets for index explanations (Nikkei, DAX…), by symbol. */
   globalIndices: Record<string, Quote>
+  /** Treasury yields (US only), by symbol; `change` is in percentage points. */
+  rates?: Record<string, Quote>
   /** Which inputs loaded, for transparency ("news: unavailable"). */
   inputs?: Record<string, 'ok' | 'stale' | 'unavailable'>
 }

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { pct } from '@/lib/format'
 
 interface WatchlistItem {
   id: number
@@ -139,7 +140,7 @@ export default function WatchlistSidebar() {
                     <>
                       <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>${item.price.toFixed(2)}</div>
                       <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                        {isPos ? '+' : ''}{(item.changePct ?? 0).toFixed(2)}%
+                        {pct(item.changePct ?? 0, 2)}
                       </div>
                     </>
                   ) : <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>—</div>}

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { arrow } from '@/lib/format';
 
 interface Props { compact?: boolean; }
 
@@ -49,7 +50,7 @@ export default function MarketsModule({ compact }: Props) {
               ${(quote.regularMarketPrice ?? 0).toFixed(2)}
             </div>
             <div style={{ fontSize: fs, color: positive ? 'var(--text-positive)' : 'var(--text-negative)', marginTop: 3, fontWeight: 700 }}>
-              {positive ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%
+              {arrow(chg)} {Math.abs(chg).toFixed(2)}%
             </div>
             {!compact && (
               <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px' }}>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { formatPercent } from '@/lib/utils'
+import { arrow } from '@/lib/format'
 
 interface TickerItem {
   symbol: string
@@ -65,7 +66,7 @@ export default function TickerTape() {
               background: item.changePct >= 0 ? 'var(--bg-live)' : 'var(--bg-sell)',
               padding: '0 4px', borderRadius: 2,
             }}>
-              {item.changePct >= 0 ? '▲' : '▼'} {formatPercent(item.changePct)}
+              {arrow(item.changePct)} {formatPercent(item.changePct)}
             </span>
             <span style={{ color: 'var(--border-bright)', marginLeft: 8, fontSize: 'var(--fs-body)' }}>│</span>
           </span>

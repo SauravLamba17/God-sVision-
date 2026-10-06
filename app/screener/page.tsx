@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
+import { arrow } from '@/lib/format'
 
 const SCREENERS = [
   { id: 'day_gainers',             label: 'TOP GAINERS' },
@@ -114,7 +115,7 @@ export default function ScreenerPage() {
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{selected.shortName}</div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>${selected.price?.toFixed(2)}</div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: selected.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                {selected.changePct >= 0 ? '▲' : '▼'} {formatPercent(selected.changePct)}
+                {arrow(selected.changePct)} {formatPercent(selected.changePct)}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
                 {[
@@ -178,7 +179,7 @@ export default function ScreenerPage() {
                     </td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(s.price)}</td>
                     <td style={{ color: s.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                      {s.changePct >= 0 ? '▲' : '▼'} {formatPercent(s.changePct)}
+                      {arrow(s.changePct)} {formatPercent(s.changePct)}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>{formatNumber(s.volume)}</td>
                     <td>{mktCapLabel(s.marketCap)}</td>

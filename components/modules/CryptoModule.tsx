@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toDataStatus } from '@/lib/dataStatus';
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge';
+import { pct } from '@/lib/format';
 
 interface Props { compact?: boolean; }
 
@@ -57,7 +58,7 @@ export default function CryptoModule({ compact }: Props) {
                       ${price >= 1000 ? price.toLocaleString(undefined, { maximumFractionDigits: 0 }) : price.toFixed(price < 1 ? 4 : 2)}
                     </td>
                     <td style={{ padding: compact ? '3px 6px' : '4px 8px', textAlign: 'right', color: chg >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
-                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
+                      {pct(chg, 2)}
                     </td>
                   </tr>
                 );

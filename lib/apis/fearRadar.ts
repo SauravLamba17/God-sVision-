@@ -1,6 +1,7 @@
 import { getCache, setCache } from '@/lib/cache'
 import { getQuotes } from '@/lib/apis/yahoo'
 import { trackedFetch as fetch } from '@/lib/feedHealth' // records feed health; same fetch semantics
+import { pct } from '@/lib/format'
 
 export interface FearSignal {
   name: string
@@ -130,7 +131,7 @@ export async function getFearRadarData(): Promise<FearRadarData> {
     { name: 'BTC Fear/Greed (inv)', weight: 0.20, rawValue: b ?? 0, score: scoreBTCFG(b), label: b ? `${b}/100` : 'N/A' },
     { name: 'Gold/SPY Ratio', weight: 0.20, rawValue: g ?? 0, score: scoreGoldSPY(g), label: g ? g.toFixed(3) : 'N/A' },
     { name: '10Y-3M Spread', // ^TNX − ^IRX; was mislabeled 2Y-10Y
-      weight: 0.20, rawValue: y ?? 0, score: scoreYieldSpread(y), label: y !== null ? `${y >= 0 ? '+' : ''}${y.toFixed(2)}%` : 'N/A' },
+      weight: 0.20, rawValue: y ?? 0, score: scoreYieldSpread(y), label: y !== null ? pct(y, 2) : 'N/A' },
     { name: 'USD Strength (DXY)', weight: 0.15, rawValue: d ?? 0, score: scoreDXY(d), label: d ? d.toFixed(1) : 'N/A' },
   ]
 

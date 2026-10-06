@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { DOWN, INK, UP } from '@/lib/canvas/globe'
+import { arrow, pct } from '@/lib/format'
 
 /** [symbol, price, change, direction] — the design's illustrative tape. */
 type TapeRow = [string, string, string, number]
@@ -23,7 +24,7 @@ const fmtPrice = (n: number) =>
   n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 })
             : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-const fmtChange = (n: number) => (n >= 0 ? '+' : '') + n.toFixed(2) + '%'
+const fmtChange = (n: number) => pct(n, 2)
 
 export default function LandingTickerTape() {
   const [rows, setRows] = useState<TapeRow[]>(TAPE)
@@ -39,7 +40,7 @@ export default function LandingTickerTape() {
         setRows(TAPE.map(row => {
           const l = bySymbol.get(row[0])
           if (!l || typeof l.price !== 'number') return row
-          return [row[0], fmtPrice(l.price), fmtChange(l.changePercent), l.changePercent >= 0 ? 1 : -1]
+          return [row[0], fmtPrice(l.price), fmtChange(l.changePercent), arrow(l.changePercent) === '' ? 0 : l.changePercent > 0 ? 1 : -1]
         }))
       })
       // Leave the illustrative array in place — never an empty marquee.
@@ -83,7 +84,7 @@ export default function LandingTickerTape() {
       }}>
         <b translate="no" style={{ color: '#e8e6e1', fontWeight: 600 }}>{q[0]}</b>
         <span style={{ color: `rgba(${INK},.6)` }}>{q[1]}</span>
-        <span style={{ color: up ? UP : DOWN }}>{(up ? '▲' : '▼') + ' ' + q[2]}</span>
+        <span style={{ color: up ? UP : DOWN }}>{(q[3] === 0 ? '' : up ? '▲ ' : '▼ ') + q[2]}</span>
       </span>
     )
   }

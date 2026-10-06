@@ -5,6 +5,7 @@
  * server, the client and every visitor see the same opening candles. */
 
 import { DOWN, INK, UP, type SizedCanvas } from './globe'
+import { arrow, pct } from '../format'
 
 export interface Candle { o: number; c: number; hi: number; lo: number; v: number }
 
@@ -58,7 +59,7 @@ export class ChartSeries {
     const chg = ((cur - first) / first) * 100
     return {
       last: cur.toFixed(2),
-      change: (chg >= 0 ? '▲ +' : '▼ −') + Math.abs(chg).toFixed(2) + '%',
+      change: (arrow(chg) && arrow(chg) + ' ') + pct(chg, 2, '−'),
       changeUp: chg >= 0,
       book: (cur - 0.03).toFixed(2) + ' / ' + (cur + 0.02).toFixed(2),
       spread: '0.05 (2 bp)',

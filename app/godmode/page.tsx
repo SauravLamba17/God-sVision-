@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useBinanceStream } from '@/lib/hooks/useBinanceStream'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import dynamic from 'next/dynamic'
+import { pct } from '@/lib/format'
 
 const CandlestickChart = dynamic(() => import('@/components/charts/CandlestickChart'), { ssr: false })
 
@@ -40,7 +41,7 @@ function SceneMarketPulse({ gainers, losers }: { gainers: Mover[]; losers: Mover
               <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
             </div>
             <div style={{ fontFamily:'IBM Plex Mono', fontSize:48, fontWeight:700, color:'var(--text-positive)', lineHeight:1 }}>
-              +{m.changePct.toFixed(1)}%
+              {pct(m.changePct, 1)}
             </div>
           </div>
         ))}
@@ -54,7 +55,7 @@ function SceneMarketPulse({ gainers, losers }: { gainers: Mover[]; losers: Mover
               <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
             </div>
             <div style={{ fontFamily:'IBM Plex Mono', fontSize:48, fontWeight:700, color:'var(--text-negative)', lineHeight:1 }}>
-              {m.changePct.toFixed(1)}%
+              {pct(m.changePct, 1)}
             </div>
           </div>
         ))}
@@ -85,7 +86,7 @@ function SceneCryptoMatrix({ coins, tickers }: { coins: CryptoItem[]; tickers: M
               {price < 1 ? `$${price.toFixed(4)}` : formatCurrency(price)}
             </div>
             <div style={{ fontFamily:'IBM Plex Mono', fontSize:18, fontWeight:700, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)', marginTop:4 }}>
-              {isPos ? '+' : ''}{changePct.toFixed(2)}%
+              {pct(changePct, 2)}
             </div>
           </div>
         )

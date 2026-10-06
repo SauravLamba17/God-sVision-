@@ -13,4 +13,6 @@ export interface AIProvider {
   readonly name: string      // shown in the UI label, e.g. "Gemini"
   /** One call for up to `maxBatch` items → { id: text }. Throws on failure / over budget. */
   narrate(items: NarrationItem[]): Promise<Record<string, string>>
+  /** Optional: one call rewrites a market's Market Brain sections into a short paragraph. */
+  narrateBrain?(input: { market: 'US' | 'IN'; summary: string; sections: Record<string, string> }): Promise<string>
 }

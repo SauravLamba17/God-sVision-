@@ -10,6 +10,9 @@ import { cachedAI } from '@/lib/aiCache'
 import type { Explanation, Market, Snapshot } from '@/lib/evidence/types'
 import { BANNED } from '@/lib/evidence/summary'
 import { needsRecompute } from '@/lib/evidence/freshness'
+import type { Brain } from '@/lib/brain/types'
+import type { BrainText } from '@/lib/brain/text'
+import { narrationInput, validBrainNarration } from '@/lib/brain/narration'
 
 export type { AIProvider } from './types'
 
@@ -69,4 +72,25 @@ export async function narrateExplanations(market: Market, explanations: Record<s
       e.narration = { text: n.text, provider: result.data.provider, generatedAt: result.generatedAt, snapshot: n.snapshot }
     }
   }
+}
+
+/**
+ * Optional AI prose for one market's Market Brain: at most one call per
+ * AI_BRAIN_TTL_SECONDS window and AI_BRAIN_DAILY_LIMIT per market per day,
+ * cached in Postgres and shared by all users. Rejected prose (causes, numbers,
+ * predictions, entities not in the evidence) is never shown. Never throws.
+ */
+export async function narrateBrain(brain: Brain, text: BrainText): Promise<void> {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return
+  const provider = getAIProvider()
+  if (!provider?.narrateBrain) return
+  const cfg = aiConfig()
+  const windowStart = Math.floor(Date.now() / 1000 / cfg.brainTtlSeconds)
+  const result = await cachedAI<{ text: string; provider: string; snapshot: Brain['snapshot'] }>(`ai:brain:${brain.market}:${windowStart}`, cfg.brainTtlSeconds, async () => {
+    if (!(await reserveFeature(`brain-${brain.market}`, cfg.brainDailyLimit))) throw new Error('AI brain daily limit reached')
+    const prose = await provider.narrateBrain!(narrationInput(brain, text))
+    if (!validBrainNarration(prose, brain, text)) throw new Error('AI brain prose rejected by the evidence rules')
+    return { text: prose.trim(), provider: provider.name, snapshot: brain.snapshot }
+  }).catch(() => null)
+  if (result) brain.narration = { ...result.data, generatedAt: result.generatedAt }
 }

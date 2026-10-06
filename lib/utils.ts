@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { pct } from './format'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -33,8 +34,7 @@ export function formatNumber(value: number, decimals = 2): string {
 
 export function formatPercent(value: number, decimals = 2): string {
   if (value === null || value === undefined || isNaN(value)) return 'N/A'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(decimals)}%`
+  return pct(value, decimals) // rounds to zero → "0.00%", never "+0.00%" / "-0.00%"
 }
 
 export function formatTimestamp(date: Date | string | number): string {

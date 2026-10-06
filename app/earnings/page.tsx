@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
+import { pct } from '@/lib/format'
 
 interface EarningsEvent {
   ticker: string; date: string; epsEstimate: number|null; epsLow: number|null; epsHigh: number|null
@@ -185,7 +186,7 @@ export default function EarningsPage() {
                           {h.surprise !== null ? `${beat ? '+' : ''}$${h.surprise.toFixed(2)}` : '—'}
                         </td>
                         <td style={{ color: beat ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
-                          {h.surprisePct !== null ? `${beat ? '+' : ''}${h.surprisePct.toFixed(1)}%` : '—'}
+                          {h.surprisePct !== null ? pct(h.surprisePct, 1) : '—'}
                         </td>
                       </tr>
                     )

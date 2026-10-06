@@ -4,6 +4,7 @@ import PanelWrapper from '@/components/panels/PanelWrapper'
 import ForexPanel from '@/components/panels/ForexPanel'
 import { MAJOR_PAIRS } from '@/lib/apis/forex'
 import { usePolicyRates } from '@/lib/hooks/usePolicyRates'
+import { pct } from '@/lib/format'
 
 const MATRIX_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY']
 
@@ -102,7 +103,7 @@ export default function ForexPage() {
                     {p.rate >= 100 ? p.rate.toFixed(2) : p.rate >= 10 ? p.rate.toFixed(3) : p.rate.toFixed(4)}
                   </td>
                   <td className={p.changePct === null ? 'neutral' : p.changePct >= 0 ? 'positive' : 'negative'}>
-                    {p.changePct === null ? '—' : `${p.changePct >= 0 ? '+' : ''}${p.changePct.toFixed(2)}%`}
+                    {p.changePct === null ? '—' : pct(p.changePct, 2)}
                   </td>
                 </tr>
               ))}
@@ -182,7 +183,7 @@ export default function ForexPage() {
               <div className="flex justify-between" style={{ borderTop: '1px solid #1b2e1b', paddingTop: 4 }}>
                 <span className="font-mono text-[11px] text-accent font-bold">CARRY RETURN</span>
                 <span className={`font-mono text-[15px] font-bold ${carryReturn === null ? 'text-muted' : carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
-                  {carryReturn === null ? '—' : `${carryReturn >= 0 ? '+' : ''}${carryReturn.toFixed(2)}%`}
+                  {carryReturn === null ? '—' : pct(carryReturn, 2)}
                 </span>
               </div>
             </div>

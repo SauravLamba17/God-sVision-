@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine, CartesianGrid,
 } from 'recharts'
 import PanelWrapper from '@/components/panels/PanelWrapper'
+import { pct, signed } from '@/lib/format'
 
 interface MaturityPoint { label: string; value: number | null; prev: number | null; change: number | null; months: number }
 interface Spreads { '10Y-2Y': number | null; '10Y-3M': number | null; '30Y-5Y': number | null; '5Y-2Y': number | null }
@@ -16,7 +17,7 @@ function SpreadBadge({ label, value }: { label: string; value: number | null }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 14px', background: inv ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${inv ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`, borderRadius: 4, minWidth: 100 }}>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 16, fontWeight: 700, color: inv ? 'var(--text-negative)' : 'var(--text-positive)' }}>
-        {value >= 0 ? '+' : ''}{value.toFixed(2)}%
+        {pct(value, 2)}
       </span>
       <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 2 }}>{label} SPREAD</span>
       {inv && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-negative)', marginTop: 2 }}>⚠ INVERTED</span>}
@@ -127,7 +128,7 @@ export default function YieldCurvePage() {
                     <td style={{ textAlign: 'left', color: 'var(--text-accent)', fontWeight: 700 }}>{m.label}</td>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{m.value !== null ? `${m.value.toFixed(3)}%` : '—'}</td>
                     <td style={{ color: m.change !== null ? (m.change >= 0 ? 'var(--text-positive)' : 'var(--text-negative)') : 'var(--text-muted)' }}>
-                      {m.change !== null ? `${m.change >= 0 ? '+' : ''}${m.change.toFixed(3)}` : '—'}
+                      {m.change !== null ? signed(m.change, 3) : '—'}
                     </td>
                   </tr>
                 ))}

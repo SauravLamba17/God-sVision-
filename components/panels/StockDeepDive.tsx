@@ -6,6 +6,7 @@ import { sma, bollingerBands, rsi, macd, Candle } from '@/lib/utils/technicals'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 import { WhyLine } from '@/components/ui/WhyLine'
+import { arrow } from '@/lib/format'
 
 interface StockSnapshot {
   ticker: string; name: string; price: number; changePct: number; weeklyChangePct: number; monthlyChangePct: number
@@ -114,7 +115,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
               <>
                 <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{currency}{data.snapshot.price.toFixed(2)}</span>
                 <span style={{ fontSize: 10, color: data.snapshot.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                  {data.snapshot.changePct >= 0 ? '▲' : '▼'} {Math.abs(data.snapshot.changePct).toFixed(2)}%
+                  {arrow(data.snapshot.changePct)} {Math.abs(data.snapshot.changePct).toFixed(2)}%
                 </span>
               </>
             )}

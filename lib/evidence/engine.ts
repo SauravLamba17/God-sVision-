@@ -40,20 +40,22 @@
 //   index news: headlines naming the index, or its country plus a market term
 //               (stocks, Wall Street, yields, Fed…) — × 0.8
 //
-// Drivers scoring < SHOW_THRESHOLD are dropped. If none reaches CLEAR_THRESHOLD
+// Drivers scoring < SHOW_THRESHOLD are dropped; those below STRONG (0.5) are WEAK —
+// shown only in the expanded view, never named or counted in the line. If none reaches CLEAR_THRESHOLD (= STRONG)
 // the result leads with "no clear driver found" — a valid, honest answer.
 
 import type { Driver, Explanation, Headline, MarketContext, Market, Quote } from './types.ts'
-import { getEntity, getLinks, resolveEntity } from '../graph/index.ts'
-import { summarize } from './summary.ts'
+import { getEntity, getLinks, matchEntitiesInText, resolveEntity } from '../graph/index.ts'
+import { STRONG, summarize } from './summary.ts'
+import { pct } from '../format.ts'
 
 export const SHOW_THRESHOLD = 0.2
-export const CLEAR_THRESHOLD = 0.3
+export const CLEAR_THRESHOLD = STRONG // a driver must be strong (≥0.5) to be named in the line
 const FLAT = 0.3 // |move| below this is "little changed"
 
 const r2 = (n: number) => Math.round(n * 100) / 100
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
-export const fmtPct = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(1)}%`
+export const fmtPct = (n: number) => pct(n, 1, '−') // rounds to zero → "0.0%"
 const sameDir = (a: number, b: number) => (a > 0 && b > 0) || (a < 0 && b < 0)
 const H = 3600_000
 
@@ -77,7 +79,7 @@ const SESSION: Record<Market, { tz: string; close: [number, number] }> = {
   IN: { tz: 'Asia/Kolkata', close: [15, 30] },
 }
 /** Epoch ms of hh:mm on a YYYY-MM-DD date in a time zone. */
-function zoned(date: string, [hh, mm]: [number, number], tz: string): number {
+export function zoned(date: string, [hh, mm]: [number, number], tz: string): number {
   const guess = Date.parse(`${date}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`)
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
     .formatToParts(guess).map(x => [x.type, x.value]))
@@ -171,15 +173,27 @@ const wordSet = (t: string) => new Set(t.toLowerCase().replace(/[^\p{L}\p{N}.%]+
   .map(w => (w.length > 3 ? w.replace(/(es|s)$/, '') : w)).filter(w => w.length > 1 && !STOP.has(w)))
 /**
  * Two titles are the same story when ≥50% of the shorter title's significant
- * words appear in the other. Exported for tests.
+ * words appear in the other (≥3 of them not entity names). Exported for tests.
  * ponytail: word overlap, not semantics — rewritten headlines of one event can still count twice.
  */
 export function sameStory(a: string, b: string): boolean {
   const A = words(a), B = words(b), n = Math.min(A.size, B.size)
   if (n < 4) return a.trim().toLowerCase() === b.trim().toLowerCase()
-  let common = 0
-  for (const w of A) if (B.has(w)) common++
-  return common / n >= 0.5
+  // Shared names ("US", "Accenture") don't make two stories one: besides the
+  // ≥50% overlap, ≥3 shared words must be something other than entity names.
+  const names = new Set([...entityWords(a), ...entityWords(b)])
+  let common = 0, specific = 0
+  for (const w of A) if (B.has(w)) { common++; if (!names.has(w)) specific++ }
+  return common / n >= 0.5 && specific >= 3
+}
+const entityMemo = new Map<string, Set<string>>()
+function entityWords(t: string): Set<string> {
+  let w = entityMemo.get(t)
+  if (!w) {
+    if (entityMemo.size > 5000) entityMemo.clear()
+    entityMemo.set(t, (w = new Set(matchEntitiesInText(t).flatMap(m => [...wordSet(m.text)]))))
+  }
+  return w
 }
 /** First k items (in the given order) that aren't the same story as one already kept. */
 function distinctTop<T extends { h: Headline }>(xs: T[], k: number): T[] {
@@ -204,6 +218,17 @@ export function headlineScore(h: Headline, move: number, end: number, context: M
   const s = r2(clamp01(0.55 * focus * recency(h.publishedAt, end) + tone))
   return OPINION_FORM.test(h.title) ? Math.min(s, OPINION_CAP) : s
 }
+
+/**
+ * A headline that reports market/company news (not a listicle, opinion piece,
+ * recap, question or long-horizon story). Used by the Market Brain's themes.
+ */
+export function isMarketNews(title: string): boolean {
+  const context = FINANCIAL.test(title) || MARKET_ANY.test(title) || MACRO.test(title)
+  return context && !NOT_A_REASON.test(title) && !OPINION_FORM.test(title) && !(LONG_HORIZON.test(title) && !THIS_SESSION.test(title))
+}
+// Commodity / macro context for themes ("Brent tops $95 as supply worries grow").
+const MACRO = /\b(prices?|supply|supplies|demand|inventor(y|ies)|output|production|exports?|imports?|shipments?|interest rates?|inflation|GDP|currency|rupee|dollar|yen|yuan|euro|Fed|FOMC|Federal Reserve|central bank|RBI|ECB|BOJ|monetary policy|rate path)\b/i
 
 /** Keyword tone clearly against the move: positive news on a drop, negative news on a rise. */
 const toneOpposes = (h: Headline, move: number) => (h.sentiment === 'BULLISH' && move < 0) || (h.sentiment === 'BEARISH' && move > 0)

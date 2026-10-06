@@ -13,7 +13,8 @@
     "test:graph": "node scripts/graph-test.ts",
     "test:sentiment": "node scripts/sentiment-test.ts",
     "test:evidence": "node scripts/evidence-test.ts",
-    "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml"
+    "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml",
+    "test:brain": "node scripts/brain-test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

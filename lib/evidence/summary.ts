@@ -3,14 +3,20 @@
 // Never "because", "caused by", "due to", "driven by"… (BANNED is enforced
 // here and checked by scripts/evidence-test.ts).
 import type { Driver } from './types.ts'
+import { pct } from '../format.ts'
 
 export const BANNED = /\b(because|caus(e|ed|es|ing)|due to|driven by|thanks to|owing to|as a result|trigger(ed|s)?|spark(ed|s)?|fuel(l)?ed)\b/i
 
 const MAX_CLAUSES = 4
+/** Drivers below this are WEAK: shown only in the expanded view, never in the line. */
+export const STRONG = 0.5
 
-/** Body of the line, without the "SYMBOL ±x.x%" head — the UI prefixes the LIVE move. */
-export function summarize(drivers: Driver[]): string {
-  if (drivers[0]?.type === 'no_clear_driver') return drivers[0].label
+/** Body of the line, without the "SYMBOL ±x.x%" head — the UI prefixes the LIVE move.
+ *  Only STRONG drivers (≥0.5) are counted or named; if none, "no clear driver found". */
+export function summarize(all: Driver[]): string {
+  if (all[0]?.type === 'no_clear_driver') return all[0].label
+  const drivers = all.filter(d => d.score >= STRONG)
+  if (!drivers.length) return 'no clear driver found'
 
   const by = (t: Driver['type']) => drivers.filter(d => d.type === t)
   const clauses: { text: string; score: number }[] = []
@@ -36,6 +42,5 @@ export function summarize(drivers: Driver[]): string {
 
 /** The full line as shown: live symbol and move + the evidence body. */
 export function formatLine(symbol: string, liveChangePct: number, body: string): string {
-  const pct = `${liveChangePct >= 0 ? '+' : '−'}${Math.abs(liveChangePct).toFixed(1)}%`
-  return `${symbol.replace(/\.NS$/, '')} ${pct} · ${body}`
+  return `${symbol.replace(/\.NS$/, '')} ${pct(liveChangePct, 1, '−')} · ${body}`
 }

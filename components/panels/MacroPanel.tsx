@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from './PanelWrapper'
+import { signed } from '@/lib/format'
 
 interface Indicator {
   key: string
@@ -62,7 +63,7 @@ export default function MacroPanel() {
                 {ind.value !== null ? `${formatValue(ind.value, ind.unit)}${ind.unit === '%' || ind.unit === 'bps' ? ind.unit : ''}` : 'N/A'}
               </td>
               <td className={ind.change !== null ? (ind.change >= 0 ? 'positive' : 'negative') : 'neutral'}>
-                {ind.change !== null ? `${ind.change >= 0 ? '+' : ''}${formatChange(ind.change, ind.unit)}` : '—'}
+                {ind.change !== null ? formatChange(ind.change, ind.unit) : '—'}
               </td>
               <td style={{ textAlign: 'left' }} className="text-muted text-[9px]">{ind.date}</td>
             </tr>
@@ -86,8 +87,9 @@ function formatValue(v: number, unit: string): string {
 // Same FRED units as formatValue; the raw change printed "+8225.00" for a
 // $8.2B move in retail sales.
 function formatChange(v: number, unit: string): string {
-  if (unit === 'T' || unit === 'B') return `${(v / 1e3).toFixed(1)}B`
-  if (unit === 'K') return `${v.toFixed(0)}K`
-  if (unit === 'bps') return `${(v * 100).toFixed(0)}bps`
-  return v.toFixed(2)
+  // signed(): a change that rounds to zero shows unsigned ("0.00"), never "+0.00"/"-0.00"
+  if (unit === 'T' || unit === 'B') return `${signed(v / 1e3, 1)}B`
+  if (unit === 'K') return `${signed(v, 0)}K`
+  if (unit === 'bps') return `${signed(v * 100, 0)}bps`
+  return signed(v, 2)
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toDataStatus } from '@/lib/dataStatus';
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge';
+import { arrow } from '@/lib/format';
 
 interface Props { compact?: boolean; }
 
@@ -50,7 +51,7 @@ export default function DashboardModule({ compact }: Props) {
                     ${(q.regularMarketPrice ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </div>
                   <div style={{ fontSize: fs, color: positive ? 'var(--text-positive)' : 'var(--text-negative)', marginTop: 2, fontWeight: 700 }}>
-                    {positive ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%
+                    {arrow(chg)} {Math.abs(chg).toFixed(2)}%
                   </div>
                 </div>
               );

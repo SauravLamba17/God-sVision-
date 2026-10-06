@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { pct, signed } from '@/lib/format';
 
 // Numeric fields are nullable: the API returns null when Yahoo/FRED did not
 // supply a value, instead of the 0 it used to substitute. Render null as an
@@ -30,7 +31,7 @@ interface SpreadData {
 const DASH = '—';
 const fmtNum = (v: number | null, d: number, suffix = '') => v === null ? DASH : `${v.toFixed(d)}${suffix}`;
 const fmtSigned = (v: number | null, d: number, suffix = '') =>
-  v === null ? DASH : `${v >= 0 ? '+' : ''}${v.toFixed(d)}${suffix}`;
+  v === null ? DASH : `${signed(v, d)}${suffix}`;
 const signColor = (v: number | null) =>
   v === null ? 'var(--text-muted)' : v >= 0 ? 'var(--text-positive)' : 'var(--text-negative)';
 
@@ -348,7 +349,7 @@ export default function BondsPage() {
                 {s.label}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '28px', fontWeight: 700, color: s.value === null ? 'var(--text-muted)' : s.value < 0 ? 'var(--text-negative)' : 'var(--text-primary)' }}>
-                {s.value === null ? DASH : `${s.value > 0 ? '+' : ''}${s.value.toFixed(2)}%`}
+                {s.value === null ? DASH : pct(s.value, 2)}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 {s.value === null ? 'Unavailable — FRED not reachable' : `As of ${s.date} · Source: FRED`}

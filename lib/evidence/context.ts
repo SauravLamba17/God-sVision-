@@ -60,7 +60,7 @@ function yahooToQuote(q: any, at: number): Quote | null {
   if (!q?.symbol || changePct == null) return null
   return {
     symbol: q.symbol, name: q.longName ?? q.shortName ?? q.label ?? q.symbol,
-    price: num(q.regularMarketPrice) ?? num(q.price), changePct,
+    price: num(q.regularMarketPrice) ?? num(q.price), changePct, change: num(q.regularMarketChange) ?? num(q.change),
     volume: num(q.regularMarketVolume) ?? num(q.volume), avgVolume: num(q.averageDailyVolume3Month) ?? num(q.averageDailyVolume10Day) ?? num(q.avgVolume),
     at, marketTime: toMs(q.regularMarketTime ?? q.marketTime),
   }
@@ -100,7 +100,7 @@ export async function withTickerNews(ctx: MarketContext, quotes: Quote[]): Promi
   const seen = new Set(ctx.headlines.map(h => titleKey(h.title)))
   return {
     ...ctx,
-    headlines: [...ctx.headlines, ...headlinesFrom(extra, ctx.headlines.length, seen)],
+    headlines: [...ctx.headlines, ...headlinesFrom(extra, ctx.headlines.length, seen).map(h => ({ ...h, via: 'ticker' as const }))],
     inputs: { ...ctx.inputs, 'ticker news': ok === results.length ? 'ok' : ok ? 'stale' : 'unavailable' },
   }
 }
@@ -149,6 +149,8 @@ export async function buildContext(market: Market): Promise<MarketContext> {
       if (e?.type === 'sector' && q) ctx.sectorEtfs[e.id] = { ...q, name: e.name, etf: s.symbol }
     }
     for (const g of overview?.globalMarkets ?? []) { const q = yahooToQuote(g, ovAt); if (q) ctx.globalIndices[q.symbol] = { ...q, name: g.label ?? q.name } }
+    ctx.rates = {}
+    for (const c of overview?.commodities ?? []) { if (['^TNX', '^IRX'].includes(c.symbol)) { const q = yahooToQuote(c, ovAt); if (q) ctx.rates[q.symbol] = { ...q, name: c.symbol === '^TNX' ? 'US 10-year yield' : 'US 3-month yield' } } }
     // Quotes the app holds: today's movers, plus the default watch list if this instance has it cached (no fetch).
     for (const q of [...(movers?.gainers ?? []), ...(movers?.losers ?? [])]) { const x = yahooToQuote(q, now); if (x) ctx.quotes[x.symbol] = x }
     const defaults = await getCache<any[]>(`quotes_${DEFAULT_TICKERS.join(',')}`).catch(() => null)

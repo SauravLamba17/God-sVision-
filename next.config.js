@@ -50,7 +50,6 @@ const nextConfig = {
       { source: '/api/india/news',    headers: [{ key: 'Cache-Control', value: 's-maxage=300, stale-while-revalidate=600' }] },
       { source: '/api/fear-radar',    headers: [{ key: 'Cache-Control', value: 's-maxage=300, stale-while-revalidate=600' }] },
       { source: '/api/weather',       headers: [{ key: 'Cache-Control', value: 's-maxage=600, stale-while-revalidate=1200' }] },
-      { source: '/api/narratives',    headers: [{ key: 'Cache-Control', value: 's-maxage=900, stale-while-revalidate=1800' }] },
       // Slow-changing data
       { source: '/api/insiders',      headers: [{ key: 'Cache-Control', value: 's-maxage=1800, stale-while-revalidate=3600' }] },
       { source: '/api/calendar',      headers: [{ key: 'Cache-Control', value: 's-maxage=3600, stale-while-revalidate=7200' }] },

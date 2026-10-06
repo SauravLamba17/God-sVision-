@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { parseQuery, ticker as tickerSchema } from '@/lib/validation'
 import { limiterId } from '@/lib/rateLimit'
 import { connectionsFor } from '@/lib/graph'
+import { arrow } from '@/lib/format'
 
 const Query = z.object({ ticker: tickerSchema, market: z.string().trim().toUpperCase().pipe(z.enum(['US', 'IN'])).default('IN') })
 
@@ -33,7 +34,7 @@ function ruleBasedVerdict(s: StockSnapshot, news: { title: string }[]) {
   const verdict = score >= 3 ? 'BUY' : score <= -2 ? 'SELL' : 'HOLD'
   const confidence = Math.min(95, Math.max(40, 55 + score * 7))
   const newsTxt = news.length ? ` Recent headline: "${news[0].title}".` : ''
-  const analysis = `${s.name} (${s.ticker}) trades at ${s.price.toFixed(2)}, ${s.changePct >= 0 ? 'up' : 'down'} ${Math.abs(s.changePct).toFixed(2)}% on the session. Supertrend is ${s.supertrend.trend ?? 'undetermined'}, RSI reads ${s.rsi?.toFixed(1) ?? 'N/A'}, and MACD histogram is ${s.macd.histogram !== null && s.macd.histogram > 0 ? 'positive' : 'negative'}. Price sits ${s.price > (s.sma20 ?? 0) ? 'above' : 'below'} its 20-day average with volume running ${s.volumeRatio.toFixed(1)}x the 20-day norm.${newsTxt} Nearest support at ${s.support[0]?.toFixed(2) ?? 'N/A'}, resistance at ${s.resistance[0]?.toFixed(2) ?? 'N/A'}.`
+  const analysis = `${s.name} (${s.ticker}) trades at ${s.price.toFixed(2)}, ${arrow(s.changePct) === '' ? 'unchanged' : `${s.changePct > 0 ? 'up' : 'down'} ${Math.abs(s.changePct).toFixed(2)}%`} on the session. Supertrend is ${s.supertrend.trend ?? 'undetermined'}, RSI reads ${s.rsi?.toFixed(1) ?? 'N/A'}, and MACD histogram is ${s.macd.histogram !== null && s.macd.histogram > 0 ? 'positive' : 'negative'}. Price sits ${s.price > (s.sma20 ?? 0) ? 'above' : 'below'} its 20-day average with volume running ${s.volumeRatio.toFixed(1)}x the 20-day norm.${newsTxt} Nearest support at ${s.support[0]?.toFixed(2) ?? 'N/A'}, resistance at ${s.resistance[0]?.toFixed(2) ?? 'N/A'}.`
   return { analysis, verdict, confidence }
 }
 

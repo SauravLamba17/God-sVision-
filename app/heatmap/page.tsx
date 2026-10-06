@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { formatPercent } from '@/lib/utils'
+import { pct as pctFmt } from '@/lib/format'
 
 interface SectorData {
   name: string; etf: string; weight: number
@@ -147,7 +148,7 @@ export default function HeatmapPage() {
                 </div>
                 <div>
                   <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 16, fontWeight: 700, color: textColor(pct), lineHeight: 1 }}>
-                    {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+                    {pctFmt(pct, 2)}
                   </div>
                   {sector.etfData && (
                     <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: `${textColor(pct)}80`, marginTop: 2 }}>
@@ -166,7 +167,7 @@ export default function HeatmapPage() {
                       <span style={{ color: textColor(pct), fontWeight: 700 }}>{stock.symbol}</span>
                       {stock.changePct !== undefined && (
                         <span style={{ color: stock.changePct >= 0 ? '#86efac' : '#fca5a5', marginLeft: 3 }}>
-                          {stock.changePct >= 0 ? '+' : ''}{stock.changePct?.toFixed(1)}%
+                          {pctFmt(stock.changePct ?? 0, 1)}
                         </span>
                       )}
                     </div>
@@ -202,7 +203,7 @@ export default function HeatmapPage() {
                 {stock.symbol}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color: textColor(stock.changePct || 0), marginTop: 3 }}>
-                {(stock.changePct || 0) >= 0 ? '+' : ''}{(stock.changePct || 0).toFixed(2)}%
+                {pctFmt(stock.changePct || 0, 2)}
               </div>
               <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: `${textColor(stock.changePct || 0)}70`, marginTop: 2 }}>
                 {stock.sector.slice(0, 8)}

@@ -16,7 +16,8 @@ const NEWS_PER_SIDE = 5
 // One context per market per instance for 20s: recomputes arriving together
 // share it instead of re-reading every cache.
 const memo = new Map<Market, { ctx: MarketContext; at: number }>()
-async function context(market: Market): Promise<MarketContext> {
+/** The market's evidence context (cached inputs, no per-ticker news), shared for 20s. */
+export async function context(market: Market): Promise<MarketContext> {
   const m = memo.get(market)
   if (m && Date.now() - m.at < 20_000) return m.ctx
   const ctx = await buildContext(market)
@@ -34,6 +35,12 @@ export interface MarketExplanations {
 
 /** Explanations for today's movers and the hero index cards. */
 export async function explainMarket(market: Market): Promise<MarketExplanations> {
+  const { ctx, explanations, computeMs } = await marketEvidence(market)
+  return { market, generatedAt: ctx.builtAt, explanations, inputs: ctx.inputs, computeMs }
+}
+
+/** The context (with per-ticker news for the biggest moves) and the movers' + hero indices' explanations. */
+export async function marketEvidence(market: Market): Promise<{ ctx: MarketContext; explanations: Record<string, Explanation>; computeMs: number }> {
   const base = await context(market)
   const stocks = Object.values(base.quotes).sort((a, b) => b.changePct - a.changePct)
   const targets = [...stocks.slice(0, MOVERS_PER_SIDE), ...stocks.slice(-MOVERS_PER_SIDE)]
@@ -42,7 +49,7 @@ export async function explainMarket(market: Market): Promise<MarketExplanations>
   const explanations: Record<string, Explanation> = {}
   for (const q of targets) explanations[q.symbol] = explain(q, 'stock', ctx)
   for (const sym of HERO_INDICES[market]) if (ctx.indices[sym]) explanations[sym] = explain(ctx.indices[sym], 'index', ctx)
-  return { market, generatedAt: ctx.builtAt, explanations, inputs: ctx.inputs, computeMs: Math.round((performance.now() - t0) * 10) / 10 }
+  return { ctx, explanations, computeMs: Math.round((performance.now() - t0) * 10) / 10 }
 }
 
 /** Fresh evidence for specific symbols (drift/flip recompute, deep dive). */

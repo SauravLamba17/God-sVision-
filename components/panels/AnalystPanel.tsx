@@ -6,6 +6,7 @@ import { useBeginnerMode } from '@/lib/hooks/useBeginnerMode'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
 import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
+import { pct } from '@/lib/format'
 
 const StockDeepDive = dynamic(() => import('@/components/panels/StockDeepDive'), { ssr: false })
 
@@ -352,7 +353,7 @@ export default function AnalystPanel() {
             <div style={{ padding: '0 8px 8px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {data.sectorRotation.map(s => (
                 <span key={s.sector} style={{ fontSize: 'var(--fs-meta)', padding: '2px 6px', borderRadius: 2, background: `${trendColor(s.trend)}15`, color: trendColor(s.trend), border: `1px solid ${trendColor(s.trend)}30` }}>
-                  {s.sector} {s.trend} ({s.avgChangePct >= 0 ? '+' : ''}{s.avgChangePct}%)
+                  {s.sector} {s.trend} ({pct(s.avgChangePct, 2)})
                 </span>
               ))}
             </div>

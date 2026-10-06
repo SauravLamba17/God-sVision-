@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { pct } from '@/lib/format';
 
 interface Props { compact?: boolean; }
 
@@ -53,7 +54,7 @@ export default function ForexModule({ compact }: Props) {
                       {(p.regularMarketPrice ?? p.rate ?? 0).toFixed(4)}
                     </td>
                     <td style={{ padding: compact ? '3px 6px' : '4px 8px', textAlign: 'right', color: chg >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>
-                      {chg >= 0 ? '+' : ''}{Number(chg).toFixed(3)}%
+                      {pct(Number(chg), 3)}
                     </td>
                   </tr>
                 );

@@ -8,10 +8,7 @@
  *  per IP); its credentials sit in the OS temp dir. Delete it when done:
  *     npm run test:evidence -- --cleanup
  */
-import crypto from 'node:crypto'
-import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
+import { signIn, cleanupAccount, CLEANUP } from './liveAccount.ts'
 import { explain, headlineScore, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
 import { BANNED, formatLine } from '../lib/evidence/summary.ts'
 import { needsRecompute, isCurrent, isSameMarketDay } from '../lib/evidence/freshness.ts'
@@ -87,11 +84,23 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
 { // index: breadth + global
   const c = ctx('US', {
     indices: { '^GSPC': q('^GSPC', -1.4, 'S&P 500') },
-    sectorEtfs: Object.fromEntries(['XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLY', 'XLP', 'XLU', 'XLRE', 'XLB', 'XLC'].map((s, i) => [`s${i}`, { ...q(s, i < 9 ? -1.2 - i * 0.1 : 0.4, s), etf: s }])),
+    sectorEtfs: Object.fromEntries(['XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLY', 'XLP', 'XLU', 'XLRE', 'XLB', 'XLC'].map((s, i) => [`s${i}`, { ...q(s, i < 10 ? -1.2 - i * 0.1 : 0.4, s), etf: s }])),
     globalIndices: { '^GDAXI': q('^GDAXI', -1.1, 'DAX'), '^FTSE': q('^FTSE', -0.8, 'FTSE 100'), '^N225': q('^N225', 0.5, 'Nikkei') },
   })
   const e = run(c.indices['^GSPC'], 'index', c)
-  check('index move → breadth + global markets', types(e).includes('breadth') && types(e).includes('global') && /9 of 11 sectors down/.test(e.summary), show(e))
+  check('index move → breadth (strong, in the line) + global markets (weak, expanded view only)',
+    types(e).includes('breadth') && types(e).includes('global') && /10 of 11 sectors down/.test(e.summary) && !/DAX/.test(e.summary), show(e))
+}
+{ // the line names and counts only STRONG drivers (≥0.5); WEAK ones stay in the expanded view
+  const strong = headline('HCLTech shares crash 3.5% after deal slowdown warning', 1)
+  const weak = { ...headline('HCLTech Q2 deal wins tracker: board to consider interim dividend', 30), sentiment: 'NEUTRAL' as const }
+  const allWeak = run(q('HCLTECH.NS', -3.3, 'HCLTech'), 'stock', ctx('IN', { headlines: [weak] }))
+  const mixed = run(q('HCLTECH.NS', -3.3, 'HCLTech'), 'stock', ctx('IN', { headlines: [strong, weak] }))
+  const weakScores = allWeak.drivers.filter(d => d.type === 'news').map(d => d.score)
+  check('line: all-WEAK drivers read "no clear driver found" but stay in the expanded view',
+    allWeak.summary === 'no clear driver found' && weakScores.length === 1 && weakScores[0] < 0.5, show(allWeak))
+  check('line: headline count includes only drivers ≥0.5',
+    mixed.summary === '1 related headline' && mixed.drivers.filter(d => d.type === 'news').length === 2, show(mixed))
 }
 
 // ── 2. False-attribution traps ───────────────────────────────────────────────
@@ -293,31 +302,12 @@ check('previous day is never current', !isSameMarketDay(NOW - 24 * H, NOW, 'US')
 }
 
 // ── 6. Live: today's real movers via the local app ───────────────────────────
-const BASE = process.env.BASE_URL ?? 'http://localhost:3001'
-const ACCOUNT_FILE = path.join(os.tmpdir(), 'gv-evidence-test-account.json')
-const CLEANUP = process.argv.includes('--cleanup')
 async function live(): Promise<string[] | string> {
-  if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) return `refusing non-local BASE_URL ${BASE}`
-  try { await fetch(BASE + '/auth/signin') } catch { return `no server at ${BASE}` }
-  const { PrismaClient } = await import('@prisma/client')
-  const prisma = new PrismaClient()
-  // Reuse the throwaway account from an earlier run if there is one.
-  const saved = savedAccount()
-  const { email, password } = saved ?? { email: `gv-evidence-test-${Date.now()}@example.com`, password: 'Ev-' + crypto.randomBytes(9).toString('base64url') }
-  let jar = ''
-  const req = async (p: string, init: RequestInit = {}) => {
-    const res = await fetch(BASE + p, { ...init, headers: { ...(init.headers as Record<string, string> ?? {}), cookie: jar }, redirect: 'manual' })
-    for (const c of res.headers.getSetCookie()) { const kv = c.split(';')[0]; if (kv.split('=')[1]) jar += (jar ? '; ' : '') + kv }
-    return res
-  }
+  const session = await signIn()
+  if (typeof session === 'string') return session
+  const { req } = session
   const out: string[] = []
   try {
-    if (!saved || !(await prisma.user.findUnique({ where: { email } }))) {
-      await req('/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })
-      fs.writeFileSync(ACCOUNT_FILE, JSON.stringify({ email, password }), { mode: 0o600 })
-    }
-    const { csrfToken } = await (await req('/api/auth/csrf')).json()
-    await req('/api/auth/callback/credentials', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ csrfToken, email, password, json: 'true' }) })
     for (const m of ['us', 'in']) {
       const t0 = performance.now()
       const j = await (await req(`/api/why/${m}`)).json()
@@ -343,29 +333,13 @@ async function live(): Promise<string[] | string> {
     }
     return out
   } finally {
-    if (CLEANUP) await deleteAccount(prisma, email)
-    await prisma.$disconnect()
+    if (CLEANUP) check('live: throwaway account deleted', (await cleanupAccount()) === true)
   }
 }
 
-function savedAccount(): { email: string; password: string } | null {
-  try { return JSON.parse(fs.readFileSync(ACCOUNT_FILE, 'utf8')) } catch { return null }
-}
-
-async function deleteAccount(prisma: any, email: string) {
-  const u = await prisma.user.findUnique({ where: { email } })
-  if (u) await prisma.user.delete({ where: { id: u.id } })
-  fs.rmSync(ACCOUNT_FILE, { force: true })
-  check('live: throwaway account deleted', !(await prisma.user.findUnique({ where: { email } })))
-}
 const liveOut = await live()
 // --cleanup still removes the saved account when the live check couldn't run.
-if (CLEANUP && typeof liveOut === 'string' && savedAccount()) {
-  const { PrismaClient } = await import('@prisma/client')
-  const prisma = new PrismaClient()
-  await deleteAccount(prisma, savedAccount()!.email)
-  await prisma.$disconnect()
-}
+if (CLEANUP && typeof liveOut === 'string') await cleanupAccount()
 if (typeof liveOut === 'string') check('live check', false, `skipped: ${liveOut}`)
 
 // ── Report ───────────────────────────────────────────────────────────────────

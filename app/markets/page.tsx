@@ -10,6 +10,7 @@ import { useAlpacaStream } from '@/lib/hooks/useAlpacaStream'
 import { useFlash } from '@/lib/hooks/useFlash'
 import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
+import { arrow } from '@/lib/format'
 
 const DEFAULT_TICKERS = ['SPY','QQQ','AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','JPM','PLTR','AMD']
 
@@ -217,7 +218,7 @@ function MarketsInner() {
               }}>{formatCurrency(displayPrice, 2, cur)}</span>
               <div>
                 <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, fontWeight:700, color: displayChangePct>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                  {displayChangePct>=0 ? '▲' : '▼'} {formatPercent(displayChangePct)}
+                  {arrow(displayChangePct)} {formatPercent(displayChangePct)}
                 </div>
                 <div style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color: quote.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                   {quote.regularMarketChange>=0 ? '+' : ''}{quote.regularMarketChange?.toFixed(2)}

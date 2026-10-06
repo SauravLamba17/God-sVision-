@@ -9,15 +9,15 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { PanelEmpty } from '@/components/ui/Panel'
 import TickerLink from '@/components/ui/TickerLink'
 import { WhyLine } from '@/components/ui/WhyLine'
+import { arrow, pct, signed } from '@/lib/format'
 
 const MarketOverviewStrip = dynamic(() => import('@/components/panels/MarketOverviewStrip'), { ssr: false })
 const CryptoPanel         = dynamic(() => import('@/components/panels/CryptoPanel'),         { ssr: false })
 const NewsPanel           = dynamic(() => import('@/components/panels/NewsPanel'),           { ssr: false })
 const EarthquakePanel     = dynamic(() => import('@/components/panels/EarthquakePanel'),     { ssr: false })
 const WeatherPanel        = dynamic(() => import('@/components/panels/WeatherPanel'),        { ssr: false })
-const DailyBrief          = dynamic(() => import('@/components/terminal/DailyBrief'),        { ssr: false })
+const MarketBrain         = dynamic(() => import('@/components/panels/MarketBrain'),         { ssr: false })
 const FearRadar           = dynamic(() => import('@/components/panels/FearRadar'),           { ssr: false })
-const NarrativeDetector   = dynamic(() => import('@/components/panels/NarrativeDetector'),   { ssr: false })
 const RedditSentiment     = dynamic(() => import('@/components/panels/RedditSentiment'),     { ssr: false })
 const ISSTracker          = dynamic(() => import('@/components/panels/ISSTracker'),          { ssr: false })
 const RBIPolicyTracker    = dynamic(() => import('@/components/panels/RBIPolicyTracker'),    { ssr: false })
@@ -107,7 +107,7 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
             {displayPrice}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: cc, marginTop: 3 }}>
-            {hasQuote ? <>{isPos ? '▲ +' : '▼ '}{m.price! >= 1 ? m.change!.toFixed(2) : m.change!.toFixed(4)} ({isPos ? '+' : ''}{m.changePct!.toFixed(2)}%)</> : 'awaiting quote'}
+            {hasQuote ? <>{arrow(m.changePct!)} {signed(m.change!, m.price! >= 1 ? 2 : 4)} ({pct(m.changePct!, 2)})</> : 'awaiting quote'}
           </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
@@ -374,7 +374,7 @@ function TickerTape({ prices }: { prices: Record<string, { price: number; change
             <span key={i} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 14px', height: 24, lineHeight: '24px', borderRight: '1px solid var(--border-color)' }}>
               <span style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{sym.replace('-USD', '').replace('=X', '')}</span>
               <span style={{ color: 'var(--text-primary)' }}>${p?.price >= 1 ? p.price.toFixed(2) : p?.price.toFixed(4)}</span>
-              <span style={{ color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>{isPos ? '▲' : '▼'}{Math.abs(p?.changePct ?? 0).toFixed(2)}%</span>
+              <span style={{ color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>{arrow(p?.changePct ?? 0)}{Math.abs(p?.changePct ?? 0).toFixed(2)}%</span>
             </span>
           )
         })}
@@ -655,10 +655,10 @@ export default function DashboardPage() {
           {/* Row 1: Market Overview Strip — immediate */}
           <MarketOverviewStrip />
 
-          {/* Row 2: Daily Brief + RBI Policy — 500ms */}
+          {/* Row 2: Market Brain + RBI Policy — 500ms */}
           {phase >= 1 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6 }}>
-              <ErrorBoundary name="Daily Brief"><DailyBrief /></ErrorBoundary>
+              <ErrorBoundary name="Market Brain"><MarketBrain /></ErrorBoundary>
               <ErrorBoundary name="RBI Policy Tracker"><RBIPolicyTracker /></ErrorBoundary>
             </div>
           ) : <PanelSkeleton h={120} />}
@@ -690,20 +690,14 @@ export default function DashboardPage() {
             </div>
           ) : <PanelSkeleton h={520} />}
 
-          {/* Row 5: FII/DII + Narrative + India News — 1500ms */}
+          {/* Row 5: FII/DII + India News — 1500ms */}
           {phase >= 3 ? (
-            // No alignItems:'start' here. With it, the row took its height from the
-            // tall Narrative panel while FII/DII (256px) and the news list (354px)
-            // kept their natural heights, leaving 217px and 119px of bare
-            // background beneath them — the black void directly above the ISS row.
-            // Letting the three stretch to a common height is what USA mode's
-            // equivalent row already does. The Narrative column also goes 280 ->
-            // 380 to match USA's, which cuts its wrapped content from 845 to 623px.
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 380px) minmax(0, 1fr)', gap: 6, minHeight: 440 }}>
+            // No alignItems:'start': the two panels stretch to a common height, so
+            // neither leaves bare background beneath it (the old black void above
+            // the ISS row). The Narrative Detector that sat between them is now
+            // part of the Market Brain (row 2).
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 1fr)', gap: 6 }}>
               <ErrorBoundary name="FII/DII Flow"><FIIDIIFlow /></ErrorBoundary>
-              <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <ErrorBoundary name="Narrative Detector"><NarrativeDetector /></ErrorBoundary>
-              </div>
               <ErrorBoundary name="India News"><IndiaNewsMini limit={12} /></ErrorBoundary>
             </div>
           ) : <PanelSkeleton h={260} />}
@@ -737,10 +731,10 @@ export default function DashboardPage() {
         {/* Row 1: Global Market Overview Strip — immediate */}
         <ErrorBoundary name="Market Overview"><MarketOverviewStrip /></ErrorBoundary>
 
-        {/* Row 2: Daily Brief + Fear Radar — 500ms */}
+        {/* Row 2: Market Brain + Fear Radar — 500ms */}
         {phase >= 1 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 6 }}>
-            <ErrorBoundary name="Daily Brief"><DailyBrief /></ErrorBoundary>
+            <ErrorBoundary name="Market Brain"><MarketBrain /></ErrorBoundary>
             <ErrorBoundary name="Fear Radar"><FearRadar compact={false} /></ErrorBoundary>
           </div>
         ) : <PanelSkeleton h={120} />}
@@ -753,14 +747,9 @@ export default function DashboardPage() {
           </div>
         ) : <PanelSkeleton h={260} />}
 
-        {/* Row 4: Narrative Detector + News — 1000ms */}
+        {/* Row 4: News — 1000ms (the Narrative Detector beside it is now part of the Market Brain, row 2) */}
         {phase >= 2 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 380px) minmax(0, 1fr)', gap: 6, minHeight: 440 }}>
-            <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-              <ErrorBoundary name="Narrative Detector"><NarrativeDetector /></ErrorBoundary>
-            </div>
-            <ErrorBoundary name="News Panel"><NewsPanel limit={8} /></ErrorBoundary>
-          </div>
+          <ErrorBoundary name="News Panel"><NewsPanel limit={8} /></ErrorBoundary>
         ) : <PanelSkeleton h={280} />}
 
         {/* Row 5: Reddit + ISS + Earthquake + Weather — 1500ms */}

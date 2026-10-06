@@ -71,10 +71,16 @@ Evidence Engine (code only) ── candidate drivers, each with score · evidenc
 
 | Feature | Trigger | Cache | Calls/day max | Fallback |
 |---|---|---|---|---|
-| Morning brief (`/api/ai/brief`) | Dashboard load | Postgres, 24h per mode | 2 | last brief with "generated at" time |
-| Narratives (`/api/narratives`) | Dashboard load / ISR | Postgres, 8h | 3 | last narratives with time |
+| Market Brain prose (`lib/ai` `narrateBrain`) | Brain rebuild, only if `AI_PROVIDER` is set | Postgres, 4h per market | `AI_BRAIN_DAILY_LIMIT` per market (default 3) | deterministic brain text (always shown) |
+| Why-line narration (`lib/ai` `narrateExplanations`) | `/api/why/<market>`, only if `AI_PROVIDER` is set | Postgres, 2h | `AI_NARRATION_DAILY_LIMIT` (default 4) | deterministic why lines |
 | Per-stock deep dive (`/api/analyst/stock`) | Opening a deep dive | Postgres, 6h per ticker | on-demand pool | rule-based verdict, **ESTIMATE** |
 | ⚡ AI analyze (`/api/ai/analyze`) | User click | none | on-demand pool | 429 "quota reached" |
+
+Removed in Phase 3 (Market Brain, 2026-10-05):
+
+- **Morning brief (`/api/ai/brief`, 2 calls/day) and Narratives (`/api/narratives`, 3 calls/day).** Replaced by the
+  Market Brain (`lib/brain`), built in code from the evidence context; themes need ≥3 stories from ≥2 outlets plus a
+  related price move. Optional AI prose rewrites it (one call per market per window), off by default.
 
 Removed on 2026-10-05:
 
@@ -87,7 +93,8 @@ Removed on 2026-10-05:
 
 Real usage: the budget counters (`gemini_budget:<PT day>:<pool>`) show 11 scheduled and 10 on-demand attempts on
 2026-10-04, a deploy and testing day. With the analyst drain and headline batches gone, the remaining design
-maximum is **5 scheduled + ≤8 on-demand**, well under the free tier.
+maximum was **5 scheduled + ≤8 on-demand**; Phase 3 removes the 5 scheduled calls (brief + narratives), so with
+`AI_PROVIDER` unset the scheduled pool now makes **0** calls.
 
 ## How later phases use AI
 
