@@ -324,6 +324,8 @@ export async function getAllNewsCached() {
         idx === self.findIndex(t => t.title.slice(0, 60) === item.title.slice(0, 60))
       )
 
+      // Never cache an empty feed (see indiaNews): the route retries on the next request.
+      if (!unique.length) throw new Error('no news items')
       const sources = new Set(unique.map(u => u.source))
       const meta = {
         total: unique.length,

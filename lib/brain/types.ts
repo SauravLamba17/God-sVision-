@@ -16,6 +16,8 @@ export interface BrainQuote {
   source: Source
   at: number            // exchange time of the last trade, else fetch time
   score: number         // notability 0–1 (see engine.ts)
+  /** Theme moves: the size that counts as notable (% move; yields: basis points). */
+  min?: number
 }
 
 export interface BrainMover extends BrainQuote {
@@ -45,7 +47,9 @@ export interface Theme {
   stories: number       // distinct stories (near-duplicates merged)
   sources: number       // distinct outlets
   headlines: ThemeHeadline[]
-  moves: BrainQuote[]   // related price moves (≥1 required)
+  moves: BrainQuote[]   // the instruments the headlines are about, primary first (≥1 required); shown with real numbers
+  /** Price direction the headlines state (1 up, −1 down, 0 unclear): a move against it is never claimed. */
+  direction: 1 | -1 | 0
   tone: { positive: number; negative: number; neutral: number } // keyword estimate
 }
 

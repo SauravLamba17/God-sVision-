@@ -159,6 +159,11 @@ function namedAsSubject(h: Headline, id: string): boolean {
 // Price direction stated in a headline ("shares rise", "Sensex falls").
 const STATED_UP = /\b(rise[sn]?|rising|rose|gain(s|ed)?|jump(s|ed)?|surge[sd]?|soar\w*|rall(y|ies|ied)|climb(s|ed)?|advance[sd]?)\b/i
 const STATED_DOWN = /\b(fall(s|en|ing)?|fell|drop(s|ped)?|decline[sd]?|slump\w*|plunge[sd]?|tumble[sd]?|sink(s)?|sank|slide[s]?|slid|crash\w*|sell-?off)\b/i
+/** Price direction a headline states: 1 up, −1 down, 0 none or both. */
+export const statedDirection = (title: string): 1 | -1 | 0 => {
+  const up = STATED_UP.test(title), down = STATED_DOWN.test(title)
+  return up === down ? 0 : up ? 1 : -1
+}
 // Market terms an index headline must contain — the index's own market only
 // ("Wall Street's India hospital bet" is not about the Nifty).
 // Market-level only: "stocks"/"markets", not one company's "stock"/"share price".

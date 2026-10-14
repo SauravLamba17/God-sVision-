@@ -14,10 +14,12 @@ import './serverModules.ts'
 import fs from 'node:fs'
 import type { Explanation, MarketContext, Quote } from '../lib/evidence/types.ts'
 
-const { marketEvidence, symbolsEvidence, HERO_INDICES } = await import('../lib/evidence/index.ts')
+const { context, symbolsEvidence, HERO_INDICES, NEWS_PER_SIDE } = await import('../lib/evidence/index.ts')
+const { withTickerNews } = await import('../lib/evidence/context.ts')
 const { explain, isNotAReason } = await import('../lib/evidence/engine.ts')
 const { STRONG } = await import('../lib/evidence/summary.ts')
 const { buildBrain } = await import('../lib/brain/engine.ts')
+const { themeMovesText } = await import('../lib/brain/text.ts')
 const { MARKET_FEEDS, feedUrl, parseFeed } = await import('../lib/apis/marketNews.ts')
 
 const FIXED = (process.env.COMPARE_SYMBOLS ?? 'ACN,TSLA,TXN,AVGO,ORCL,NVDA,AAPL,MSFT,JPM,XOM').split(',')
@@ -27,14 +29,36 @@ const newsOf = (e: Explanation) => e.drivers.filter(d => d.type === 'news' || d.
 const ms = (t: number) => `${(performance.now() - t).toFixed(0)} ms`
 
 // ── Live context (cold: every loader fetches) ────────────────────────────────
+const cpuMs = (c: NodeJS.CpuUsage) => ((c.user + c.system) / 1000).toFixed(0)
 const cpu0 = process.cpuUsage(), t0 = performance.now()
-const { ctx } = await marketEvidence('US')
-console.log(`context with per-ticker news (cold): ${ms(t0)}, CPU ${((process.cpuUsage(cpu0).user + process.cpuUsage(cpu0).system) / 1000).toFixed(0)} ms (all inputs)`)
+const base = await context('US')
+console.log(`context without per-ticker news (cold): ${ms(t0)}, CPU ${cpuMs(process.cpuUsage(cpu0))} ms (all inputs)`)
+const movers = Object.values(base.quotes).sort((a, b) => b.changePct - a.changePct)
+const side = (n: number) => [...new Map([...movers.slice(0, n), ...movers.slice(-n)].map(q => [q.symbol, q])).values()]
+// Per-ticker news (one Google News search per ticker, cached 10 min): the old 5-per-side set
+// first, then the extra tickers NEWS_PER_SIDE=${NEWS_PER_SIDE} adds — each measured cold.
+const t5 = performance.now(), c5 = process.cpuUsage()
+const ctx5 = await withTickerNews(base, side(5))
+console.log(`per-ticker news, 5 per side: ${side(5).length} searches, ${ms(t5)}, CPU ${cpuMs(process.cpuUsage(c5))} ms`)
+const extra = side(NEWS_PER_SIDE).filter(q => !side(5).includes(q))
+const tx = performance.now(), cx = process.cpuUsage()
+await withTickerNews(base, extra)
+console.log(`per-ticker news, extra for ${NEWS_PER_SIDE} per side: +${extra.length} searches per 10 min per instance, ${ms(tx)}, CPU ${cpuMs(process.cpuUsage(cx))} ms`)
+const ctx = await withTickerNews(base, side(NEWS_PER_SIDE)) // all cache hits: production's marketEvidence context
 const fx = await symbolsEvidence('US', FIXED)
 
-const movers = Object.values(ctx.quotes).sort((a, b) => b.changePct - a.changePct)
-const targets = [...movers.slice(0, 10), ...movers.slice(-10)]
-const top10 = [...new Map(targets.map(q => [q.symbol, q])).values()].sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, 10)
+const targets = side(10)
+const top10 = [...targets].sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, 10)
+{
+  const s5 = top10.map(q => explain(q, 'stock', ctx5)), s10 = top10.map(q => explain(q, 'stock', ctx))
+  console.log(`\nPER-TICKER NEWS — top 10 movers, strong driver: 5 per side ${s5.filter(strong).length}/10 → ${NEWS_PER_SIDE} per side ${s10.filter(strong).length}/10`)
+  top10.forEach((q, i) => {
+    console.log(`  ${q.symbol.padEnd(5)} ${q.changePct.toFixed(2).padStart(6)}%  5/side  ${strong(s5[i]) ? 'STRONG' : 'weak  '} ${s5[i].summary}`)
+    if (s10[i].summary === s5[i].summary) return
+    console.log(`${' '.repeat(16)}${NEWS_PER_SIDE}/side ${strong(s10[i]) ? 'STRONG' : 'weak  '} ${s10[i].summary}`)
+    for (const d of newsOf(s10[i]).filter(d => d.score >= STRONG)) console.log(`${' '.repeat(20)}${d.score.toFixed(2)} "${d.evidence}" [${d.source.name}]`)
+  })
+}
 
 const feedOf = new Map(ctx.headlines.map(h => [h.title, h.feed]))
 const rows: { group: string; q: Quote; o: Explanation; n: Explanation }[] = []
@@ -81,12 +105,12 @@ const explanations = (c: MarketContext) => {
 }
 const tb = performance.now(); const bOld = buildBrain({ ctx: old(ctx), explanations: explanations(old(ctx)), status: 'compare' }); const brainOldMs = performance.now() - tb
 const tn = performance.now(); const bNew = buildBrain({ ctx, explanations: explanations(ctx), status: 'compare' }); const brainNewMs = performance.now() - tn
-const themeLine = (t: (typeof bNew.themes)[number]) => `${t.title} — ${t.stories} stories, ${t.sources} outlets, score ${t.score}`
+const themeLine = (t: (typeof bNew.themes)[number]) => `${t.title} — ${t.stories} stories, ${t.sources} outlets, score ${t.score}; ${themeMovesText(t)}`
 console.log(`\nUS THEMES old (${bOld.themes.length}): ${bOld.themes.map(themeLine).join(' | ') || 'none'}`)
 console.log(`US THEMES new (${bNew.themes.length}): ${bNew.themes.map(themeLine).join(' | ') || 'none'}`)
 const oldIds = new Set(bOld.themes.map(t => `${t.id}:${t.stories}`))
 for (const t of bNew.themes) if (!oldIds.has(`${t.id}:${t.stories}`)) {
-  console.log(`  ${t.title} (new or changed) — moves: ${t.moves.map(m => `${m.name} ${m.changePct.toFixed(1)}%`).join(', ')}`)
+  console.log(`  ${t.title} (new or changed) — ${themeMovesText(t)}`)
   for (const h of t.headlines) console.log(`    - ${h.title} [${h.source.name}; feed ${feedOf.get(h.title) ?? 'general'}]`)
 }
 

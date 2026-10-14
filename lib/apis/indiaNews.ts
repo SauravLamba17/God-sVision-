@@ -78,6 +78,8 @@ export async function getIndiaNewsCached() {
     // engine needs the whole session's stories. The route still serves 40.
     const cutoff = Date.now() - 48 * 3600_000
     const articles = all.filter(a => new Date(a.publishedAt).getTime() >= cutoff).slice(0, 200)
+    // Never cache an empty list: throwing lets readThrough serve the last good one, or the route answer no-store and retry next time.
+    if (!articles.length) throw new Error('no India news items')
     return { articles, total: articles.length, fetchedAt: Date.now() }
   }, 60)
 }

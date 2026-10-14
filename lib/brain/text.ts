@@ -2,18 +2,23 @@
 // Engine: "moved with", "coincides with", "related"; never "because"/"caused".
 // No predictions, price targets or advice. Third-party titles (headlines, event
 // and calendar names) are quoted in “…” and excluded from the wording check.
-import type { Brain, BrainQuote } from './types.ts'
+import type { Brain, BrainQuote, Theme } from './types.ts'
 import { BANNED } from '../evidence/summary.ts'
 import { fmtPct } from '../evidence/engine.ts'
 import { signed } from '../format.ts'
-import { MARKET_CONF } from './engine.ts'
+import { MARKET_CONF, moveClaim } from './engine.ts'
 
 /** Forward-looking or advice wording our own text must never use. */
 export const PREDICTIVE = /\b(will|would|should|expects?|expected|expecting|likely|forecasts?|predict\w*|price targets?|buy|sell|recommend\w*|could|might|may|poised|set to|outlook|opportunit\w*)\b/i
 
 export const SECTIONS = ['state', 'sectors', 'movers', 'crossAsset', 'events', 'themes', 'upcoming'] as const
 export type SectionKey = typeof SECTIONS[number]
-export interface BrainText { summary: string; sections: Record<SectionKey, string> }
+export interface BrainText {
+  summary: string
+  sections: Record<SectionKey, string>
+  /** Per theme id: its related-move phrase, from live numbers ("coincides with …" only when it may be claimed). */
+  themeMoves: Record<string, string>
+}
 
 const pct = (q: Pick<BrainQuote, 'changePct'>) => fmtPct(q.changePct)
 const short = (name: string) => name.replace(/ \((avg|[\d]+ stocks)[^)]*\)$/, '')
@@ -25,6 +30,17 @@ function crossItem(q: BrainQuote): string {
     return `${q.name} ${signed(bp, 0, '−')}bp`
   }
   return `${q.name} ${pct(q)}`
+}
+
+/** "coincides with Crude oil (WTI) +2.1%" — or, for a small move or one against the headlines,
+ *  the real number labelled as such: "related: Crude oil (WTI) +0.4% (small move)". */
+export function themeMovesText(t: Theme): string {
+  const ms = t.moves.slice(0, 3).map(q => ({ q, c: moveClaim(q, t.direction), s: crossItem({ ...q, name: short(q.name) }) }))
+  const w = ms.filter(m => m.c === 'with'), o = ms.filter(m => m.c !== 'with')
+  return [
+    w.length ? `coincides with ${w.map(m => m.s).join(', ')}` : '',
+    o.length ? `${w.length ? 'also' : 'related:'} ${o.map(m => `${m.s} (${m.c === 'small' ? 'small move' : 'opposite to the headlines'})`).join(', ')}` : '',
+  ].filter(Boolean).join('; ')
 }
 
 function timeLabel(t: number | null, b: Brain): string {
@@ -75,8 +91,8 @@ export function renderBrain(b: Brain): BrainText {
 
   // ── themes
   const themes = b.themes.length
-    ? b.themes.map(t => `${t.title}: ${t.stories} related headlines from ${t.sources} sources; coincides with ${t.moves.slice(0, 3).map(q => `${short(q.name)} ${pct(q)}`).join(', ')}.`).join(' ')
-    : 'No theme met the bar (≥3 stories from ≥2 sources plus a related price move).'
+    ? b.themes.map(t => `${t.title}: ${t.stories} related headlines from ${t.sources} sources; ${themeMovesText(t)}.`).join(' ')
+    : 'No theme met the bar (≥3 stories from ≥2 sources plus a quoted instrument they are about).'
 
   // ── upcoming
   const upcoming = b.upcoming.length
@@ -93,8 +109,9 @@ export function renderBrain(b: Brain): BrainText {
     b.themes[0] ? `Most covered theme: ${b.themes[0].title} (${b.themes[0].stories} stories).` : '',
   ].filter(Boolean).join(' ')
 
-  const out: BrainText = { summary, sections: { state, sectors, movers, crossAsset, events, themes, upcoming } }
-  for (const t of [summary, ...Object.values(out.sections)]) assertWording(t)
+  const themeMoves = Object.fromEntries(b.themes.map(t => [t.id, themeMovesText(t)]))
+  const out: BrainText = { summary, sections: { state, sectors, movers, crossAsset, events, themes, upcoming }, themeMoves }
+  for (const t of [summary, ...Object.values(out.sections), ...Object.values(themeMoves)]) assertWording(t)
   return out
 }
 

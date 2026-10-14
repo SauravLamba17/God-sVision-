@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server'
 import { getAllNewsCached } from '@/lib/apis/news'
+import { newsCacheHeaders } from '@/lib/cache'
 
-export const revalidate = 300
+// Dynamic, not ISR (see /api/india/news): a non-empty feed is shared by the CDN for
+// 5 min; an empty one is never cached, so the next request retries.
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
     const { data, source } = await getAllNewsCached()
-    return NextResponse.json({ data: data.items, source, meta: data.meta })
+    return NextResponse.json({ data: data.items, source, meta: data.meta }, { headers: newsCacheHeaders(data.items.length) })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg, data: [], source: 'unavailable', meta: { total: 0, sources: 0, lastUpdated: new Date().toISOString(), feedNames: [] } })
+    return NextResponse.json({ error: msg, data: [], source: 'unavailable', meta: { total: 0, sources: 0, lastUpdated: new Date().toISOString(), feedNames: [] } }, { headers: newsCacheHeaders(0) })
   }
 }

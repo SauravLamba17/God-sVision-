@@ -377,6 +377,29 @@ await import('./serverModules.ts')
     JSON.stringify(g.map(i => [i.title, i.source])))
 }
 
+// ── 2d. News routes never cache an empty result (the real /api/india/news handler, fetch stubbed) ──
+{
+  const realFetch = globalThis.fetch
+  let calls = 0, body = '<rss><channel></channel></rss>'
+  globalThis.fetch = (async () => { calls++; return new Response(body, { status: 200, headers: { 'content-type': 'application/rss+xml' } }) }) as typeof fetch
+  try {
+    const { GET } = await import('../app/api/india/news/route.ts')
+    const r1 = await GET(), j1 = await r1.json(), c1 = calls
+    const r2 = await GET(), c2 = calls
+    check('news route: 0 upstream items → no-store, and the next request fetches again (not cached)',
+      j1.data.articles.length === 0 && r1.headers.get('cache-control') === 'no-store' && r2.headers.get('cache-control') === 'no-store' && c1 > 0 && c2 === 2 * c1,
+      `cache-control ${r1.headers.get('cache-control')}; upstream calls ${c1} then ${c2}`)
+    body = `<rss><channel><item><title>Sensex ends higher as banks gain</title><link>https://example.com/a</link><pubDate>${new Date(Date.now() - H).toUTCString()}</pubDate></item></channel></rss>`
+    const r3 = await GET(), j3 = await r3.json(), c3 = calls
+    const r4 = await GET(), c4 = calls
+    check('news route: with items → shared by the CDN for 5 min and cached server-side (no refetch)',
+      j3.data.articles.length === 1 && /s-maxage=300/.test(r3.headers.get('cache-control') ?? '') && c3 > c2 && c4 === c3 && /s-maxage=300/.test(r4.headers.get('cache-control') ?? ''),
+      `cache-control ${r3.headers.get('cache-control')}; upstream calls ${c2} → ${c3} → ${c4}`)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+}
+
 // ── 3. Wording rule ──────────────────────────────────────────────────────────
 const texts = all.flatMap(e => [e.summary, ...e.drivers.flatMap(d => [d.label, d.evidence])])
 const bad = texts.filter(t => BANNED.test(t) || /\bbecause\b|\bcaused?\b/i.test(t))

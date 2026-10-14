@@ -12,19 +12,21 @@
 //   volatility index    min(|move| / 15%, 1)       notable at ≥ 5%
 //   world event         earthquake M6 0.3 / M6.5 0.4 / M7+ 0.55 (≤48h); outbreak report 0.15 (≤14 days);
 //                       × 0.6 when it touches no listed company or commodity
-//   theme               0.5·min(stories/8, 1) + 0.2·min(sources/4, 1) + 0.3·min(|largest related move|/3%, 1)
+//   theme               0.5·min(stories/8, 1) + 0.2·min(sources/4, 1) + 0.3·min(|largest claimable move|/3%, 1)
+//                       (claimable = notable and in the direction the headlines state; see moveClaim)
 //   upcoming            macro high 0.8 / medium 0.5 / low 0.2; earnings 0.6 (graph company) / 0.4
 //
 // THEMES replace AI "narratives". A theme groups the session's headlines by a
 // shared graph entity (sector, commodity, country, currency, or a cluster of
 // linked companies). It needs ≥3 distinct stories (near-duplicates merged) from
-// ≥2 different outlets AND ≥1 related price move. Nothing is invented from a
-// single story; every theme lists its headlines with links.
+// ≥2 different outlets AND a quoted instrument those stories are about (see
+// themeMoves). Nothing is invented from a single story; every theme lists its
+// headlines with links.
 
 import type { Explanation, Headline, MarketContext, Market, Quote } from '../evidence/types.ts'
 import type { Brain, BrainEvent, BrainMover, BrainQuote, Source, Theme, Upcoming } from './types.ts'
 import { allEntities, getEntity, getLinks } from '../graph/index.ts'
-import { isMarketNews, sameStory, sessionWindow, zoned } from '../evidence/engine.ts'
+import { isMarketNews, sameStory, sessionWindow, statedDirection, zoned } from '../evidence/engine.ts'
 import { STRONG } from '../evidence/summary.ts'
 import { isSameMarketDay, needsRecompute } from '../evidence/freshness.ts'
 
@@ -105,77 +107,116 @@ function themeKeys(h: Headline, market: Market): { id: string; kind: Theme['kind
   return keys
 }
 
-/** Related price moves for a theme (empty → the theme is not shown). */
-function relatedMoves(id: string, kind: Theme['kind'], ctx: MarketContext, inSectors: ReturnType<typeof indiaSectors>): BrainQuote[] {
-  const out: BrainQuote[] = []
-  const stock = (sym: string, min: number) => { const q = ctx.quotes[sym]; if (q && Math.abs(q.changePct) >= min) out.push(bq(q, Math.abs(q.changePct) / 5, YAHOO, getEntity(sym)?.name ?? q.name)) }
-  if (kind === 'sector') {
+// ── Theme moves: the instruments a theme's headlines are about ─────────────────
+// Primary instrument first (crude oil for an oil theme — WTI in the US, Brent in
+// India — never a different commodity), always with its real number. `min` is the
+// size that counts as notable; the text says "coincides with" only for a notable
+// move in the direction the headlines state (moveClaim), else it shows the number
+// and labels it "small move" / "opposite to the headlines".
+type InSectors = ReturnType<typeof indiaSectors>
+const YIELDS = new Set(['^TNX', '^IRX'])
+const withMin = (q: BrainQuote, min: number): BrainQuote => ({ ...q, min })
+
+/** The quote for a graph entity the app holds, or null. */
+function instrument(id: string, ctx: MarketContext, inSectors: InSectors): BrainQuote | null {
+  const e = getEntity(id)
+  if (!e) return null
+  if (e.type === 'commodity') { const c = ctx.commodities[id]; return c ? withMin(bq(c, Math.abs(c.changePct) / 3, { name: `${c.name} futures (Yahoo Finance)` }), 1) : null }
+  if (e.type === 'currency') { const c = ctx.currencies[id]; return c ? withMin(bq(c, Math.abs(c.changePct) / 0.8), 0.25) : null }
+  if (e.type === 'company') { const q = ctx.quotes[id]; return q ? withMin(bq(q, Math.abs(q.changePct) / 5, YAHOO, e.name), 1.5) : null }
+  if (e.type === 'sector') {
     const etf = ctx.sectorEtfs[id]
-    if (etf && Math.abs(etf.changePct) >= 0.5) out.push(bq(etf, Math.abs(etf.changePct) / 2, { name: `${etf.etf} (Yahoo Finance)` }, `${getEntity(id)?.name ?? id} (${etf.etf})`))
+    if (etf) return withMin(bq(etf, Math.abs(etf.changePct) / 2, { name: `${etf.etf} (Yahoo Finance)` }, `${e.name} (${etf.etf})`), 0.5)
     const avg = inSectors.find(s => s.id === id)
-    if (ctx.market === 'IN' && avg && Math.abs(avg.changePct) >= 0.5) {
-      out.push({ symbol: id, name: `${avg.name} (avg of ${avg.n} Nifty 50 stocks)`, changePct: avg.changePct, source: { name: 'Nifty 50 constituents (Yahoo Finance)' }, at: avg.at, score: r2(clamp01(Math.abs(avg.changePct) / 2)) })
-    }
-    for (const q of Object.values(ctx.quotes)) if (getEntity(q.symbol)?.sector === id) stock(q.symbol, 2)
-  } else if (kind === 'commodity') {
-    const c = ctx.commodities[id]
-    if (c && Math.abs(c.changePct) >= 1) out.push(bq(c, Math.abs(c.changePct) / 3, { name: `${c.name} futures (Yahoo Finance)` }))
-    for (const v of getLinks(id)) if (v.direction === 'in' && v.link.type === 'exposed_to') stock(v.other.id, 2)
-  } else if (kind === 'country') {
-    for (const v of getLinks(id)) {
-      if (v.direction === 'in' && v.link.type === 'benchmark_of') {
-        for (const sym of v.other.symbols ?? []) { const q = ctx.globalIndices[sym] ?? ctx.indices[sym]; if (q && Math.abs(q.changePct) >= 0.5) out.push(bq(q, Math.abs(q.changePct) / 2)) }
-      }
-      if (v.direction === 'in' && v.link.type === 'currency_of') { const c = ctx.currencies[v.other.id]; if (c && Math.abs(c.changePct) >= 0.25) out.push(bq(c, Math.abs(c.changePct) / 0.8)) }
-    }
-    for (const e of allEntities()) if (e.type === 'company' && e.country === id) stock(e.id, 2)
-  } else if (kind === 'currency') {
-    const c = ctx.currencies[id]
-    if (c && Math.abs(c.changePct) >= 0.25) out.push(bq(c, Math.abs(c.changePct) / 0.8))
-  } else if (kind === 'cluster') {
-    const hub = id.slice('cluster:'.length)
-    for (const sym of [hub, ...getLinks(hub).filter(v => PEER_LINKS.has(v.link.type)).map(v => v.other.id)]) stock(sym, 1.5)
+    if (ctx.market === 'IN' && avg) return { symbol: id, name: `${avg.name} (avg of ${avg.n} Nifty 50 stocks)`, changePct: avg.changePct, source: { name: 'Nifty 50 constituents (Yahoo Finance)' }, at: avg.at, score: r2(clamp01(Math.abs(avg.changePct) / 2)), min: 0.5 }
   }
+  return null
+}
+
+/** Graph entities passing `pred` named in the stories, most-named first. */
+function named(stories: Headline[], pred: (id: string) => boolean): string[] {
+  const n = new Map<string, number>()
+  for (const h of stories) for (const id of new Set(h.entities)) if (pred(id)) n.set(id, (n.get(id) ?? 0) + 1)
+  return [...n].sort((a, b) => b[1] - a[1]).map(([id]) => id)
+}
+const typeOf = (id: string) => getEntity(id)?.type
+function quotesFor(ids: string[], ctx: MarketContext, inSectors: InSectors): BrainQuote[] {
   const seen = new Set<string>()
-  return out.filter(q => !seen.has(q.symbol) && seen.add(q.symbol)).sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, 4)
+  return ids.map(id => instrument(id, ctx, inSectors)).filter((q): q is BrainQuote => !!q && !seen.has(q.symbol) && !!seen.add(q.symbol))
+}
+/** A country's own market: its benchmark index and currency. */
+function placeQuotes(place: string, ctx: MarketContext, inSectors: InSectors): BrainQuote[] {
+  const out: BrainQuote[] = []
+  for (const v of getLinks(place)) {
+    if (v.direction !== 'in') continue
+    if (v.link.type === 'benchmark_of') {
+      const sym = (v.other.symbols ?? []).find(s => ctx.globalIndices[s] ?? ctx.indices[s])
+      if (sym) { const q = ctx.globalIndices[sym] ?? ctx.indices[sym]; out.push(withMin(bq(q, Math.abs(q.changePct) / 2), 0.5)) }
+    }
+    if (v.link.type === 'currency_of') out.push(...quotesFor([v.other.id], ctx, inSectors))
+  }
+  return out
+}
+
+/** "with": notable and in the headlines' direction; "small": below its notable size; "opposite": against the headlines. Uses live numbers. */
+export function moveClaim(q: BrainQuote, direction: number): 'with' | 'small' | 'opposite' {
+  const size = YIELDS.has(q.symbol) ? Math.abs((q.change ?? 0) * 100) : Math.abs(q.changePct)
+  if (size < (q.min ?? 0)) return 'small'
+  return direction && Math.sign(q.changePct) !== direction ? 'opposite' : 'with'
+}
+
+/** Price direction the stories state: 1 / −1 when ≥2 say so and outnumber the other way 2:1, else 0. */
+function storiesDirection(stories: Headline[]): 1 | -1 | 0 {
+  let up = 0, down = 0
+  for (const h of stories) { const d = statedDirection(h.title); if (d > 0) up++; else if (d < 0) down++ }
+  return up >= 2 && up >= 2 * down ? 1 : down >= 2 && down >= 2 * up ? -1 : 0
 }
 
 // ── Topics for country / region themes (fixed list + graph entities) ──────────
 // A country or region theme is titled "<place> — <topic>" and needs its own
-// ≥3 stories from ≥2 outlets plus a related move (the place's market/currency, or the topic's own).
-function dedupeMoves(ms: BrainQuote[]): BrainQuote[] {
-  const seen = new Set<string>()
-  return ms.filter(q => !seen.has(q.symbol) && seen.add(q.symbol)).sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, 4)
-}
+// ≥3 stories from ≥2 outlets plus a quoted instrument those stories are about:
+// the topic's own instrument first, then the place's market (index, currency).
+interface Topic { id: string; label: (place: string) => string; match: (h: Headline) => boolean; instruments: (stories: Headline[], place: string, ctx: MarketContext, inSectors: InSectors) => BrainQuote[] }
 const hasEntity = (h: Headline, pred: (id: string) => boolean) => h.entities.some(pred)
-const sectorMove = (sectorId: string, ctx: MarketContext, inSectors: ReturnType<typeof indiaSectors>): BrainQuote[] => {
-  const etf = ctx.sectorEtfs[sectorId]
-  if (etf && Math.abs(etf.changePct) >= 0.5) return [bq(etf, Math.abs(etf.changePct) / 2, { name: `${etf.etf} (Yahoo Finance)` }, `${getEntity(sectorId)?.name ?? sectorId} (${etf.etf})`)]
-  const avg = inSectors.find(s => s.id === sectorId)
-  if (ctx.market === 'IN' && avg && Math.abs(avg.changePct) >= 0.5) return [{ symbol: sectorId, name: `${avg.name} (avg of ${avg.n} Nifty 50 stocks)`, changePct: avg.changePct, source: { name: 'Nifty 50 constituents (Yahoo Finance)' }, at: avg.at, score: r2(clamp01(Math.abs(avg.changePct) / 2)) }]
-  return []
-}
-interface Topic { id: string; label: (place: string) => string; match: (h: Headline) => boolean; moves: (ctx: MarketContext, inSectors: ReturnType<typeof indiaSectors>) => BrainQuote[] }
 export const TOPICS: Topic[] = [
   { id: 'rates', label: p => (p === 'country:us' ? 'Fed / rates' : 'rates / central bank'),
     match: h => /\b(Fed|FOMC|Federal Reserve|central bank|RBI|ECB|BOJ|Bank of (England|Japan)|PBOC|rate (cut|hike)s?|interest rates?|policy rate|repo rate|rate path|yields?|bonds?|Treasur(y|ies))\b/i.test(h.title),
-    moves: ctx => Object.values(ctx.rates ?? {}).filter(y => Math.abs((y.change ?? 0) * 100) >= 5).map(y => bq(y, Math.abs((y.change ?? 0) * 100) / 15)) },
+    instruments: (_s, _p, ctx) => Object.values(ctx.rates ?? {}).map(y => withMin(bq(y, Math.abs((y.change ?? 0) * 100) / 15), 5)) },
   { id: 'trade', label: () => 'tariffs / trade',
     match: h => /\b(tariffs?|trade (deal|war|talks|pact|deficit|surplus|tensions?)|exports?|imports?|sanctions?|customs dut(y|ies)|export curbs?)\b/i.test(h.title),
-    moves: () => [] },
+    instruments: () => [] },
   { id: 'tech', label: () => 'tech',
     match: h => /\b(tech|technology|AI|chips?|chipmakers?|semiconductors?|software|cloud|data cent(er|re)s?)\b/i.test(h.title) || hasEntity(h, id => id === 'sector:information-technology' || getEntity(id)?.sector === 'sector:information-technology'),
-    moves: (ctx, s) => sectorMove('sector:information-technology', ctx, s) },
+    instruments: (_s, _p, ctx, s) => quotesFor(['sector:information-technology'], ctx, s) },
   { id: 'energy', label: () => 'oil / energy',
     match: h => /\b(oil|crude|OPEC\+?|Brent|WTI|natural gas|LNG|energy|fuel|refiner(y|ies|s)?)\b/i.test(h.title) || hasEntity(h, id => id === 'commodity:crude-oil' || id === 'commodity:natural-gas' || id === 'sector:energy'),
-    moves: (ctx, s) => [...['commodity:crude-oil', 'commodity:natural-gas'].map(id => ctx.commodities[id]).filter((c): c is Quote => !!c && Math.abs(c.changePct) >= 1).map(c => bq(c, Math.abs(c.changePct) / 3, { name: `${c.name} futures (Yahoo Finance)` })), ...sectorMove('sector:energy', ctx, s)] },
+    // One commodity: crude oil, unless more stories name natural gas than oil; neither named → the energy sector.
+    instruments: (stories, _p, ctx, s) => {
+      const n = (id: string) => stories.filter(h => h.entities.includes(id)).length
+      const oil = n('commodity:crude-oil'), gas = n('commodity:natural-gas')
+      return quotesFor([gas > oil ? 'commodity:natural-gas' : oil ? 'commodity:crude-oil' : 'sector:energy'], ctx, s)
+    } },
   { id: 'economy', label: () => 'economy / inflation',
     match: h => /\b(inflation|CPI|jobs|payrolls|unemployment|GDP|recession|economy|economic growth|consumer spending|PMI|retail sales)\b/i.test(h.title),
-    moves: () => [] },
+    instruments: () => [] },
   { id: 'currency', label: () => 'currency',
     match: h => /\b(dollar|rupee|yen|yuan|renminbi|euro|sterling|currency|forex)\b/i.test(h.title) || hasEntity(h, id => getEntity(id)?.type === 'currency'),
-    moves: ctx => Object.values(ctx.currencies).filter(c => Math.abs(c.changePct) >= 0.25).map(c => bq(c, Math.abs(c.changePct) / 0.8)) },
+    instruments: (stories, place, ctx, s) => { const c = named(stories, id => typeOf(id) === 'currency'); return c.length ? quotesFor(c, ctx, s) : placeQuotes(place, ctx, s).filter(q => !q.symbol.startsWith('^')) } },
 ]
+
+/** The instruments a theme's stories are about, primary first (empty → the theme is not shown). */
+function themeMoves(id: string, kind: Theme['kind'], stories: Headline[], ctx: MarketContext, inSectors: InSectors): BrainQuote[] {
+  const companies = (pred: (id: string) => boolean) => named(stories, x => typeOf(x) === 'company' && pred(x))
+  if (kind === 'sector') return quotesFor([id, ...companies(x => getEntity(x)?.sector === id)], ctx, inSectors)
+  if (kind === 'commodity') return quotesFor([id, ...companies(() => true)], ctx, inSectors)
+  if (kind === 'currency') return quotesFor([id], ctx, inSectors)
+  if (kind === 'cluster') {
+    const hub = id.slice('cluster:'.length)
+    const members = new Set([hub, ...getLinks(hub).filter(v => PEER_LINKS.has(v.link.type)).map(v => v.other.id)])
+    return quotesFor(companies(x => members.has(x)), ctx, inSectors)
+  }
+  return []
+}
 
 export function buildThemes(ctx: MarketContext, win: { start: number; end: number }, inSectors = indiaSectors(ctx.quotes)): Theme[] {
   const groups = new Map<string, { kind: Theme['kind']; hs: Headline[] }>()
@@ -190,18 +231,21 @@ export function buildThemes(ctx: MarketContext, win: { start: number; end: numbe
     }
   }
   const themes: (Theme & { ids: Set<number> })[] = []
-  /** A theme from these stories, or null if it misses the bar (≥3 stories, ≥2 outlets, ≥1 related move). */
+  /** A theme from these stories, or null if it misses the bar (≥3 stories, ≥2 outlets, ≥1 quoted related instrument). */
   const make = (id: string, kind: Theme['kind'], stories: Headline[], moves: BrainQuote[], title: string, topic?: string) => {
     const sources = new Set(stories.map(h => outletKey(h.source)))
     if (stories.length < 3 || sources.size < 2 || !moves.length) return
+    const direction = storiesDirection(stories)
+    // Only a move the text may claim (notable, headlines' direction) adds to the score.
+    const claimed = moves.filter(q => moveClaim(q, direction) === 'with').map(q => Math.abs(q.changePct))
     const tone = { positive: 0, negative: 0, neutral: 0 }
     for (const h of stories) tone[h.sentiment === 'BULLISH' ? 'positive' : h.sentiment === 'BEARISH' ? 'negative' : 'neutral']++
     themes.push({
-      id, kind, topic, title,
-      score: r2(0.5 * Math.min(stories.length / 8, 1) + 0.2 * Math.min(sources.size / 4, 1) + 0.3 * Math.min(Math.abs(moves[0].changePct) / 3, 1)),
+      id, kind, topic, title, direction,
+      score: r2(0.5 * Math.min(stories.length / 8, 1) + 0.2 * Math.min(sources.size / 4, 1) + 0.3 * Math.min(Math.max(0, ...claimed) / 3, 1)),
       stories: stories.length, sources: sources.size,
       headlines: stories.slice(0, 8).map(h => ({ title: h.title, source: { name: h.source, url: h.url }, at: h.publishedAt, tone: h.sentiment })),
-      moves, tone, ids: new Set(stories.map(h => h.id)),
+      moves: moves.slice(0, 4), tone, ids: new Set(stories.map(h => h.id)),
     })
   }
   for (const [id, { kind, hs }] of groups) {
@@ -212,11 +256,11 @@ export function buildThemes(ctx: MarketContext, win: { start: number; end: numbe
     if (kind === 'country' || kind === 'region') {
       // A place alone is too broad ("United States"): split by the specific shared
       // topic in its headlines; a topic needs the same bar on its own, else no theme.
-      const placeMoves = relatedMoves(id, kind, ctx, inSectors)
       for (const t of TOPICS) {
         const ts = stories.filter(h => t.match(h))
-        const moves = dedupeMoves([...t.moves(ctx, inSectors), ...placeMoves])
-        make(`${id}#${t.id}`, kind, ts, moves, `${place?.name ?? id} — ${t.label(id)}`, t.id)
+        if (ts.length < 3) continue
+        const own = t.instruments(ts, id, ctx, inSectors), market = t.id === 'currency' ? [] : placeQuotes(id, ctx, inSectors)
+        make(`${id}#${t.id}`, kind, ts, [...own, ...market.filter(q => !own.some(o => o.symbol === q.symbol))], `${place?.name ?? id} — ${t.label(id)}`, t.id)
       }
       continue
     }
@@ -226,7 +270,7 @@ export function buildThemes(ctx: MarketContext, win: { start: number; end: numbe
       if (companies.size < 2) continue
     }
     const hub = kind === 'cluster' ? getEntity(id.slice(8)) : place
-    make(id, kind, stories, relatedMoves(id, kind, ctx, inSectors), kind === 'cluster' ? `${hub?.name ?? id} & linked companies` : hub?.name ?? id)
+    make(id, kind, stories, themeMoves(id, kind, stories, ctx, inSectors), kind === 'cluster' ? `${hub?.name ?? id} & linked companies` : hub?.name ?? id)
   }
   // Keep the strongest; drop a theme whose stories are ≥70% inside a stronger one.
   const kept: typeof themes = []

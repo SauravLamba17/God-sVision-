@@ -4,7 +4,6 @@ import { useMode } from '@/lib/context/ModeContext'
 import type { BrainResponse } from '@/lib/brain'
 import type { SectionKey } from '@/lib/brain/text'
 import type { Theme } from '@/lib/brain/types'
-import { pct } from '@/lib/format'
 
 // Market Brain: one evidence-built picture of the market (replaces the AI Morning
 // Brief and the AI Narrative Detector). Text is rendered server-side from the
@@ -22,7 +21,7 @@ const badge = (label: string, color: string, title: string) => (
   <span title={title} style={{ fontSize: 'var(--fs-badge)', fontWeight: 700, letterSpacing: '0.06em', padding: '0 5px', border: `1px solid ${color}66`, color, borderRadius: 2 }}>{label}</span>
 )
 
-function ThemeRow({ t, fmt }: { t: Theme; fmt: (n: number) => string }) {
+function ThemeRow({ t, moves, fmt }: { t: Theme; moves?: string; fmt: (n: number) => string }) {
   const [open, setOpen] = useState(false)
   return (
     <div style={{ borderTop: '1px solid #0d1526', padding: '4px 0' }}>
@@ -31,9 +30,9 @@ function ThemeRow({ t, fmt }: { t: Theme; fmt: (n: number) => string }) {
         <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{open ? '▾' : '▸'}</span>
         <span style={{ fontWeight: 700, color: 'var(--text-accent)', whiteSpace: 'nowrap' }}>{t.title}</span>
         <span style={{ flex: 1, minWidth: 0, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {t.stories} headlines · {t.sources} sources · coincides with {t.moves.slice(0, 3).map(m => `${m.name.replace(/ \((avg|\d+ stocks)[^)]*\)$/, '')} ${pct(m.changePct, 1, '−')}`).join(', ')}
+          {t.stories} headlines · {t.sources} sources{moves ? ` · ${moves}` : ''}
         </span>
-        <span title="Theme score: coverage (stories, sources) and size of the related move" style={{ fontSize: 'var(--fs-badge)', color: 'var(--text-muted)' }}>{t.score.toFixed(2)}</span>
+        <span title="Theme score: coverage (stories, sources) and size of a related move in the headlines' direction" style={{ fontSize: 'var(--fs-badge)', color: 'var(--text-muted)' }}>{t.score.toFixed(2)}</span>
       </button>
       {open && (
         <div style={{ margin: '4px 0 2px 16px', display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -125,7 +124,7 @@ export default function MarketBrain() {
               </button>
               {open[k] && (
                 k === 'themes' && data.brain.themes.length
-                  ? <div style={{ marginTop: 2 }}>{data.brain.themes.map(t => <ThemeRow key={t.id} t={t} fmt={fmt} />)}</div>
+                  ? <div style={{ marginTop: 2 }}>{data.brain.themes.map(t => <ThemeRow key={t.id} t={t} moves={data.text.themeMoves?.[t.id]} fmt={fmt} />)}</div>
                   : <div style={{ marginTop: 2, color: 'var(--text-secondary)', lineHeight: 1.6, overflowWrap: 'anywhere' }}>{data.text.sections[k]}</div>
               )}
             </div>

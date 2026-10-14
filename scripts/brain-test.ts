@@ -5,8 +5,8 @@
  *  7. CPU per build   8. Live: both markets via a LOCAL server (shared throwaway
  *     account, see liveAccount.ts; `npm run test:brain -- --cleanup` deletes it).
  */
-import { buildBrain, buildThemes, outletKey, rebuildReason, withLive } from '../lib/brain/engine.ts'
-import { renderBrain, assertWording, PREDICTIVE, SECTIONS } from '../lib/brain/text.ts'
+import { buildBrain, buildThemes, outletKey, rebuildReason, TOPICS, withLive } from '../lib/brain/engine.ts'
+import { renderBrain, assertWording, PREDICTIVE, SECTIONS, themeMovesText } from '../lib/brain/text.ts'
 import { validBrainNarration } from '../lib/brain/narration.ts'
 import type { Brain } from '../lib/brain/types.ts'
 import { explain, fmtPct, isMarketNews } from '../lib/evidence/engine.ts'
@@ -192,8 +192,46 @@ const render = (b: Brain) => { const t = renderBrain(b); allTexts.push(t.summary
     headline('Crude oil jumps after OPEC+ output cut', 1, 'Reuters'),
     headline('Refiners face higher crude costs this quarter', 2, 'CNBC'),
     headline('Oil prices lift energy shares across Asia', 3, 'Bloomberg'),
-  ], { commodities: { 'commodity:crude-oil': q('CL=F', 0.2, 'Crude oil') } })
-  check('themes: no related price move → no theme', noMove.length === 0, JSON.stringify(noMove.map(t => t.title)))
+  ], { commodities: { 'commodity:crude-oil': q('CL=F', 0.2, 'Crude oil (WTI)') } })
+  const noQuote = themesOf([
+    headline('Crude oil jumps after OPEC+ output cut', 1, 'Reuters'),
+    headline('Refiners face higher crude costs this quarter', 2, 'CNBC'),
+    headline('Oil prices lift energy shares across Asia', 3, 'Bloomberg'),
+  ], { commodities: {} })
+  const smallText = noMove[0] ? themeMovesText(noMove[0]) : ''
+  check('themes: a small move shows its real number labelled "small move", never "coincides with"; no quoted instrument → no theme',
+    noMove[0]?.moves[0]?.symbol === 'CL=F' && smallText === 'related: Crude oil (WTI) +0.2% (small move)' && noQuote.length === 0,
+    `${smallText} | ${JSON.stringify(noQuote.map(t => t.title))}`)
+
+  // From the live Part A run: oil stories showed "Natural gas −2.7%". An oil theme shows crude oil, whatever its size.
+  const oilStories = [
+    headline('Oil prices rise as Iran deploys new tactics to target tankers', 1, 'Reuters (Google News)'),
+    headline('Brent gains more than 4% on U.S.-Iran tensions', 2, 'WSJ (Google News)'),
+    headline('Oil prices climb as Iran threatens more tanker attacks', 3, 'CNBC'),
+  ]
+  const oilWith = (crude: number) => themesOf(oilStories, { commodities: { 'commodity:crude-oil': q('CL=F', crude, 'Crude oil (WTI)'), 'commodity:natural-gas': q('NG=F', -2.6, 'Natural gas') } })
+  const [small, opposite, moved] = [oilWith(0.4), oilWith(-1.8), oilWith(2.1)]
+  const texts = (ts: typeof small) => ts.map(t => `${t.title}: ${themeMovesText(t)}`)
+  const all3 = [small, opposite, moved].flat()
+  check('themes: oil stories + natural gas −2.6% + crude +0.4% → shows crude oil +0.4% (small move), never natural gas',
+    small.length >= 1 && small.every(t => t.direction === 1 && t.moves[0].symbol === 'CL=F' && themeMovesText(t) === 'related: Crude oil (WTI) +0.4% (small move)')
+      && all3.every(t => !t.moves.some(m => m.symbol === 'NG=F') && !/Natural gas/.test(themeMovesText(t))), texts(small).join(' | '))
+  check('themes: crude moving against the headlines is shown but not claimed; a notable move with them is "coincides with"',
+    opposite.every(t => themeMovesText(t) === 'related: Crude oil (WTI) −1.8% (opposite to the headlines)')
+      && moved.every(t => themeMovesText(t) === 'coincides with Crude oil (WTI) +2.1%') && moved[0]?.score > small[0]?.score,
+    `${texts(opposite).join(' | ')} || ${texts(moved).join(' | ')}`)
+  const energy = TOPICS.find(t => t.id === 'energy')!
+  const lng = headline("India's gas demand drops as Iran war hikes LNG spot prices", 2, 'OilPrice.com')
+  const iranOil = energy.instruments([...oilStories, lng], 'country:iran', ctx('US', { commodities: { 'commodity:crude-oil': q('CL=F', 0.9, 'Crude oil (WTI)'), 'commodity:natural-gas': q('NG=F', -2.9, 'Natural gas') } }), [])
+  check('themes: "Iran — oil / energy" with one LNG story among oil stories shows crude oil only (live Part B sample)',
+    iranOil.map(m => m.symbol).join() === 'CL=F', iranOil.map(m => `${m.name} ${m.changePct}`).join(', '))
+  const gas = themesOf([
+    headline('Natural gas prices jump as cold snap lifts heating demand', 1, 'Reuters'),
+    headline('LNG exports hit record as natural gas output rises', 2, 'CNBC'),
+    headline('Natural gas prices climb as storage falls short of estimates', 3, 'Bloomberg'),
+  ], { commodities: { 'commodity:crude-oil': q('CL=F', 3.0, 'Crude oil (WTI)'), 'commodity:natural-gas': q('NG=F', 4.2, 'Natural gas') } })
+  check('themes: natural gas stories show natural gas, not crude oil', gas.length >= 1 && gas.every(t => t.moves[0].symbol === 'NG=F' && !t.moves.some(m => m.symbol === 'CL=F')),
+    gas.map(t => `${t.title}: ${themeMovesText(t)}`).join(' | '))
   const ok = themesOf([
     headline('Crude oil jumps after OPEC+ output cut', 1, 'Reuters'),
     headline('Refiners face higher crude costs this quarter', 2, 'CNBC'),

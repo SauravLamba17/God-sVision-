@@ -10,8 +10,8 @@ export type { Explanation, Market } from './types.ts'
 // Index cards the dashboards show, by market.
 export const HERO_INDICES: Record<Market, string[]> = { US: ['^GSPC', '^IXIC'], IN: ['^NSEI', '^BSESN', '^NSEBANK'] }
 const MOVERS_PER_SIDE = 10
-// Per-ticker news is fetched only for the biggest moves: 5 up + 5 down per market.
-const NEWS_PER_SIDE = 5
+// Per-ticker news for every explained mover: 10 up + 10 down per market (cached 10 min each).
+export const NEWS_PER_SIDE = 10
 
 // One context per market per instance for 20s: recomputes arriving together
 // share it instead of re-reading every cache.

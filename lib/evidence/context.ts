@@ -90,6 +90,23 @@ function headlinesFrom(raw: { title: string; url?: string; link?: string; source
   }))
 }
 
+// At most this many per-ticker searches in flight at once (cache hits return at once):
+// 20 movers per market would otherwise hit Google News in one burst.
+const TICKER_NEWS_CONCURRENCY = 6
+/** Promise.allSettled with at most n calls running at a time. */
+async function settledPool<T, R>(xs: T[], n: number, fn: (x: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
+  const out: PromiseSettledResult<R>[] = []
+  let next = 0
+  const worker = async () => {
+    while (next < xs.length) {
+      const k = next++
+      try { out[k] = { status: 'fulfilled', value: await fn(xs[k]) } } catch (reason) { out[k] = { status: 'rejected', reason } }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(n, xs.length) }, worker))
+  return out
+}
+
 /**
  * A copy of ctx with per-ticker headlines (Google News, cached 10 min per ticker)
  * merged in for these quotes only. Same rules as every other headline: the
@@ -97,8 +114,8 @@ function headlinesFrom(raw: { title: string; url?: string; link?: string; source
  */
 export async function withTickerNews(ctx: MarketContext, quotes: Quote[]): Promise<MarketContext> {
   if (!quotes.length) return ctx
-  const results = await Promise.allSettled(quotes.map(q =>
-    getTickerNewsCached(q.symbol, getEntity(q.symbol)?.name ?? coreName(q.name), ctx.market, sessionWindow(q, ctx.market, ctx.builtAt))))
+  const results = await settledPool(quotes, TICKER_NEWS_CONCURRENCY, q =>
+    getTickerNewsCached(q.symbol, getEntity(q.symbol)?.name ?? coreName(q.name), ctx.market, sessionWindow(q, ctx.market, ctx.builtAt)))
   const ok = results.filter(r => r.status === 'fulfilled').length
   const extra = results.flatMap(r => (r.status === 'fulfilled' ? r.value.data : []))
     .map(i => ({ ...i, source: `${i.source} (Google News)` }))
@@ -130,9 +147,13 @@ export async function buildContext(market: Market): Promise<MarketContext> {
   ])
   const ovAt = overview?.fetchedAt ?? now
 
+  // Crude oil is the market's own benchmark: WTI for the US, Brent for India.
+  const crude = market === 'US' ? 'CL=F' : 'BZ=F'
   for (const c of overview?.commodities ?? []) {
     const e = resolveEntity(c.symbol), q = yahooToQuote(c, ovAt)
-    if (e?.type === 'commodity' && q && !ctx.commodities[e.id]) ctx.commodities[e.id] = { ...q, name: e.name }
+    if (e?.type !== 'commodity' || !q) continue
+    if (e.id === 'commodity:crude-oil') { if (c.symbol === crude) ctx.commodities[e.id] = { ...q, name: `${e.name} (${crude === 'CL=F' ? 'WTI' : 'Brent'})` } }
+    else if (!ctx.commodities[e.id]) ctx.commodities[e.id] = { ...q, name: e.name }
   }
   for (const q of quakes ?? []) {
     ctx.events.push({ kind: 'earthquake', title: `M${q.magnitude} earthquake — ${q.place}`, url: q.url, at: q.time, magnitude: q.magnitude, countries: eventCountries(q.place ?? '') })

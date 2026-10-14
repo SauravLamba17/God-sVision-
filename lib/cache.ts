@@ -120,6 +120,15 @@ export async function readThrough<T>(
   }
 }
 
+/**
+ * Cache-Control for a news list route: shared by the CDN for `seconds` when it has
+ * items; never stored when empty, so the next request fetches again (an ISR route
+ * used to keep an empty build-time snapshot for its whole revalidate window).
+ */
+export function newsCacheHeaders(items: number, seconds = 300): Record<string, string> {
+  return { 'Cache-Control': items > 0 ? `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=60` : 'no-store' }
+}
+
 export function isRedisAvailable(): boolean {
   return REDIS_AVAILABLE
 }
