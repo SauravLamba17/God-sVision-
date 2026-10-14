@@ -50,11 +50,11 @@ const RSS_FEEDS: Feed[] = [
 
   // ── FINANCIAL ──
   { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', category: 'Business', ttl: 90, limit: 15 },
-  { name: 'MarketWatch', url: 'https://feeds.marketwatch.com/marketwatch/topstories/', category: 'Business', ttl: 90, limit: 12 },
-  { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', category: 'Business', ttl: 90, limit: 15 },
   { name: 'Seeking Alpha', url: 'https://seekingalpha.com/market_currents.xml', category: 'Business', ttl: 120, limit: 10 },
   // Removed: Reuters Business/Energy (feeds.reuters.com no longer resolves),
-  // Forbes + Investopedia + Medical News Today (all HTTP 404).
+  // Forbes + Investopedia + Medical News Today (all HTTP 404), MarketWatch top stories
+  // (301 → HTTP 400) and Yahoo Finance rssindex (HTTP 404) — checked Oct 2026.
+  // US market feeds for the evidence engine live in marketNews.ts.
 
   // ── ENERGY ──
   { name: 'OilPrice.com', url: 'https://oilprice.com/rss/main', category: 'Energy', ttl: 120, limit: 12 },

@@ -54,6 +54,13 @@ export async function marketEvidence(market: Market): Promise<{ ctx: MarketConte
 
 /** Fresh evidence for specific symbols (drift/flip recompute, deep dive). */
 export async function explainSymbols(market: Market, symbols: string[]): Promise<Record<string, Explanation>> {
+  const { ctx, withNews, stocks, out } = await symbolsEvidence(market, symbols)
+  for (const q of stocks) out[q.symbol] = explain(q, 'stock', withNews)
+  return out
+}
+
+/** The inputs explainSymbols uses: quotes for the symbols and a context with their per-ticker news (index explanations already in `out`). */
+export async function symbolsEvidence(market: Market, symbols: string[]) {
   const ctx = await context(market)
   const out: Record<string, Explanation> = {}
   const stocks: Quote[] = []
@@ -75,6 +82,5 @@ export async function explainSymbols(market: Market, symbols: string[]): Promise
   }
   // On-demand symbols get their own per-ticker news (≤10 per request, cached 10 min each).
   const withNews = await withTickerNews(ctx, stocks)
-  for (const q of stocks) out[q.symbol] = explain(q, 'stock', withNews)
-  return out
+  return { ctx, withNews, stocks, out }
 }

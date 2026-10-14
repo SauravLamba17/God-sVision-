@@ -9,7 +9,7 @@
  *     npm run test:evidence -- --cleanup
  */
 import { signIn, cleanupAccount, CLEANUP } from './liveAccount.ts'
-import { explain, headlineScore, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
+import { explain, headlineScore, isNotAReason, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
 import { BANNED, formatLine } from '../lib/evidence/summary.ts'
 import { needsRecompute, isCurrent, isSameMarketDay } from '../lib/evidence/freshness.ts'
 import type { Explanation, Headline, MarketContext, Quote } from '../lib/evidence/types.ts'
@@ -262,6 +262,119 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
   const e10 = run(q('INFY.NS', -2.4, 'Infosys'), 'stock', ctx('IN', { quotes: { 'TCS.NS': q('TCS.NS', -2.6, 'TCS'), 'WIPRO.NS': q('WIPRO.NS', -2.2, 'Wipro'), 'HCLTECH.NS': q('HCLTECH.NS', -2.0, 'HCLTech') } }))
   const sec10 = e10.drivers.find(d => d.type === 'sector')?.evidence ?? ''
   check('labels: India sector evidence names its same-sector stocks', /same sector: /.test(sec10), sec10)
+}
+
+// ── 2b. US market feeds: noise traps from real samples (CNBC, Investing.com, Google News, Fed; Oct 2026) ──
+{
+  const noise = [
+    'Texas Instruments options signal 7.1% move on earnings',                       // options-implied preview
+    'Meta Platforms shares may move 4.9% on Oct. 21 earnings',
+    'Earnings Preview: Tesla (TSLA) Q3 Earnings Expected to Decline',
+    'RBB (RBB) Q3 Earnings Preview: What You Should Know Beyond the Headline Estimates',
+    'Steel Dynamics (STLD) Q3 Earnings on the Horizon: Analysts\' Insights on Key Performance Measures',
+    'Kennametal to Host Earnings Conference Call & Webcast on First Quarter Fiscal 2027 Results',
+    'AbbVie To Go Ex-Dividend On October 15th, 2026 With 1.73 USD Dividend Per Share',
+    'Tesla to Post Q3 Earnings: Will Automotive Margins Play a Spoilsport?',
+    "Here’s How Much Traders Expect TSMC Stock to Move After Earnings",
+    "We're upgrading our rating on Wells Fargo as the stock's pullback offers a nice entry point", // CNBC Investing Club
+    "We're raising our Micron price target after an incredible quarter and robust guidance",
+    "Jim Cramer's top 10 things to watch in the stock market Wednesday",
+    'Not Nvidia. Not Broadcom. This Storage Stock Could Be 2027\'s Hidden AI Winner.',
+    'One Stock Could Benefit as AI Spending Moves Beyond Nvidia',
+    'SpaceX Stock Could Soar by 73%, According to a Wall Street Analyst',
+    '3 of Wall Street’s Favorite Stocks That Fall Short',
+    'Oracle Corp Stock (ORCL) Opened Down by 6.61% on Oct 14: Key Drivers Unveiled', // generated recap
+    'Advanced Micro Devices Inc Stock (AMD) Moved Down by 3.47% on Oct 14: Drivers Behind the Movement',
+    'Advanced Micro Devices Tokenized bStocks Price (AMDB/USD) Today | Live Price, Market Cap & Chart',
+    'Inflation data, Bank of America\'s penalty, Apple\'s new home hub and more in Morning Squawk',
+    'Oil (USCrude) Price Forecast for Today, Tomorrow, Next Week, and Next 30 Days',
+    "Don't let inflation bite — how to hedge with TIPS, commodities and infrastructure funds",   // personal finance
+    'The best credit cards for travel rewards in October 2026',
+    'Federal Reserve Board announces approval of application by Isabella Bank Corporation',  // routine Fed notice
+    'FILE PHOTO: Federal Reserve Board building is seen in Washington',
+    'COMMENTARY: Morning Bid: Trillion dollar trade',
+    'Indexes Drift Lower Ahead Of Inflation Report: AMD, CAKE, URBN In Focus - Video',   // ticker round-up
+  ]
+  const ns = noise.map(t => [headlineScore(headline(t, 1), 3.0, NOW), headlineScore(headline(t, 1), -3.0, NOW)])
+  check('trap: market-feed noise (previews, house calls, generated recaps, personal finance, Fed notices) never explains a move',
+    ns.every(([a, b]) => a === 0 && b === 0) && noise.every(isNotAReason), noise.filter((_, i) => ns[i][0] || ns[i][1]).join(' | '))
+  const real = [
+    ['Bank of America shares drop 8% after third-quarter revenue miss and regulatory penalty', -7.8],
+    ['Morgan Stanley tops estimates as equities trading revenue beats expectations by $909 million', 3.0],
+    ['UnitedHealth Group tops estimates, hikes profit outlook as insurer manages high medical costs', 2.7],
+    ['Bank of America Third-Quarter Earnings Unexpectedly Decline Amid $1.2 Billion Treasury Fine', -7.8],
+  ] as const
+  const rs = real.map(([t, m]) => headlineScore(headline(t, 1), m, NOW))
+  // A Fed enforcement action is real news — the routine-notice trap must not catch it.
+  const amex = 'Federal Reserve Board announces enforcement action against American Express Company'
+  check('real events from the same feeds still count (≥0.5); Fed enforcement actions are not routine notices',
+    rs.every(s => s >= 0.5) && !isNotAReason(amex), `scores ${rs.join(',')}`)
+
+  // From the live comparison: JPMorgan named only as the analyst attached to JPM.
+  const informa = headline('Informa earnings estimates rise at JP Morgan after Clarion deal', 1)
+  const reset = headline('JPMorgan resets Apple stock price target amid iPhone panic', 1)
+  const own = headline('JPMorgan Chase profit beats estimates as trading revenue jumps', 1)
+  const jpm = run(q('JPM', 1.2, 'JPMorgan Chase'), 'stock', ctx('US', { headlines: [informa, reset] }))
+  const jpmOwn = run(q('JPM', 1.2, 'JPMorgan Chase'), 'stock', ctx('US', { headlines: [informa, own] }))
+  const aapl = run(q('AAPL', -1.5, 'Apple'), 'stock', ctx('US', { headlines: [reset] }))
+  const gs = headline('Goldman Sachs Adjusts Price Target on UnitedHealth Group to $506 From $490', 1)
+  const unh = run(q('UNH', 2.6, 'UnitedHealth Group Incorporated'), 'stock', ctx('US', { headlines: [gs] }))
+  const gsMover = run(q('GS', 2.0, 'Goldman Sachs Group Inc.'), 'stock', ctx('US', { headlines: [gs] }))
+  check('trap: a bank named only as the analyst is not its own news (JPM, GS); the rated company keeps it',
+    !types(jpm).includes('news') && jpmOwn.drivers.filter(d => d.type === 'news').map(d => d.evidence).join('|') === own.title
+      && types(aapl).includes('news') && types(unh).includes('news') && !types(gsMover).includes('news'),
+    `${show(jpm)} | ${show(jpmOwn)} | ${show(aapl)} | ${show(unh)} | ${show(gsMover)}`)
+}
+
+// ── 2c. US market feeds: parsing, outlets, isolation (local HTTP server, no internet) ──
+await import('./serverModules.ts')
+{
+  const http = await import('node:http')
+  const { loadFeeds, parseFeed, healthName } = await import('../lib/apis/marketNews.ts')
+  const { feedSnapshot } = await import('../lib/feedHealth.ts')
+  const pub = new Date(Date.now() - H).toUTCString()
+  const rss = (items: string) => `<?xml version="1.0"?><rss version="2.0"><channel><title>t</title>${items}</channel></rss>`
+  const google = rss(`
+    <item><title>Oil prices rise as Iran targets tankers - Reuters</title><link>https://news.google.com/a</link><pubDate>${pub}</pubDate><source url="https://www.reuters.com">Reuters</source></item>
+    <item><title>Brent gains 4% on supply fears - WSJ</title><link>https://news.google.com/b</link><pubDate>${pub}</pubDate><source url="https://www.wsj.com">WSJ</source></item>
+    <item><title>Exxon stock: 5 holdings changes - MarketBeat</title><link>https://news.google.com/c</link><pubDate>${pub}</pubDate><source url="https://www.marketbeat.com">MarketBeat</source></item>
+    <item><title>No publisher here</title><link>https://news.google.com/d</link><pubDate>${pub}</pubDate></item>
+    <item><title>Undated story - Reuters</title><link>https://news.google.com/e</link><source url="https://www.reuters.com">Reuters</source></item>`)
+  const direct = rss(`<item><title>Morgan Stanley tops estimates &amp; raises outlook</title><link>https://www.cnbc.com/x</link><pubDate>${pub}</pubDate></item>`)
+  const server = http.createServer((req, res) => {
+    if (req.url === '/good') { res.setHeader('content-type', 'application/rss+xml'); res.end(direct) }
+    else if (req.url === '/blocked') { res.statusCode = 403; res.end('Forbidden') }
+    else if (req.url === '/html') { res.setHeader('content-type', 'text/html'); res.end('<html><body>Please enable JS</body></html>') }
+    // '/hang' never answers: the feed's timeout must cut it off
+  })
+  await new Promise<void>(r => server.listen(0, '127.0.0.1', r))
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`
+  const f = (id: string, path: string, outlet: string | null = 'CNBC') => ({ id: `test-${id}-${Date.now()}`, name: `Test ${id}`, url: base + path, outlet, region: 'US' as const, timeoutMs: 400, ttl: 300, limit: 30 })
+  const feeds = [f('good', '/good'), f('blocked', '/blocked'), f('hang', '/hang'), f('html', '/html')]
+  const t0 = performance.now()
+  const per = await loadFeeds(feeds)
+  const took = performance.now() - t0
+  const snap = new Map(feedSnapshot().map(s => [s.feed, s]))
+  const st = feeds.map(x => snap.get(healthName(x)))
+  check('feeds: a blocked, hanging or HTML feed returns nothing and never affects the others (parallel, timed out)',
+    per[0].length === 1 && per[0][0].title === 'Morgan Stanley tops estimates & raises outlook' && per[0][0].source === 'CNBC'
+      && per.slice(1).every(p => p.length === 0) && took < 2000,
+    `items ${per.map(p => p.length)}; ${took.toFixed(0)} ms`)
+  check('feeds: health records status, item count and last success per feed',
+    st[0]?.lastOkAt != null && st[0]?.lastItems === 1 && st[0]?.lastStatus === 200
+      && st[1]?.lastStatus === 403 && st[1]?.lastOkAt == null && /403/.test(st[1]?.lastError ?? '')
+      && st[2]?.lastOkAt == null && /abort|timeout/i.test(st[2]?.lastError ?? '')
+      && st[3]?.lastOkAt == null && st[3]?.lastItems === 0,
+    JSON.stringify(st.map(s => s && [s.lastStatus, s.lastItems, s.lastError])))
+  const calls = () => feeds.map(x => feedSnapshot().find(s => s.feed === healthName(x))?.calls)
+  const before = calls().join(), again = await loadFeeds(feeds)
+  check('feeds: cached per feed (failures too) — a second load makes no upstream calls', again[0].length === 1 && calls().join() === before, `calls ${before} → ${calls().join()}`)
+  server.close()
+
+  const g = await parseFeed(google, { id: 'gn', name: 'GN', query: 'x', outlet: null, region: 'US', timeoutMs: 1, ttl: 1, limit: 30 })
+  check('feeds: Google News items carry their real publisher (title suffix stripped); skipped, publisher-less and undated items dropped',
+    g.length === 2 && g[0].title === 'Oil prices rise as Iran targets tankers' && g[0].source === 'Reuters (Google News)' && g[1].source === 'WSJ (Google News)',
+    JSON.stringify(g.map(i => [i.title, i.source])))
 }
 
 // ── 3. Wording rule ──────────────────────────────────────────────────────────

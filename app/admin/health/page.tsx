@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { feedSnapshot, instanceStartedAt, instanceId, mergeFeeds, type FeedStats, type InstanceSummary } from '@/lib/feedHealth'
 import { DAILY_CAP } from '@/lib/gemini'
+import { MARKET_FEEDS, healthName } from '@/lib/apis/marketNews'
 
 // Admin-only data health page. Access is checked here, server-side, against
 // ADMIN_EMAILS (comma-separated) — not in middleware or auth config. Anyone
@@ -16,7 +17,7 @@ export const metadata = { title: 'Data health', robots: { index: false, follow: 
 const EXPECTED = [
   'Yahoo Finance', 'Yahoo Finance (yahoo-finance2)', 'Alpaca (IEX)', 'CoinGecko', 'NSE India', 'FRED', 'OpenSky',
   'USGS', 'WHO', 'Open-Meteo', 'OpenWeather', 'NewsAPI', 'Nasdaq', 'disease.sh', 'ISS position', 'ISS crew',
-  'Reddit', 'TheSportsDB', 'Windy', 'Gemini',
+  'Reddit', 'TheSportsDB', 'Windy', 'Gemini', ...MARKET_FEEDS.map(healthName),
 ]
 
 const isAdmin = (email?: string | null) =>
@@ -107,7 +108,7 @@ export default async function HealthPage() {
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
           <thead><tr>
             <th style={head}>FEED</th><th style={head}>STATUS</th><th style={head}>LAST SUCCESS</th><th style={head}>LAST ERROR</th>
-            <th style={head}>LAST RESPONSE</th><th style={head}>CALLS / FAILED</th>
+            <th style={head}>LAST RESPONSE</th><th style={head}>ITEMS</th><th style={head}>CALLS / FAILED</th>
           </tr></thead>
           <tbody>
             {names.map(n => {
@@ -121,6 +122,7 @@ export default async function HealthPage() {
                     {f?.lastErrorAt ? `${ago(f.lastErrorAt)} — ${f.lastError}` : '—'}
                   </td>
                   <td style={cell}>{f?.lastMs != null ? `${f.lastMs} ms${f.lastStatus ? ` · HTTP ${f.lastStatus}` : ''}` : '—'}</td>
+                  <td style={cell}>{f?.lastItems != null ? f.lastItems : '—'}</td>
                   <td style={cell}>{f ? `${f.calls} / ${f.failures}` : '—'}</td>
                 </tr>
               )

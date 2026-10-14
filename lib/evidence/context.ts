@@ -2,13 +2,16 @@ import 'server-only'
 // Builds the Evidence Engine's inputs from data the app ALREADY fetches, through
 // the same shared, cached loaders the dashboard routes use (same cache keys and
 // TTLs). Normally every input is a cache hit; on a cold instance a loader runs
-// exactly the request its own route would have made. No new upstream APIs.
+// exactly the request its own route would have made. The only evidence-specific
+// sources are per-ticker news (tickerNews) and the US market feeds (marketNews),
+// both cached per item/feed for 5–10 min.
 //
 // Inputs used (reliable):            US                           India
 //   benchmark / index moves          overview (^GSPC ^IXIC …)     india indices (^NSEI ^BSESN ^NSEBANK)
 //   sector moves                     SPDR sector ETFs (overview)  average of Nifty 50 names per graph sector
 //   peers                            quotes the app holds         all Nifty 50 quotes
-//   news                             aggregated news feed         India RSS feeds + aggregated feed
+//   news                             aggregated news feed +       India RSS feeds + aggregated feed
+//                                    US market feeds (marketNews)
 //   linked events                    USGS earthquakes, WHO outbreak reports (both markets)
 //   commodities                      overview futures (gold, silver, crude, nat gas, copper)
 //   currency                         —                            USD/INR (india forex)
@@ -31,6 +34,7 @@ import { getUpcoming } from '@/lib/apis/earnings'
 import { fetchCalendarEvents } from '@/lib/apis/calendar'
 import { getCache } from '@/lib/cache'
 import { getTickerNewsCached } from '@/lib/apis/tickerNews'
+import { getMarketNewsCached } from '@/lib/apis/marketNews'
 
 type Status = 'ok' | 'stale' | 'unavailable'
 async function load<T>(inputs: Record<string, Status>, name: string, fn: () => Promise<{ data: T; source?: string } | T>): Promise<T | null> {
@@ -69,7 +73,7 @@ function yahooToQuote(q: any, at: number): Quote | null {
 // Same story from two feeds counts once; a headline without a publish time is
 // dropped (it can't be placed inside or outside a session window).
 const titleKey = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ')
-function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string }[], startId: number, seen = new Set<string>()): Headline[] {
+function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string; feed?: string }[], startId: number, seen = new Set<string>()): Headline[] {
   const items = raw.filter(i => {
     const key = titleKey(i.title)
     if (!Date.parse(i.publishedAt ?? '') || seen.has(key)) return false
@@ -82,6 +86,7 @@ function headlinesFrom(raw: { title: string; url?: string; link?: string; source
     publishedAt: Date.parse(i.publishedAt!),
     entities: matchEntitiesInText(i.title).map(m => m.entity.id),
     sentiment: sentiments[k].sentiment,
+    ...(i.feed ? { feed: i.feed } : {}),
   }))
 }
 
@@ -138,9 +143,10 @@ export async function buildContext(market: Market): Promise<MarketContext> {
   ctx.macro = (calendar ?? []).map(e => ({ title: e.event, currency: e.currency, date: e.date, time: e.time, impact: e.impact }))
 
   if (market === 'US') {
-    const [movers, news, earnings] = await Promise.all([
+    const [movers, news, marketNews, earnings] = await Promise.all([
       load<any>(inputs, 'movers', getMarketMoversCached),
       load<any>(inputs, 'news', getAllNewsCached),
+      load<any[]>(inputs, 'market news', () => getMarketNewsCached('US')),
       load<any[]>(inputs, 'earnings calendar', getUpcoming),
     ])
     for (const i of overview?.indices ?? []) { const q = yahooToQuote(i, ovAt); if (q) ctx.indices[q.symbol] = { ...q, name: i.label ?? q.name } }
@@ -155,7 +161,8 @@ export async function buildContext(market: Market): Promise<MarketContext> {
     for (const q of [...(movers?.gainers ?? []), ...(movers?.losers ?? [])]) { const x = yahooToQuote(q, now); if (x) ctx.quotes[x.symbol] = x }
     const defaults = await getCache<any[]>(`quotes_${DEFAULT_TICKERS.join(',')}`).catch(() => null)
     for (const q of defaults?.data ?? []) { const x = yahooToQuote(q, now); if (x && !ctx.quotes[x.symbol]) ctx.quotes[x.symbol] = x }
-    ctx.headlines = headlinesFrom(news?.items ?? [], 0)
+    // General feed first: a story both carry keeps its general-feed copy (no `feed` tag).
+    ctx.headlines = headlinesFrom([...(news?.items ?? []), ...(marketNews ?? [])], 0)
     ctx.earnings = (earnings ?? []).map(e => ({ symbol: e.ticker, date: e.date, timing: e.timing }))
   } else {
     const [nifty, idx, fx, inNews, news] = await Promise.all([

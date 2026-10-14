@@ -9,7 +9,7 @@ import { buildBrain, buildThemes, outletKey, rebuildReason, withLive } from '../
 import { renderBrain, assertWording, PREDICTIVE, SECTIONS } from '../lib/brain/text.ts'
 import { validBrainNarration } from '../lib/brain/narration.ts'
 import type { Brain } from '../lib/brain/types.ts'
-import { explain, fmtPct } from '../lib/evidence/engine.ts'
+import { explain, fmtPct, isMarketNews } from '../lib/evidence/engine.ts'
 import { BANNED, formatLine } from '../lib/evidence/summary.ts'
 import { arrow, pct, signed } from '../lib/format.ts'
 import type { Explanation, Headline, LinkedEventInput, MarketContext, Market, Quote } from '../lib/evidence/types.ts'
@@ -136,6 +136,58 @@ const render = (b: Brain) => { const t = renderBrain(b); allTexts.push(t.summary
   check('themes: two feeds of one outlet count as one source', sameOutlet.length === 0 && outletKey('Economic Times Markets') === outletKey('The Economic Times')
       && outletKey('NDTV Profit') === outletKey('NDTV') && outletKey('The Guardian Business') === outletKey('The Guardian Politics') && outletKey('Reuters (Google News)') === outletKey('Reuters'),
     JSON.stringify(sameOutlet.map(t => t.title)))
+  // Outlet keys for the US market feeds: one publisher = one outlet; Google News = each item's real publisher.
+  await import('./serverModules.ts')
+  const { MARKET_FEEDS } = await import('../lib/apis/marketNews.ts')
+  const cnbcFeeds = MARKET_FEEDS.filter(f => f.id.startsWith('cnbc-'))
+  const keys = new Set([...cnbcFeeds.map(f => outletKey(f.outlet!)), outletKey('CNBC'), outletKey('CNBC (Google News)')])
+  check('outlets: CNBC Economy / Earnings / Finance, the general CNBC feed and CNBC via Google News are one outlet',
+    cnbcFeeds.length === 3 && keys.size === 1, JSON.stringify([...keys]))
+  check('outlets: Google News feeds key by publisher; short and full publisher names match',
+    MARKET_FEEDS.filter(f => f.query).every(f => f.outlet === null) && outletKey('Reuters (Google News)') === 'reuters' && outletKey('Google News') !== outletKey('Reuters (Google News)')
+      && outletKey('WSJ (Google News)') === outletKey('The Wall Street Journal') && outletKey('AP News') === outletKey('Associated Press') && outletKey('NYT') === outletKey('The New York Times')
+      && outletKey('Investing.com (Google News)') === outletKey(MARKET_FEEDS.find(f => f.id === 'investing-stocks')!.outlet!),
+    [outletKey('Reuters (Google News)'), outletKey('WSJ (Google News)'), outletKey('The Wall Street Journal')].join(','))
+  const cnbcOnly = themesOf([
+    headline('Crude oil jumps after OPEC+ output cut', 1, 'CNBC'),
+    headline('Refiners face higher crude costs this quarter', 2, 'CNBC'),
+    headline('Oil prices lift energy shares across Asia', 3, 'CNBC (Google News)'),
+  ])
+  const wsjTwice = themesOf([
+    headline('Crude oil jumps after OPEC+ output cut', 1, 'WSJ (Google News)'),
+    headline('Refiners face higher crude costs this quarter', 2, 'The Wall Street Journal'),
+    headline('Oil prices lift energy shares across Asia', 3, 'WSJ (Google News)'),
+  ])
+  const twoPublishers = themesOf([
+    headline('Crude oil jumps after OPEC+ output cut', 1, 'CNBC'),
+    headline('Refiners face higher crude costs this quarter', 2, 'Reuters (Google News)'),
+    headline('Oil prices lift energy shares across Asia', 3, 'CNBC'),
+  ])
+  check('themes: three CNBC feeds (or WSJ under two names) are one source — no theme; a second real publisher makes one',
+    cnbcOnly.length === 0 && wsjTwice.length === 0 && twoPublishers.length === 1 && twoPublishers[0].sources === 2,
+    JSON.stringify([cnbcOnly, wsjTwice, twoPublishers].map(ts => ts.map(t => [t.title, t.sources]))))
+  // Theme noise from the market feeds (live samples): opinion, roundups, captions, routine notices, quote pages.
+  const feedNoise = themesOf([
+    headline('ASML: What We Think of the Stock After Earnings', 1, 'Morningstar (Google News)'),
+    headline("CPI ahead; more banks to report; ASML earnings - what's moving markets", 2, 'Investing.com (Google News)'),
+    headline('Current price of oil as of October 14, 2026', 1, 'Fortune (Google News)'),
+    headline('Oil (USCrude) Price Forecast for Today, Tomorrow, Next Week, and Next 30 Days', 2, 'LiteFinance (Google News)'),
+    headline('3 U.S. Energy Stocks With Direct Exposure to Rising Oil Prices', 3, 'Yahoo Finance (Google News)'),
+    headline('Commentary: The oil market that sets today’s gas prices was invented in western Pennsylvania', 3, 'Pennsylvania Capital-Star (Google News)'),
+  ])
+  const feedReal = themesOf([
+    headline('Oil prices rise as Iran deploys new tactics to target tankers', 1, 'Reuters (Google News)'),
+    headline('Brent Gains More Than 4% on U.S.-Iran Tensions, Hurricane Isaias', 2, 'WSJ (Google News)'),
+    headline('Oil Prices Rise as Traders Weigh Saudi Aramco Attack Report, Hormuz Shipping Risks', 3, 'The Wall Street Journal'),
+    headline('Oil prices rise after IEA warns on market constraints; Saudi officials say Aramco facilities attacked', 3, 'CNBC'),
+  ])
+  check('themes: market-feed noise never forms a theme; the same day\'s real oil stories do (WSJ counted once)',
+    feedNoise.length === 0 && feedReal.some(t => t.id === 'commodity:crude-oil' && t.stories === 4 && t.sources === 3),
+    JSON.stringify([feedNoise.map(t => t.title), feedReal.map(t => [t.title, t.stories, t.sources])]))
+  check('themes: "Wall St" and "rate-hike" read as market news; a 2035 forecast and an "In Focus" round-up do not',
+    isMarketNews('Wall St slides as hot CPI data fuels rate-hike bets; chips, banks weigh') && !isMarketNews('India power demand to outpace energy by 2035')
+      && !isMarketNews('Indexes Drift Lower Ahead Of Inflation Report: AMD, CAKE, URBN In Focus - Video') && isMarketNews('Inflation in focus as stocks slip ahead of Fed meeting'))
+
   const noMove = themesOf([
     headline('Crude oil jumps after OPEC+ output cut', 1, 'Reuters'),
     headline('Refiners face higher crude costs this quarter', 2, 'CNBC'),

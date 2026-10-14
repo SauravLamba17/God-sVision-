@@ -16,6 +16,8 @@ export interface FeedStats {
   lastError: string | null
   lastMs: number | null
   lastStatus: number | null
+  /** Items parsed on the last call (news feeds only). */
+  lastItems?: number | null
 }
 
 const feeds = new Map<string, FeedStats>()
@@ -52,7 +54,7 @@ export function mergeFeeds(lists: FeedStats[][]): FeedStats[] {
     m.failures += f.failures
     m.lastOkAt = Math.max(m.lastOkAt ?? 0, f.lastOkAt ?? 0) || null
     if ((f.lastErrorAt ?? 0) > (m.lastErrorAt ?? 0)) { m.lastErrorAt = f.lastErrorAt; m.lastError = f.lastError }
-    if (fLast > mLast) { m.lastMs = f.lastMs; m.lastStatus = f.lastStatus }
+    if (fLast > mLast) { m.lastMs = f.lastMs; m.lastStatus = f.lastStatus; m.lastItems = f.lastItems }
   }
   return [...out.values()].sort((a, b) => a.feed.localeCompare(b.feed))
 }
@@ -93,11 +95,12 @@ export function feedForUrl(url: string): string {
   }
 }
 
-export function recordFeed(feed: string, ok: boolean, ms: number, error?: string, status?: number) {
+export function recordFeed(feed: string, ok: boolean, ms: number, error?: string, status?: number, items?: number) {
   const s = feeds.get(feed) ?? { feed, calls: 0, failures: 0, lastOkAt: null, lastErrorAt: null, lastError: null, lastMs: null, lastStatus: null }
   s.calls++
   s.lastMs = Math.round(ms)
   s.lastStatus = status ?? null
+  if (items !== undefined) s.lastItems = items
   if (ok) s.lastOkAt = Date.now()
   else { s.failures++; s.lastErrorAt = Date.now(); s.lastError = (error ?? 'error').slice(0, 200) }
   feeds.set(feed, s)

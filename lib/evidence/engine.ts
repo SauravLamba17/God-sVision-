@@ -18,7 +18,9 @@
 //                       no later than the quote's market time (the last trade) attach —
 //                       news after the close belongs to the next session's move
 //               0 for recommendation lists ("stocks to buy", "top picks", "best shares for"),
-//                 valuation/opinion pieces, fund-holdings filings and move recaps
+//                 valuation/opinion pieces, fund-holdings filings and move recaps,
+//                 previews / schedule notices, an outlet's own calls and predictions,
+//                 generated recaps and quote pages, personal finance, routine Fed notices
 //               near-duplicate titles (same story from two outlets) count once
 //               0 if it describes a move over months ("slump 27% YTD") with no cue for this session
 //               0 if the headline states a price direction opposite to the live move
@@ -124,13 +126,34 @@ const COMMON = new Set(['Target', 'Visa', 'Apple', 'Ball', 'Snap', 'Block', 'Gap
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export function mentionsTarget(h: Headline, targetId: string, name: string): boolean {
-  if (h.entities.includes(targetId)) return true
+  if (h.entities.includes(targetId)) return namedAsSubject(h, targetId)
   if (getEntity(targetId)) return false // graph entities rely on the graph's careful matcher
   const core = coreName(name)
   const base = targetId.replace(/\.NS$/, '')
-  if (core.length >= 4 && !COMMON.has(core) && new RegExp(`(?<![\\w&])${esc(core)}(?![\\w&])`).test(h.title)) return true
-  if (base.length >= 3 && new RegExp(`(?<![\\w&$])${esc(base)}(?![\\w&])|\\$${esc(base)}(?![\\w])`).test(h.title)) return true
-  return false
+  const names: string[] = []
+  if (core.length >= 4 && !COMMON.has(core) && new RegExp(`(?<![\\w&])${esc(core)}(?![\\w&])`).test(h.title)) names.push(core)
+  if (base.length >= 3 && new RegExp(`(?<![\\w&$])${esc(base)}(?![\\w&])|\\$${esc(base)}(?![\\w])`).test(h.title)) names.push(base)
+  return names.length > 0 && !onlyAsAnalyst(h.title, names)
+}
+
+// A bank or broker named only as the analyst — "JPMorgan resets Apple stock price target",
+// "Informa earnings estimates rise at JP Morgan" — is not the story's subject.
+const ANALYST_AFTER = /^(['’]s)?( (analysts?|strategists?))? (raise[sd]?|cuts?|lower(s|ed)?|resets?|adjust(s|ed)?|maintains?|reiterates?|upgrade[sd]?|downgrade[sd]?|initiate[sd]?|boosts?|lifts?|trims?|sets?|keeps?|starts?|hikes?|slash(es)?)\b/i
+const ANALYST_BEFORE = /\b(at|from|by|per|says|according to)\s+$/i
+const RATING = /\b(price targets?|ratings?|estimates|coverage|overweight|underweight|outperform|buy|sell|hold)\b/i
+function onlyAsAnalyst(title: string, names: string[]): boolean {
+  if (!RATING.test(title)) return false
+  let n = 0
+  for (const name of names) for (const m of title.matchAll(new RegExp(`(?<![\\w&])${esc(name)}(?![\\w&])`, 'gi'))) {
+    n++
+    if (!ANALYST_AFTER.test(title.slice(m.index! + m[0].length)) && !ANALYST_BEFORE.test(title.slice(0, m.index))) return false
+  }
+  return n > 0
+}
+/** A graph entity the headline names as its subject, not only as the analyst. */
+function namedAsSubject(h: Headline, id: string): boolean {
+  const texts = matchEntitiesInText(h.title).filter(m => m.entity.id === id).map(m => m.text)
+  return !texts.length || !onlyAsAnalyst(h.title, texts)
 }
 
 // Price direction stated in a headline ("shares rise", "Sensex falls").
@@ -139,13 +162,13 @@ const STATED_DOWN = /\b(fall(s|en|ing)?|fell|drop(s|ped)?|decline[sd]?|slump\w*|
 // Market terms an index headline must contain — the index's own market only
 // ("Wall Street's India hospital bet" is not about the Nifty).
 // Market-level only: "stocks"/"markets", not one company's "stock"/"share price".
-const MARKET_ANY = /\b(stocks|equities|markets?|index|indices|benchmarks?|yields?|bonds?|rate (cut|hike)s?|inflation|GDP|rall(y|ies)|sell-?off)\b/i
+const MARKET_ANY = /\b(stocks|equities|markets?|index|indices|benchmarks?|yields?|bonds?|rate[- ](cut|hike)s?|inflation|GDP|rall(y|ies)|sell-?off)\b/i
 // A move over months ("slump 27% YTD") is not evidence for today's move, unless
 // the headline also points at this session ("…in one year! ITC shares rise on…").
-const LONG_HORIZON = /\b(YTD|year[- ]to[- ]date|this year|in (one|a|1|two|2|three|3) years?|past (week|month|year)|in \d+ (days|sessions|weeks|months|years)|52-week|since (January|listing|IPO))\b/i
+const LONG_HORIZON = /\b(YTD|year[- ]to[- ]date|this year|in (one|a|1|two|2|three|3) years?|past (week|month|year)|in \d+ (days|sessions|weeks|months|years)|52-week|since (January|listing|IPO)|by (FY ?)?20\d\d)\b/i
 const THIS_SESSION = /\b(today|intraday|session|on (Mon|Tues|Wednes|Thurs|Fri)day)\b|\bshares? (ris\w*|rose|jump\w*|surg\w*|soar\w*|fall\w*|fell|drop\w*|slump\w*|plung\w*|tumbl\w*|climb\w*|gain\w*|slid\w*|sink\w*|sank)\b/i
 const MARKET_TERMS: Record<Market, Matcher> = {
-  US: { test: s => MARKET_ANY.test(s) || /\b(Wall Street|Nasdaq|Dow|S&P|Fed|Treasur(y|ies))\b/i.test(s) },
+  US: { test: s => MARKET_ANY.test(s) || /\b(Wall Street|Wall St|Nasdaq|Dow|S&P|Fed|Treasur(y|ies))\b/i.test(s) },
   IN: { test: s => MARKET_ANY.test(s) || /\b(Dalal Street|Nifty|Sensex|NSE|BSE|RBI)\b/i.test(s) },
 }
 
@@ -155,7 +178,23 @@ const LISTICLE = /\b(stocks?|shares?|picks?|bets?) (to|for) (buy|add|watch|sell|
 const OPINION = /\b(undervalued|overvalued|fair value|intrinsic value|priced below|(a|the) (screaming |strong |no-brainer )?buy|stock forecasts?|did you miss|should you (buy|sell)|is it (time|too late) to|worth buying|buying opportunity|price prediction|stock price today|(increases|decreases|raises|lowers|trims|boosts|cuts|acquires|sells|buys|takes|has) (its |new )?(stock )?(holdings?|position) in)\b|\bvs\.? /i
 // Recaps restate the move itself — circular, not a reason ("stocks making the biggest moves").
 const RECAP = /\b(out|under)performs (competitors|the market|market)\b|\b(strong|poor|weak) trading day\b|\bbiggest (moves|movers)\b|\btop (gainers|losers)\b|\bstocks making\b|\b(opening|closing) bell\b|\bmarket wrap\b|\bstocks? (trade|trading|traded) (up|down|higher|lower)\b|\bwhat you need to know\b|\bquote (&|and) history\b|\bstock price, news\b/i
-const NOT_A_REASON = { test: (s: string) => LISTICLE.test(s) || OPINION.test(s) || RECAP.test(s) }
+// Noise from the US market feeds (CNBC, Investing.com, Google News searches — Oct 2026 samples).
+// Previews and schedule notices are about a future event, not this session's move:
+// "Q3 Earnings Preview", "options signal 7.1% move on earnings", "may move 4.9% on Oct. 21 earnings".
+const PREVIEW = /\b(earnings|results) preview\b|\bpreview:|\bearnings expected to (grow|decline|rise|fall)\b|\bon the horizon\b|\bwhat to expect\b|\bthings to (know|watch)\b|\b(schedules|to host|will host|to hold|announces)\b.*\b(conference call|webcast|earnings release)\b|\bto go ex-dividend\b|\bto (post|report|release) (Q[1-4] |quarterly )?(earnings|results)\b|\bmay move \d+(\.\d+)?%|\boptions? (signal|suggest|imply|implies|point to)\b.*\bmove\b|\bto move after earnings\b/i
+// The outlet's own calls, commentary and predictions ("We're upgrading our rating on…",
+// Cramer, "Commentary:", "could soar 73%", "This storage stock could be 2027's hidden winner").
+const HOUSE = /^\s*(we'?re|we are|we) (upgrading|downgrading|raising|lowering|cutting|trimming|buying|selling|adding|got|made)\b|\bCramer\b|^\s*(commentary|opinion|analysis|editorial|column)\s*[:|]|\bcould (soar|surge|jump|skyrocket|crash|plunge)\b|\b(could|will) (nearly )?(double|triple)\b|\bcould be (\d{4}['’]s|the next|a hidden)\b|\b(this|these|one|two|three|four|five)( [\w’'.-]+){0,3} stocks? (that )?(could|may|might|to (buy|own|watch|avoid))\b|\b(\d+|two|three|four|five|six|seven|eight|nine|ten) of [\w’'.-]+ [\w’'.-]+ (favorite |top |best )?stocks\b|\bprice forecast\b|\bwhere to (find|invest|put)\b|\bwhat we think\b|\bhere['’]?s what (history|it means|comes next)\b/i
+// Generated move recaps, quote pages, round-ups and photo captions ("Opened Down by 6.61% on
+// Oct 14: Key Drivers Unveiled", "Live Price, Market Cap & Chart", "… and More", "FILE PHOTO:").
+const GENERATED = /^\s*file photo\b|\b(opened|moved) (up|down) by \d|\bis (up|down) \d+(\.\d+)?% on \w+\.? \d+:|\bkey drivers unveiled\b|\bthe reason has emerged\b|\bdrivers behind the movement\b|\b(current|live) price\b|\bmorning (bid|squawk|call sheet)\b|\b(news|markets) wrap\b|\bwhat['’]?s moving (markets|stocks)\b|\band more\b|\bin focus(\s*-\s*video)?\s*$/i
+// Personal finance and lifestyle ("best credit cards", "how to hedge with TIPS", "apps for traders").
+const PERSONAL = /\b(credit cards?|savings accounts?|CD rates?|mortgage rates? today|personal loans?|high-yield savings|best (brokers?|banks?|apps?)|apps? for (active )?(traders|investors)|how to (invest|save|retire|hedge|budget|pay off)|retirement (savings|plan(ning)?)|side hustle|net worth)\b|401\(k\)/i
+// Routine Federal Reserve notices ("approval of application by Isabella Bank Corporation").
+const ROUTINE = /\bapproval of (an )?application\b|\bwith former employees? of\b|\bcomment period\b|\brequests? (public )?comment\b|\btermination of enforcement action\b|\bfeedback letters\b/i
+const NOT_A_REASON = { test: (s: string) => LISTICLE.test(s) || OPINION.test(s) || RECAP.test(s) || PREVIEW.test(s) || HOUSE.test(s) || GENERATED.test(s) || PERSONAL.test(s) || ROUTINE.test(s) }
+/** Listicle, opinion, recap or feed noise — never a reason for a move. Exported for tests and news-compare. */
+export const isNotAReason = (title: string) => NOT_A_REASON.test(title)
 
 // ── Near-duplicate stories ("same story from NDTV and NDTV Profit") ─────────────
 const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'in', 'on', 'for', 'and', 'as', 'at', 'by', 'with', 'after', 'is', 'are', 'its', 'from', 'amid', 'over', 'check'])
@@ -335,9 +374,9 @@ function stockDrivers(t: Quote, ctx: MarketContext): Driver[] {
   if (ent) {
     const linked = new Map(getLinks(t.symbol).filter(v => ['supplier_of', 'competitor_of', 'subsidiary_of'].includes(v.link.type)).map(v => [v.other.id, v]))
     // cheapest checks first: most headlines name no linked company
-    const rel = ctx.headlines.filter(h => h.entities.some(e => linked.has(e)) && inWindow(h, win) && !toneOpposes(h, m) && FINANCIAL.test(h.title) && !NOT_A_REASON.test(h.title) && !OPINION_FORM.test(h.title) &&!mentioned.some(d => d.id === h.id || sameStory(d.title, h.title)))
+    const rel = ctx.headlines.filter(h => h.entities.some(e => linked.has(e) && namedAsSubject(h, e)) && inWindow(h, win) && !toneOpposes(h, m) && FINANCIAL.test(h.title) && !NOT_A_REASON.test(h.title) && !OPINION_FORM.test(h.title) &&!mentioned.some(d => d.id === h.id || sameStory(d.title, h.title)))
       .map(h => {
-        const v = linked.get(h.entities.find(e => linked.has(e))!)!
+        const v = linked.get(h.entities.find(e => linked.has(e) && namedAsSubject(h, e))!)!
         return { h, v, s: r2(0.3 * recency(h.publishedAt, win.end)) }
       }).sort((a, b) => b.s - a.s)
     const relTop = distinctTop(rel, 2)

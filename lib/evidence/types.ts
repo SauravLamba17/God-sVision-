@@ -66,6 +66,8 @@ export interface Headline {
   sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'   // keyword estimate
   /** 'ticker' = from a per-ticker search for a mover (biased toward movers; not used for themes). */
   via?: 'ticker'
+  /** Market-news feed id (lib/apis/marketNews) it came from; absent for the general news feed. */
+  feed?: string
 }
 
 export interface LinkedEventInput { kind: 'earthquake' | 'outbreak'; title: string; url?: string; at: number; countries: string[]; magnitude?: number }

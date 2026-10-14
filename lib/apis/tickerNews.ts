@@ -17,7 +17,7 @@ const LOCALE = { US: 'hl=en-US&gl=US&ceid=US:en', IN: 'hl=en-IN&gl=IN&ceid=IN:en
 const TTL_SECONDS = 600
 const MAX_ITEMS = 30 // in Google's relevance order
 // Auto-generated price tickers / fund-holdings filings seen in results — never a reason for a move.
-const SKIP_SOURCES = /^(MarketBeat|ad-hoc-news\.de|AD HOC NEWS|Pluang)$/i
+export const SKIP_SOURCES = /^(MarketBeat|ad-hoc-news\.de|AD HOC NEWS|Pluang)$/i
 
 const decode = (s: string) => s.replace(/<!\[CDATA\[|\]\]>/g, '')
   .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()

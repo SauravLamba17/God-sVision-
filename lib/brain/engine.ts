@@ -73,9 +73,12 @@ export function indiaSectors(quotes: Record<string, Quote>): { id: string; name:
 /** ponytail: unrelated outlets sharing a first word ("Business Standard", "Business Today")
  *  merge too — that only makes the ≥2-sources bar stricter, never looser. */
 export function outletKey(name: string): string {
-  return name.toLowerCase().replace(/\(google news\)/g, '').replace(/^the\s+/, '')
+  const k = name.toLowerCase().replace(/\(google news\)/g, '').replace(/^the\s+/, '')
     .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().split(' ')[0] ?? ''
+  return OUTLET_ALIAS[k] ?? k
 }
+// Short names Google News uses for publishers that also appear in full.
+const OUTLET_ALIAS: Record<string, string> = { wsj: 'wall', ap: 'associated', nyt: 'new', ft: 'financial', ibd: 'investor' }
 
 // ── Themes ───────────────────────────────────────────────────────────────────
 const PEER_LINKS = new Set(['competitor_of', 'supplier_of', 'subsidiary_of'])
