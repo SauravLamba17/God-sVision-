@@ -8,9 +8,10 @@ const l = (from: string, type: LinkType, to: string, reason: string): Link => ({
 const each = (ids: string[], type: LinkType, to: string, reason: string) => ids.map(id => l(id, type, to, reason))
 
 // ── Index constituents ───────────────────────────────────────────────────────
-const SP500 = ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO', 'AMD', 'PLTR', 'JPM', 'V', 'UNH', 'JNJ', 'LLY', 'XOM', 'WMT']
+const SP500 = ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO', 'AMD', 'PLTR', 'JPM', 'V', 'UNH', 'JNJ', 'LLY', 'XOM', 'WMT',
+  'DAL', 'UAL', 'LUV', 'CVX', 'VLO', 'MPC', 'BAC', 'GS', 'NEM']
 const NASDAQ_LISTED = ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO', 'AMD', 'PLTR', 'ASML']
-const DOW30 = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'JPM', 'V', 'UNH', 'JNJ', 'WMT']
+const DOW30 = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'JPM', 'V', 'UNH', 'JNJ', 'WMT', 'CVX', 'GS']
 const BANK_NIFTY = ['HDFCBANK.NS', 'ICICIBANK.NS', 'SBIN.NS', 'KOTAKBANK.NS', 'AXISBANK.NS', 'INDUSINDBK.NS']
 // Long-standing Sensex members only (the full 30 rotates).
 const SENSEX_CORE = ['RELIANCE.NS', 'HDFCBANK.NS', 'ICICIBANK.NS', 'INFY.NS', 'TCS.NS', 'BHARTIARTL.NS', 'ITC.NS', 'LT.NS', 'SBIN.NS', 'KOTAKBANK.NS', 'AXISBANK.NS', 'HINDUNILVR.NS', 'M&M.NS']
@@ -20,6 +21,7 @@ const CONSTITUENTS: Link[] = [
   ...each(SP500, 'constituent_of', 'index:sp500', MEMBER),
   ...each(NASDAQ_LISTED, 'constituent_of', 'index:nasdaq', 'Listed on Nasdaq, so included in the Nasdaq Composite'),
   ...each(NASDAQ_LISTED, 'constituent_of', 'index:nasdaq100', MEMBER),
+  l('UAL', 'constituent_of', 'index:nasdaq', 'Listed on Nasdaq, so included in the Nasdaq Composite'),
   ...each(DOW30, 'constituent_of', 'index:dow', MEMBER),
   ...each(NIFTY50_IDS, 'constituent_of', 'index:nifty50', 'Nifty 50 member (matches the list this app tracks)'),
   ...each(BANK_NIFTY, 'constituent_of', 'index:banknifty', MEMBER),
@@ -74,6 +76,13 @@ const COMPETITION: Link[] = [
   l('SUNPHARMA.NS', 'competitor_of', 'DRREDDY.NS', 'Rival Indian generic-drug makers'),
   l('DRREDDY.NS', 'competitor_of', 'CIPLA.NS', 'Rival Indian generic-drug makers'),
   l('SBILIFE.NS', 'competitor_of', 'HDFCLIFE.NS', 'Large Indian private life insurers'),
+  l('DAL', 'competitor_of', 'UAL', 'Rival US network airlines'),
+  l('DAL', 'competitor_of', 'LUV', 'Rival US airlines'),
+  l('UAL', 'competitor_of', 'LUV', 'Rival US airlines'),
+  l('CVX', 'competitor_of', 'XOM', 'The two largest US integrated oil companies'),
+  l('VLO', 'competitor_of', 'MPC', 'Rival large US oil refiners'),
+  l('BAC', 'competitor_of', 'JPM', 'Two of the largest US banks'),
+  l('GS', 'competitor_of', 'JPM', 'Compete in investment banking and trading'),
 ]
 
 // ── Exposures ────────────────────────────────────────────────────────────────
@@ -100,6 +109,13 @@ const EXPOSURE: Link[] = [
   l('DRREDDY.NS', 'exposed_to', 'country:us', 'North American generics are its largest business'),
   l('CIPLA.NS', 'exposed_to', 'country:us', 'Sells a large share of its generics in the US'),
   l('DIVISLAB.NS', 'exposed_to', 'currency:usd', 'Most revenue comes from exports'),
+  ...['DAL', 'UAL', 'LUV', 'INDIGO.NS'].map(id => l(id, 'exposed_to', 'commodity:crude-oil', 'Jet fuel is one of its largest operating costs')),
+  l('INDIGO.NS', 'exposed_to', 'currency:usd', 'Aircraft lease and maintenance costs are largely in US dollars'),
+  l('CVX', 'exposed_to', 'commodity:crude-oil', 'Earnings track oil prices as a major oil producer'),
+  l('CVX', 'exposed_to', 'commodity:natural-gas', 'Major natural-gas producer'),
+  l('VLO', 'exposed_to', 'commodity:crude-oil', 'Oil refiner; crude is its main input and refining margins track fuel prices'),
+  l('MPC', 'exposed_to', 'commodity:crude-oil', 'Oil refiner; crude is its main input and refining margins track fuel prices'),
+  l('NEM', 'exposed_to', 'commodity:gold', "The world's largest gold miner; revenue tracks the gold price"),
 ]
 
 // ── Ownership ────────────────────────────────────────────────────────────────

@@ -5,3 +5,4 @@ node_modules/
 prisma/godsvision.db
 .claude/
 tsconfig.tsbuildinfo
+data/scenario/.cache/

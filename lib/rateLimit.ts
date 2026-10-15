@@ -127,4 +127,6 @@ export const LIMITS = {
   sheetsKey:   (key: string): Limit   => ({ bucket: 'sheets-key', id: key, max: 2000, windowSec: HOUR }),
   backtest:    (userId: string): Limit => ({ bucket: 'backtest', id: userId, max: 30, windowSec: HOUR }),
   writes:      (userId: string): Limit => ({ bucket: 'writes', id: userId, max: 120, windowSec: HOUR }),
+  /** Portfolio stress tests (POST /api/scenario/portfolio) — reads the user's holdings each time. */
+  scenario:    (userId: string): Limit => ({ bucket: 'scenario', id: userId, max: 60, windowSec: HOUR }),
 }

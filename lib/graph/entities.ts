@@ -129,6 +129,16 @@ const US_COMPANIES: Entity[] = [
   { id: 'WMT', type: 'company', name: 'Walmart', sector: CS, industry: 'Retail', country: US, aliases: ['Walmart'] },
   { id: 'TSM', type: 'company', name: 'Taiwan Semiconductor Manufacturing', sector: IT, industry: 'Semiconductor foundry', country: 'country:taiwan', exchange: 'NYSE', aliases: ['TSMC', 'Taiwan Semiconductor'] },
   { id: 'ASML', type: 'company', name: 'ASML', sector: IT, industry: 'Semiconductor equipment', country: 'country:netherlands', exchange: 'NASDAQ', aliases: ['ASML'] },
+  // Scenario coverage (added 2026-10-15): oil users and producers, rate-sensitive banks, a gold miner.
+  { id: 'DAL', type: 'company', name: 'Delta Air Lines', sector: IND, industry: 'Airlines', country: US, exchange: 'NYSE', aliases: ['Delta Air Lines', 'Delta Airlines'] },
+  { id: 'UAL', type: 'company', name: 'United Airlines', sector: IND, industry: 'Airlines', country: US, exchange: 'NASDAQ', aliases: ['United Airlines'] },
+  { id: 'LUV', type: 'company', name: 'Southwest Airlines', sector: IND, industry: 'Airlines', country: US, exchange: 'NYSE', aliases: ['Southwest Airlines'] },
+  { id: 'CVX', type: 'company', name: 'Chevron', sector: EN, industry: 'Integrated oil & gas', country: US, exchange: 'NYSE', aliases: ['Chevron'] },
+  { id: 'VLO', type: 'company', name: 'Valero Energy', sector: EN, industry: 'Oil refining', country: US, exchange: 'NYSE', aliases: ['Valero Energy', 'Valero'] },
+  { id: 'MPC', type: 'company', name: 'Marathon Petroleum', sector: EN, industry: 'Oil refining', country: US, exchange: 'NYSE', aliases: ['Marathon Petroleum'] },
+  { id: 'BAC', type: 'company', name: 'Bank of America', sector: FIN, industry: 'Banking', country: US, exchange: 'NYSE', aliases: ['Bank of America', 'BofA'] },
+  { id: 'GS', type: 'company', name: 'Goldman Sachs', sector: FIN, industry: 'Investment banking', country: US, exchange: 'NYSE', aliases: ['Goldman Sachs'] },
+  { id: 'NEM', type: 'company', name: 'Newmont', sector: MAT, industry: 'Gold mining', country: US, exchange: 'NYSE', aliases: ['Newmont'] },
 ]
 
 // Nifty 50 (mirrors NIFTY50_STOCKS in lib/apis/india.ts — scripts/graph-test.ts checks they match).
@@ -188,8 +198,13 @@ const INDIA_COMPANIES: Entity[] = [
   nse('BAJAJ-AUTO.NS', 'Bajaj Auto', CD, 'Two- & three-wheelers', ['Bajaj Auto']),
 ]
 
+// NSE-listed but not in the app's Nifty 50 list (lib/apis/india.ts), so no Nifty 50 link.
+const INDIA_OTHER: Entity[] = [
+  { id: 'INDIGO.NS', type: 'company', name: 'InterGlobe Aviation (IndiGo)', sector: IND, industry: 'Airlines', country: IN, exchange: 'NSE', aliases: ['InterGlobe Aviation', 'IndiGo'], caseSensitive: ['IndiGo'] },
+]
+
 export const ENTITIES: Entity[] = [
-  ...SECTORS, ...REGIONS, ...COUNTRIES, ...COMMODITIES, ...CURRENCIES, ...INDICES, ...US_COMPANIES, ...INDIA_COMPANIES,
+  ...SECTORS, ...REGIONS, ...COUNTRIES, ...COMMODITIES, ...CURRENCIES, ...INDICES, ...US_COMPANIES, ...INDIA_COMPANIES, ...INDIA_OTHER,
 ]
 
 /** The Nifty 50 ids above, in one place (used for constituent links). */

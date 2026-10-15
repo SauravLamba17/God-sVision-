@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { feedSnapshot, instanceStartedAt, instanceId, mergeFeeds, type FeedStats, type InstanceSummary } from '@/lib/feedHealth'
 import { DAILY_CAP } from '@/lib/gemini'
 import { MARKET_FEEDS, healthName } from '@/lib/apis/marketNews'
+import { SENSITIVITIES, sensitivityAgeDays } from '@/lib/scenario/data'
 
 // Admin-only data health page. Access is checked here, server-side, against
 // ADMIN_EMAILS (comma-separated) — not in middleware or auth config. Anyone
@@ -129,6 +130,20 @@ export default async function HealthPage() {
             })}
           </tbody>
         </table>
+      </div>
+
+      <div style={section}>
+        <div style={title}>SCENARIO SENSITIVITY DATA</div>
+        {(() => {
+          const age = sensitivityAgeDays(), stale = age > 45, m = SENSITIVITIES.meta
+          return (
+            <div style={{ padding: '8px 10px', lineHeight: 1.7 }}>
+              <div>Built {fmt(new Date(m.generatedAt))} — <b style={{ color: stale ? 'var(--text-negative)' : 'var(--text-positive)' }}>{Math.floor(age)} days old{stale ? ' (older than 45 days — refresh)' : ''}</b></div>
+              <div style={{ color: 'var(--text-muted)' }}>Daily window {m.window.daily.start} to {m.window.daily.end} · weekly (USD/INR) {m.window.weekly.start} to {m.window.weekly.end} · rule: {m.reliableRule}</div>
+              <div style={{ color: 'var(--text-muted)' }}>Refresh monthly: <code>npm run build:sensitivities</code>, then commit data/scenario/sensitivities.json and deploy.</div>
+            </div>
+          )
+        })()}
       </div>
 
       <div style={section}>

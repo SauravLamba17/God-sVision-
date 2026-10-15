@@ -29,6 +29,7 @@ const NAV_EXTRA = [
   { label: 'COMMODITIES', href: '/commodities' },
   { label: 'BONDS',       href: '/bonds' },
   { label: 'BACKTEST',    href: '/backtest' },
+  { label: 'SCENARIOS',   href: '/scenarios' },
   { label: 'SHEETS',      href: '/sheets' },
   { label: 'PORTFOLIO',   href: '/portfolio' },
   { label: 'ALERTS',      href: '/alerts' },

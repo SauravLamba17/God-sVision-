@@ -119,6 +119,17 @@ async function run() {
   const bKey = await (await B.req('/api/user/gv-key')).json()
   record('B GET /api/user/gv-key', "not A's key", bKey.key === keyA ? "A's key returned" : "own key only", bKey.key !== keyA)
 
+  // Portfolio stress test: each user's result is built from their own holdings only.
+  const stress = async (c: Client) => {
+    const r = await c.json('/api/scenario/portfolio', 'POST', { preset: 'oil-up' })
+    return { status: r.status, cc: r.headers.get('cache-control'), body: await r.text() }
+  }
+  const aStress = await stress(A), bStress = await stress(B)
+  record('A POST /api/scenario/portfolio — own holdings', 'own ticker', aStress.body.includes(TICKER) ? 'own ticker' : `missing (${aStress.status})`, aStress.status === 200 && aStress.body.includes(TICKER))
+  const bHoldings = (() => { try { return JSON.parse(bStress.body).data?.holdings } catch { return 'unparsable' } })()
+  record('B POST /api/scenario/portfolio — no A holding or result', 'no A item, 0 holdings', bStress.body.includes(TICKER) ? 'A item visible' : `no A item, ${bHoldings} holdings`, bStress.status === 200 && !bStress.body.includes(TICKER) && bHoldings === 0)
+  record('POST /api/scenario/portfolio Cache-Control', 'private, no-store', `${aStress.cc} | ${bStress.cc}`, aStress.cc === 'private, no-store' && bStress.cc === 'private, no-store')
+
   // ── B writes against A's items ────────────────────────────────────────────
   const denied = (s: number) => s === 403 || s === 404
   const attack = async (label: string, res: Response, survived: () => Promise<boolean>) => {
@@ -169,6 +180,7 @@ async function run() {
     ['POST', '/api/push/subscribe', { endpoint: ENDPOINT_A, keys: {} }],
     ['GET', '/api/user/gv-key'], ['POST', '/api/user/gv-key'],
     ['POST', '/api/stripe/checkout'], ['POST', '/api/stripe/portal'],
+    ['POST', '/api/scenario/portfolio', { preset: 'oil-up' }],
   ]
   for (const [method, path, body] of unauth) {
     const res = body === undefined ? await anon.req(path, { method }) : await anon.json(path, method, body)

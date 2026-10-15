@@ -15,7 +15,9 @@
     "test:evidence": "node scripts/evidence-test.ts",
     "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml",
     "test:brain": "node scripts/brain-test.ts",
-    "compare:news": "node --no-warnings scripts/news-compare.ts"
+    "compare:news": "node --no-warnings scripts/news-compare.ts",
+    "build:sensitivities": "node --no-warnings scripts/build-sensitivities.ts",
+    "test:scenario": "node --no-warnings scripts/scenario-test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
