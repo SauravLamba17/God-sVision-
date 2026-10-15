@@ -4,12 +4,15 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { parseBody } from '@/lib/validation'
 import { checkLimits, LIMITS, tooManyRequests } from '@/lib/rateLimit'
-import { portfolioImpact } from '@/lib/scenario/engine'
+import { portfolioImpact, resolveHolding } from '@/lib/scenario/engine'
+import { cachedPrices } from '@/lib/scenario/prices'
 import { SENSITIVITIES } from '@/lib/scenario/data'
 import { ScenarioParams } from '@/lib/scenario/schema'
 
 // Stress the signed-in user's own holdings. Session-scoped: never cached anywhere,
 // reads only this user's rows; holdings without a reliable link are "not estimated".
+// Weighted by current value from prices the app already has cached (no upstream call);
+// a holding without one is weighted by cost and labelled.
 const PRIVATE: Record<string, string> = { 'Cache-Control': 'private, no-store' }
 
 export async function POST(req: NextRequest) {
@@ -21,8 +24,10 @@ export async function POST(req: NextRequest) {
     if (parsed.error) return parsed.error
     const rl = await checkLimits([LIMITS.scenario(userId)])
     if (!rl.ok) return tooManyRequests(rl.retryAfter, 'portfolio stress tests', PRIVATE)
-    const holdings = await prisma.portfolioHolding.findMany({ where: { userId }, select: { ticker: true, quantity: true, buyPrice: true } })
-    const data = portfolioImpact(SENSITIVITIES, parsed.data as Parameters<typeof portfolioImpact>[1], holdings)
+    // createdAt order = the Portfolio page's order, so its cached batch quote is found.
+    const holdings = await prisma.portfolioHolding.findMany({ where: { userId }, orderBy: { createdAt: 'asc' }, select: { ticker: true, quantity: true, buyPrice: true } })
+    const prices = await cachedPrices(holdings.map(h => h.ticker), holdings.map(h => resolveHolding(SENSITIVITIES, h.ticker)).filter((s): s is string => !!s))
+    const data = portfolioImpact(SENSITIVITIES, parsed.data as Parameters<typeof portfolioImpact>[1], holdings, prices)
     return NextResponse.json({ data: { ...data, holdings: holdings.length } }, { headers: PRIVATE })
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400, headers: PRIVATE })

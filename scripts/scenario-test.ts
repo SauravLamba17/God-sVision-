@@ -6,18 +6,22 @@
  *  8. Method: alignment, weekly returns, HC1 regression   9. Portfolio   10. CPU
  *  11. Live: the API through a LOCAL server (shared throwaway account, see
  *      liveAccount.ts; `npm run test:scenario -- --cleanup` deletes it).
+ *  `-- --offline` skips 11 (the monthly refresh workflow runs this way); the GATE
+ *  checks are the oil / rates / sector sanity gate a data refresh must pass.
  */
 import fs from 'node:fs'
-import { assertScenarioWording, portfolioImpact, runScenario, SCENARIO_BANNED, validateShock, type ScenarioResult, type SensitivityData } from '../lib/scenario/engine.ts'
-import { FACTOR_IDS, FACTORS, MARKET_FACTORS, SECTOR_FUNDS, type Market } from '../lib/scenario/factors.ts'
-import { PRESETS } from '../lib/scenario/presets.ts'
+import { assertScenarioWording, COST_NOTE, portfolioImpact, runScenario, SCENARIO_BANNED, validateShock, VALUE_NOTE, type ScenarioResult, type SensitivityData } from '../lib/scenario/engine.ts'
+import { FACTOR_IDS, FACTORS, MARKET_FACTORS, SECTOR_FUNDS, type FactorId, type Market } from '../lib/scenario/factors.ts'
+import { PRESETS, presetFactor, presetSize, type FactorPreset } from '../lib/scenario/presets.ts'
 import { alignedMove, dailyMoves, isoWeek, isReliable, olsHC1, rng, weekly } from '../lib/scenario/stats.ts'
-import { getEntity } from '../lib/graph/index.ts'
+import { allEntities, getEntity } from '../lib/graph/index.ts'
 import { signIn, cleanupAccount, CLEANUP } from './liveAccount.ts'
 
 const rows: { check: string; pass: boolean; detail: string }[] = []
 const check = (name: string, pass: boolean, detail = '') => rows.push({ check: name, pass, detail })
 const data: SensitivityData = JSON.parse(fs.readFileSync(new URL('../data/scenario/sensitivities.json', import.meta.url), 'utf8'))
+const presetSizes = JSON.parse(fs.readFileSync(new URL('../data/scenario/preset-sizes.json', import.meta.url), 'utf8'))
+const OFFLINE = process.argv.includes('--offline')
 const run = (market: Market, q: { preset: any } | { factor: any; shock: number }) => runScenario(data, { market, ...q } as any)
 const all: ScenarioResult[] = []
 const keep = (r: ScenarioResult) => (all.push(r), r)
@@ -47,6 +51,18 @@ for (const market of ['US', 'IN'] as Market[]) {
     `ONGC ${t(inn, 'ONGC.NS')?.toFixed(1)} IndiGo ${t(inn, 'INDIGO.NS')?.toFixed(1)} BPCL ${t(inn, 'BPCL.NS')?.toFixed(1)}`)
 }
 
+// ── GATE: the sanity gate a data refresh must pass (monthly workflow) ──────────
+{
+  const fit = (s: string, f: string) => (data.stocks[s] ?? data.sectors[s])?.factors[f as FactorId]
+  const gate: [string, string, 1 | -1][] = [
+    ['XOM', 'wti', 1], ['CVX', 'wti', 1], ['VLO', 'wti', 1], ['MPC', 'wti', 1], ['ONGC.NS', 'brent', 1],
+    ['DAL', 'wti', -1], ['UAL', 'wti', -1], ['INDIGO.NS', 'brent', -1], ['BPCL.NS', 'brent', -1],
+    ['JPM', 'us10y', 1], ['XLE', 'wti', 1], ['JETS', 'wti', -1],
+  ]
+  const failing = gate.filter(([s, f, sign]) => { const x = fit(s, f); return !x?.reliable || Math.sign(x.b) !== sign }).map(([s, f, sign]) => `${s}/${f} expected ${sign > 0 ? '+' : '−'}: ${fit(s, f) ? `b ${fit(s, f)!.b}, t ${fit(s, f)!.t}, ${fit(s, f)!.reliable ? 'reliable' : 'not reliable'}` : 'missing'}`)
+  check('GATE: oil (XOM, CVX, VLO, MPC, ONGC +; DAL, UAL, IndiGo, BPCL −), US 10Y (JPM +), Energy fund + and airline fund − — all reliable', failing.length === 0, failing.join(' | '))
+}
+
 // ── 3. Unreliable links never produce numbers ───────────────────────────────
 for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p => p.markets.includes(market))) keep(run(market, { preset: p.id }))
 {
@@ -64,9 +80,17 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
 
 // ── 4. Beyond historical range ───────────────────────────────────────────────
 {
-  const a = run('US', { preset: 'oil-up' }), b = run('US', { preset: 'rates-up' }), c = run('US', { factor: 'wti', shock: 30 }), d = run('US', { factor: 'wti', shock: 5 })
-  check('range: oil +20% within, rates +100bp and WTI +30% flagged beyond the 5th–95th percentile, WTI +5% within',
-    !a.range!.beyond && b.range!.beyond && c.range!.beyond && !d.range!.beyond && /Beyond historical range — estimate less reliable/.test(b.range!.text), b.range!.text)
+  const factorPresets = PRESETS.filter((p): p is FactorPreset => p.kind === 'factor')
+  const defaults = factorPresets.flatMap(p => p.markets.map(m => ({ p, m, r: run(m, { preset: p.id }) })))
+  const flagged = defaults.filter(x => x.r.range!.beyond).map(x => `${x.m} ${x.r.title}`)
+  check(`range: no default preset is beyond historical range (${defaults.length} preset × market runs)`, flagged.length === 0, flagged.join(', '))
+  check('presets: sized at the 95th/5th percentile 20-day move, rounded toward zero; the page\'s preset-sizes.json matches the engine',
+    defaults.every(({ p, m, r }) => { const pct = data.factors[presetFactor(p, m)].moves20d[p.side === 'up' ? 'p95' : 'p5'], s = r.factor!.shock
+      return Math.sign(s) === Math.sign(pct) && Math.abs(s) <= Math.abs(pct) && Math.abs(s) >= Math.abs(pct) / 2 && presetSizes.sizes[m][p.id].shock === s && presetSize(p, m, data.factors).shock === s && /a large 20-day move historically/.test(r.description) }),
+    defaults.map(x => `${x.m} ${x.r.title}`).join(', '))
+  const b = run('US', { factor: 'us10y', shock: 100 }), c = run('US', { factor: 'wti', shock: 30 }), d = run('US', { factor: 'wti', shock: 5 })
+  check('range: custom shocks can go beyond — US 10Y +100bp and WTI +30% flagged, WTI +5% within',
+    b.range!.beyond && c.range!.beyond && !d.range!.beyond && /Beyond historical range — estimate less reliable/.test(b.range!.text), b.range!.text)
   check('validation: WTI rejected for India, shocks above the factor limit rejected, in-range accepted',
     !!validateShock('IN', 'wti', 10) && !!validateShock('US', 'us10y', 400) && !!validateShock('US', 'vix', -41) && validateShock('US', 'us10y', -300) === null && validateShock('IN', 'brent', 60) === null)
 }
@@ -98,7 +122,9 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
   check('data: no NaN/Infinity, valid dates, every stock in the graph, every fund configured, reliable flags match the rule',
     !bad.length && windows.every(w => dateOk(w.start) && dateOk(w.end) && w.start < w.end) && !notInGraph.length && Object.keys(data.sectors).every(s => SECTOR_FUNDS.some(f => f.symbol === s)) && !wrongRule.length && FACTOR_IDS.every(f => data.factors[f]),
     [bad.slice(0, 3).join(', '), notInGraph.join(', '), wrongRule.slice(0, 3).join(', ')].filter(Boolean).join(' | '))
-  check('data: every graph company and every market factor has a fit (or is reported missing)', !missingFactors.length, missingFactors.join(', '))
+  const graphCompanies = allEntities().filter(e => e.type === 'company').map(e => e.id), absent = graphCompanies.filter(id => !data.stocks[id])
+  check(`data: all ${graphCompanies.length} graph companies and every market factor have a fit; no download failed`, !missingFactors.length && !absent.length && !((data.meta as any).failed ?? []).length,
+    [missingFactors.join(', '), absent.join(', '), ((data.meta as any).failed ?? []).join('; ')].filter(Boolean).join(' | '))
   const ageDays = (Date.now() - Date.parse(data.meta.generatedAt)) / 86400_000
   check(`data: built ${data.meta.generatedAt.slice(0, 10)} (${ageDays.toFixed(0)} days old; /admin/health warns after 45)`, ageDays >= 0 && ageDays < 45)
 }
@@ -134,14 +160,23 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
 
 // ── 9. Portfolio ─────────────────────────────────────────────────────────────
 {
-  const p = portfolioImpact(data, { preset: 'oil-up' }, [
+  const holdings = [
     { ticker: 'XOM', quantity: 10, buyPrice: 100 }, { ticker: 'dal', quantity: 20, buyPrice: 50 }, { ticker: 'ZZZZ', quantity: 1, buyPrice: 1 },
     { ticker: 'ONGC', quantity: 100, buyPrice: 250 }, { ticker: 'ASIANPAINT.NS', quantity: 10, buyPrice: 2500 }, { ticker: 'XOM', quantity: 5, buyPrice: 100 },
-  ])
+  ]
+  const p = portfolioImpact(data, { preset: 'oil-up' }, holdings, { XOM: 120, 'ONGC.NS': 300 })
   const us = p.groups.find(g => g.market === 'US')!, inn = p.groups.find(g => g.market === 'IN')!
-  const xom = p.lines.find(l => l.symbol === 'XOM')!
+  const xom = p.lines.find(l => l.symbol === 'XOM')!, dal = p.lines.find(l => l.symbol === 'DAL')!, ongc = p.lines.find(l => l.symbol === 'ONGC.NS')!
+  check('portfolio: weighted by current value where a cached price exists (XOM 15 × 120), else by cost and labelled (DAL 20 × 50)',
+    xom.weight === 1800 && xom.weightBasis === 'value' && xom.weightNote === VALUE_NOTE && dal.weight === 1000 && dal.weightBasis === 'cost' && dal.weightNote === COST_NOTE
+      && ongc.weight === 30000 && ongc.weightBasis === 'value' && us.weight === 2800 && /USD value, cost where no current price\)/.test(us.text) && /of their INR value, cost where no current price\)/.test(inn.text),
+    `${us.text} | ${inn.text}`)
+  const expected = (1800 * xom.impact!.total + 1000 * dal.impact!.total) / 2800
+  check('portfolio: the US figure is the value-weighted average of its holdings (USD only, never mixed with INR)', Math.abs(us.total! - expected) < 1e-9 && us.currency === 'USD' && inn.currency === 'INR', `${us.total!.toFixed(3)} vs ${expected.toFixed(3)}`)
+  const noPrices = portfolioImpact(data, { preset: 'oil-up' }, holdings)
+  check('portfolio: with no cached prices every holding is weighted by cost and says so', [...noPrices.lines, ...noPrices.notEstimated].every(l => l.weightBasis === 'cost' && l.weightNote === COST_NOTE) && noPrices.lines.find(l => l.symbol === 'XOM')!.weight === 1500)
   check('portfolio: per-market groups in their own currency; uncovered and unreliable holdings listed as not estimated, never guessed',
-    us.currency === 'USD' && inn.currency === 'INR' && xom.costBasis === 1500 && p.lines.some(l => l.symbol === 'DAL') && p.lines.some(l => l.symbol === 'ONGC.NS')
+    us.currency === 'USD' && inn.currency === 'INR' && p.lines.some(l => l.symbol === 'DAL') && p.lines.some(l => l.symbol === 'ONGC.NS')
       && p.notEstimated.some(l => l.ticker === 'ZZZZ' && /not covered/.test(l.reason!)) && p.notEstimated.some(l => l.symbol === 'ASIANPAINT.NS' && /no reliable/.test(l.reason!)) && !p.notEstimated.some(l => l.impact),
     `${us.text} | ${inn.text}`)
   const ev = portfolioImpact(data, { preset: 'taiwan-chips' }, [{ ticker: 'NVDA', quantity: 1, buyPrice: 100 }, { ticker: 'JPM', quantity: 1, buyPrice: 100 }])
@@ -158,7 +193,7 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
 
 // ── 11. Live API ─────────────────────────────────────────────────────────────
 const live: string[] = []
-{
+if (!OFFLINE) {
   const session = await signIn()
   if (typeof session === 'string') check('live check', false, `skipped: ${session}`)
   else {
@@ -170,12 +205,19 @@ const live: string[] = []
       }
       const bad = await session.req('/api/scenario?market=us&factor=wti&shock=500')
       check('live: out-of-range custom shock → 400', bad.status === 400, String(bad.status))
-      const anyHolding = await session.req('/api/portfolio', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ticker: 'XOM', quantity: 2, buyPrice: 100, buyDate: '2026-01-02' }) })
-      const hid = (await anyHolding.json()).data?.id
+      // Two holdings; only XOM's price is put in the app's cache first (the way the Portfolio page or a quote lookup would).
+      const ids: number[] = []
+      for (const t of ['XOM', 'NEM']) ids.push((await (await session.req('/api/portfolio', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ticker: t, quantity: 2, buyPrice: 100, buyDate: '2026-01-02' }) })).json()).data?.id)
+      const quote = (await (await session.req('/api/stocks?ticker=XOM')).json()).data
       const pr = await session.req('/api/scenario/portfolio', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ preset: 'oil-up' }) })
       const pj = await pr.json()
-      check('live POST /api/scenario/portfolio: own holding estimated, private no-store', pr.status === 200 && pr.headers.get('cache-control') === 'private, no-store' && pj.data?.lines?.some((l: any) => l.symbol === 'XOM' && l.impact?.total > 0), JSON.stringify(pj.data?.groups))
-      if (hid) await session.req(`/api/portfolio?id=${hid}`, { method: 'DELETE' })
+      const xom = pj.data?.lines?.find((l: any) => l.symbol === 'XOM'), all = [...(pj.data?.lines ?? []), ...(pj.data?.notEstimated ?? [])]
+      check('live POST /api/scenario/portfolio: own holdings, private no-store; XOM weighted by its cached price, every line labelled by its basis',
+        pr.status === 200 && pr.headers.get('cache-control') === 'private, no-store' && xom?.impact?.total > 0 && xom.weightBasis === 'value' && Math.abs(xom.weight / (2 * quote?.regularMarketPrice) - 1) < 0.02 /* another cached list may hold a few-seconds-different price */
+          && all.every((l: any) => (l.weightBasis === 'value') === /current value/.test(l.weightNote)),
+        `${JSON.stringify(pj.data?.groups?.map((g: any) => g.text))} | ${all.map((l: any) => `${l.ticker}: ${l.weightNote}${l.reason ? ` (${l.reason})` : ''}`).join('; ')}`)
+      live.push(`Portfolio: ${all.map((l: any) => `${l.ticker} weight ${l.weight.toFixed(2)} — ${l.weightNote}`).join('; ')} | ${pj.data?.groups?.map((g: any) => g.text).join(' | ')}`)
+      for (const id of ids) if (id) await session.req(`/api/portfolio?id=${id}`, { method: 'DELETE' })
     } finally {
       if (CLEANUP) check('live: throwaway account deleted', (await cleanupAccount()) === true)
     }

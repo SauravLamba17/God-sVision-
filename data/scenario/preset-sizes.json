@@ -1,0 +1,65 @@
+{
+ "generatedAt": "2026-10-15T02:18:33.276Z",
+ "sizes": {
+  "US": {
+   "oil-up": {
+    "shock": 20,
+    "percentile": 24.1
+   },
+   "oil-down": {
+    "shock": -10,
+    "percentile": -13.14
+   },
+   "rates-up": {
+    "shock": 35,
+    "percentile": 37.49
+   },
+   "rates-down": {
+    "shock": -20,
+    "percentile": -23.2
+   },
+   "inr-weak": {
+    "shock": 2,
+    "percentile": 2.42
+   },
+   "gold-up": {
+    "shock": 10,
+    "percentile": 11.09
+   },
+   "vix-spike": {
+    "shock": 8,
+    "percentile": 8.199
+   }
+  },
+  "IN": {
+   "oil-up": {
+    "shock": 20,
+    "percentile": 24.08
+   },
+   "oil-down": {
+    "shock": -15,
+    "percentile": -15.26
+   },
+   "rates-up": {
+    "shock": 35,
+    "percentile": 37.49
+   },
+   "rates-down": {
+    "shock": -20,
+    "percentile": -23.2
+   },
+   "inr-weak": {
+    "shock": 2,
+    "percentile": 2.42
+   },
+   "gold-up": {
+    "shock": 10,
+    "percentile": 11.09
+   },
+   "vix-spike": {
+    "shock": 8,
+    "percentile": 8.199
+   }
+  }
+ }
+}

@@ -10,7 +10,7 @@
 //   indirect    graph supplier/customer links of estimated stocks — named, never given a number
 // Sensitivities that miss the reliability rule never produce numbers ("no reliable historical link").
 import { FACTORS, MARKET_CONTROL, MARKET_FACTORS, SECTOR_FUNDS, shockLabel, type FactorId, type Market, type Unit } from './factors.ts'
-import { PRESETS, presetById, type EventPreset, type PresetId } from './presets.ts'
+import { oilFor, PRESETS, presetBlurb, presetById, presetFactor, presetSize, presetTitle, type EventPreset, type PresetId } from './presets.ts'
 import { allEntities, getEntity, getLinks } from '../graph/index.ts'
 import { BANNED } from '../evidence/summary.ts'
 import { pct } from '../format.ts'
@@ -74,9 +74,6 @@ const quality = (t: number): Quality => (Math.abs(t) >= 6 ? 'strong' : Math.abs(
 const p1 = (n: number) => pct(n, 1, '−')
 const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2 }
 const unitWord = (u: Unit) => (u === 'pct' ? 'percent' : u === 'bp' ? 'basis points' : 'points')
-
-/** The factor a preset or a request means in this market ('oil' → WTI in the US, Brent in India). */
-export const oilFor = (m: Market): FactorId => (m === 'US' ? 'wti' : 'brent')
 
 /** null if acceptable, else why not. */
 export function validateShock(market: Market, factor: FactorId, shock: number): string | null {
@@ -179,8 +176,9 @@ export function runScenario(data: SensitivityData, input: ScenarioInput): Scenar
     return r
   }
 
-  const f: FactorId = preset?.kind === 'factor' ? (preset.factor === 'oil' ? oilFor(market) : preset.factor) : (input as { factor: FactorId }).factor
-  const shock = preset?.kind === 'factor' ? preset.shock : (input as { shock: number }).shock
+  const f: FactorId = preset?.kind === 'factor' ? presetFactor(preset, market) : (input as { factor: FactorId }).factor
+  const size = preset?.kind === 'factor' ? presetSize(preset, market, data.factors) : null
+  const shock = size ? size.shock : (input as { shock: number }).shock
   const invalid = validateShock(market, f, shock)
   if (invalid) throw new Error(invalid)
   const fm = data.factors[f], unit = FACTORS[f].unit, label = shockLabel(shock, unit)
@@ -211,8 +209,8 @@ export function runScenario(data: SensitivityData, input: ScenarioInput): Scenar
 
   const result: ScenarioResult = {
     market, kind: 'factor', preset: preset?.id ?? null,
-    title: preset?.title ?? `${FACTORS[f].name} ${label}`,
-    description: preset?.blurb ?? `Custom shock: ${FACTORS[f].name} moves ${label}.`,
+    title: preset?.kind === 'factor' && size ? presetTitle(preset, market, size) : `${FACTORS[f].name} ${label}`,
+    description: preset?.kind === 'factor' && size ? presetBlurb(preset, market, size) : `Custom shock: ${FACTORS[f].name} moves ${label}.`,
     factor: { id: f, name: FACTORS[f].name, symbol: FACTORS[f].symbol, unit, shock, label, freq: fm.freq },
     range, window, generatedAt: data.meta.generatedAt, marketReaction,
     stocks,
@@ -230,10 +228,15 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 
 // ── Portfolio ────────────────────────────────────────────────────────────────
 export interface Holding { ticker: string; quantity: number; buyPrice: number }
-export interface PortfolioLine { ticker: string; symbol: string | null; name: string; market: Market | null; costBasis: number; impact: Impact | null; event?: EventTouch | null; reason?: string }
+export interface PortfolioLine {
+  ticker: string; symbol: string | null; name: string; market: Market | null
+  /** Weight: quantity × current price when the app has a cached price, else quantity × buy price. */
+  weight: number; weightBasis: 'value' | 'cost'; weightNote: string
+  impact: Impact | null; event?: EventTouch | null; reason?: string
+}
 export interface PortfolioResult {
   /** Per market (US holdings in USD, Indian in INR — never mixed without a rate). */
-  groups: { market: Market; currency: 'USD' | 'INR'; costBasis: number; estimatedBasis: number; total: number | null; low: number | null; high: number | null; text: string }[]
+  groups: { market: Market; currency: 'USD' | 'INR'; weight: number; estimatedWeight: number; total: number | null; low: number | null; high: number | null; text: string }[]
   lines: PortfolioLine[]
   notEstimated: PortfolioLine[]
   notes: string[]
@@ -245,50 +248,67 @@ export function resolveHolding(data: SensitivityData, ticker: string): string | 
   return data.stocks[t] ? t : data.stocks[`${t}.NS`] ? `${t}.NS` : null
 }
 
+export const VALUE_NOTE = 'weighted by current value (cached price)'
+export const COST_NOTE = 'weighted by cost, no current price'
+
 /**
- * The user's holdings under a scenario. Weights are cost basis (quantity × buy price) — no
- * live prices are fetched. Each market's group runs its own version of the scenario (oil
- * means WTI for US holdings, Brent for Indian ones). The group range adds the holdings'
- * bands as if they moved together (the widest honest range).
+ * The user's holdings under a scenario, weighted by current value — quantity × a price
+ * the app already has cached (`prices`, by symbol, in the holding's own currency) — or,
+ * when no cached price exists, by cost (quantity × buy price), labelled as such. Each
+ * market's group runs its own version of the scenario (oil means WTI for US holdings,
+ * Brent for Indian ones). The group range adds the holdings' bands as if they moved
+ * together (the widest honest range).
  */
-export function portfolioImpact(data: SensitivityData, input: { preset: PresetId } | { factor: FactorId; shock: number }, holdings: Holding[]): PortfolioResult {
+export function portfolioImpact(data: SensitivityData, input: { preset: PresetId } | { factor: FactorId; shock: number }, holdings: Holding[], prices: Record<string, number> = {}): PortfolioResult {
   const runs = new Map<Market, ScenarioResult | Error>()
   const runFor = (m: Market) => {
     if (!runs.has(m)) { try { runs.set(m, runScenario(data, { market: m, ...input } as ScenarioInput)) } catch (e) { runs.set(m, e as Error) } }
     return runs.get(m)!
   }
+  const priceOf = (symbol: string | null, ticker: string) => {
+    const p = (symbol && prices[symbol]) || prices[ticker.trim().toUpperCase()]
+    return typeof p === 'number' && Number.isFinite(p) && p > 0 ? p : null
+  }
   const bySym = new Map<string, PortfolioLine>()
-  const lines: PortfolioLine[] = [], notEstimated: PortfolioLine[] = []
+  const notEstimated: PortfolioLine[] = []
   for (const h of holdings) {
-    const symbol = resolveHolding(data, h.ticker), basis = h.quantity * h.buyPrice
-    if (!symbol) { notEstimated.push({ ticker: h.ticker, symbol: null, name: h.ticker, market: null, costBasis: basis, impact: null, reason: 'not covered by the sensitivity data' }); continue }
+    const symbol = resolveHolding(data, h.ticker), price = priceOf(symbol, h.ticker)
+    const w = { weight: h.quantity * (price ?? h.buyPrice), weightBasis: (price ? 'value' : 'cost') as 'value' | 'cost', weightNote: price ? VALUE_NOTE : COST_NOTE }
+    if (!symbol) { notEstimated.push({ ticker: h.ticker, symbol: null, name: h.ticker, market: null, ...w, impact: null, reason: 'not covered by the sensitivity data' }); continue }
     const prev = bySym.get(symbol)
-    if (prev) { prev.costBasis += basis; continue }
+    if (prev) { prev.weight += w.weight; continue } // same symbol → same price source
     const e = data.stocks[symbol], run = runFor(e.market)
-    const line: PortfolioLine = { ticker: h.ticker, symbol, name: e.name, market: e.market, costBasis: basis, impact: null }
+    const line: PortfolioLine = { ticker: h.ticker, symbol, name: e.name, market: e.market, ...w, impact: null }
     if (run instanceof Error) line.reason = run.message
     else if (run.kind === 'event') { line.event = run.event?.find(t => t.symbol === symbol) ?? null; if (!line.event) line.reason = 'not linked to this event' }
     else { line.impact = run.stocks.find(i => i.symbol === symbol) ?? null; if (!line.impact) line.reason = 'no reliable historical link' }
     bySym.set(symbol, line)
   }
+  const lines: PortfolioLine[] = []
   for (const l of bySym.values()) (l.impact || l.event ? lines : notEstimated).push(l)
 
   const groups = (['US', 'IN'] as Market[]).map(m => {
     const all = [...bySym.values()].filter(l => l.market === m), est = all.filter(l => l.impact)
-    const costBasis = all.reduce((a, l) => a + l.costBasis, 0), estimatedBasis = est.reduce((a, l) => a + l.costBasis, 0)
-    const w = (k: 'total' | 'low' | 'high') => estimatedBasis ? est.reduce((a, l) => a + l.costBasis * l.impact![k], 0) / estimatedBasis : null
-    const total = w('total'), low = w('low'), high = w('high')
-    const cur = m === 'US' ? 'USD' : 'INR'
+    const weight = all.reduce((a, l) => a + l.weight, 0), estimatedWeight = est.reduce((a, l) => a + l.weight, 0)
+    const avg = (k: 'total' | 'low' | 'high') => (estimatedWeight ? est.reduce((a, l) => a + l.weight * l.impact![k], 0) / estimatedWeight : null)
+    const total = avg('total'), low = avg('low'), high = avg('high')
+    const cur = m === 'US' ? 'USD' : 'INR', who = m === 'US' ? 'US' : 'Indian'
+    // The percentage below is of ALL the group's weight, so the label describes all of it.
+    const basis = all.every(l => l.weightBasis === 'value') ? 'value' : all.every(l => l.weightBasis === 'cost') ? 'cost' : 'value, cost where no current price'
     const text = !all.length ? '' : total === null
-      ? `None of your ${m === 'US' ? 'US' : 'Indian'} holdings has a reliable historical link to this scenario.`
-      : `Historically, under this scenario your ${m === 'US' ? 'US' : 'Indian'} holdings with a reliable link (${Math.round((estimatedBasis / costBasis) * 100)}% of their ${cur} cost basis) tended to move ${p1(total)} (range ${p1(low!)} to ${p1(high!)}).`
+      ? `None of your ${who} holdings has a reliable historical link to this scenario.`
+      : `Historically, under this scenario your ${who} holdings with a reliable link (${Math.round((estimatedWeight / weight) * 100)}% of their ${cur} ${basis}) tended to move ${p1(total)} (range ${p1(low!)} to ${p1(high!)}).`
     if (text) assertScenarioWording(text)
-    return { market: m, currency: cur as 'USD' | 'INR', costBasis, estimatedBasis, total, low, high, text }
-  }).filter(g => g.costBasis > 0)
+    return { market: m, currency: cur as 'USD' | 'INR', weight, estimatedWeight, total, low, high, text }
+  }).filter(g => g.weight > 0)
   return {
     groups, lines, notEstimated,
-    notes: ['Weights use your cost basis (quantity × buy price); no live prices are used.', 'US and Indian holdings are shown separately in their own currency.', 'Holdings without a reliable historical link are listed as not estimated — never guessed.'],
+    notes: [
+      'Weights use current value from prices the app already has cached; a holding without one uses cost (quantity × buy price) and is labelled.',
+      'US and Indian holdings are shown separately in their own currency, never converted.',
+      'Holdings without a reliable historical link are listed as not estimated — never guessed.',
+    ],
   }
 }
 
-export { PRESETS }
+export { PRESETS, oilFor }

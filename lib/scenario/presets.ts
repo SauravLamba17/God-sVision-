@@ -1,16 +1,43 @@
-// Scenario presets. Factor presets carry a shock size in the factor's unit; every
-// result magnitude still comes from data/scenario/sensitivities.json. Event presets
-// have no measurable history: they are directional only — which listed companies
-// are linked to the event and how (graph links, or a curated business exposure
-// with its reason) — and never show a percentage.
-import type { FactorId, Market } from './factors.ts'
+// Scenario presets. Factor presets are sized from history: each is the factor's 95th
+// (up) or 5th (down) percentile 20-day move in data/scenario/sensitivities.json, rounded
+// toward zero, so a default preset is never "beyond historical range" — a custom shock
+// still can be. Every result magnitude comes from the data file. Event presets have no
+// measurable history: they are directional only — which listed companies are linked to
+// the event and how (graph links, or a curated business exposure with its reason) — and
+// never show a percentage.
+import { FACTORS, shockLabel, type FactorId, type Market, type Unit } from './factors.ts'
 
 export type PresetId = 'oil-up' | 'oil-down' | 'rates-up' | 'rates-down' | 'inr-weak' | 'gold-up' | 'vix-spike' | 'taiwan-chips' | 'china-slowdown' | 'india-monsoon'
 
+/** A factor preset is sized from history, not chosen: a large but ordinary 20-day move (see presetSize). */
 export interface FactorPreset {
-  id: PresetId; kind: 'factor'; title: string; blurb: string; markets: Market[]
+  id: PresetId; kind: 'factor'; name: string; what: string; markets: Market[]
   /** 'oil' = the market's own benchmark: WTI in the US, Brent in India. */
-  factor: FactorId | 'oil'; shock: number
+  factor: FactorId | 'oil'; side: 'up' | 'down'
+}
+
+/** The factor a preset or a request means in this market ('oil' → WTI in the US, Brent in India). */
+export const oilFor = (m: Market): FactorId => (m === 'US' ? 'wti' : 'brent')
+export const presetFactor = (p: FactorPreset, m: Market): FactorId => (p.factor === 'oil' ? oilFor(m) : p.factor)
+
+/** Rounds toward zero to a readable step, so a rounded size never leaves the range it came from. */
+export function niceTowardZero(x: number, unit: Unit): number {
+  const a = Math.abs(x)
+  const step = unit === 'bp' ? 5 : unit === 'pt' ? 1 : a >= 10 ? 5 : a >= 3 ? 1 : a >= 1 ? 0.5 : 0.25
+  return Math.sign(x) * Math.floor(a / step + 1e-9) * step
+}
+
+export interface PresetSize { shock: number; percentile: number }
+type Moves = Record<FactorId, { moves20d: { p5: number; p95: number } }>
+/** Size = the factor's 95th (up) or 5th (down) percentile 20-day move, rounded toward zero. */
+export function presetSize(p: FactorPreset, m: Market, factors: Moves): PresetSize {
+  const r = factors[presetFactor(p, m)].moves20d, percentile = p.side === 'up' ? r.p95 : r.p5
+  return { shock: niceTowardZero(percentile, FACTORS[presetFactor(p, m)].unit), percentile }
+}
+export const presetTitle = (p: FactorPreset, m: Market, size: PresetSize) => `${p.name} ${shockLabel(size.shock, FACTORS[presetFactor(p, m)].unit)}`
+export function presetBlurb(p: FactorPreset, m: Market, size: PresetSize): string {
+  const unit = FACTORS[presetFactor(p, m)].unit
+  return `${p.what} — a large 20-day move historically (${p.side === 'up' ? '95th' : '5th'} percentile over the last two years: ${shockLabel(Math.round(size.percentile * 10) / 10, unit)}).`
 }
 
 /** Who an event touches: the graph relationship to an origin entity, or a curated industry list. */
@@ -25,13 +52,13 @@ export interface EventPreset { id: PresetId; kind: 'event'; title: string; blurb
 export type Preset = FactorPreset | EventPreset
 
 export const PRESETS: Preset[] = [
-  { id: 'oil-up', kind: 'factor', title: 'Oil +20%', blurb: 'Crude oil rises 20% (WTI in the US, Brent in India).', markets: ['US', 'IN'], factor: 'oil', shock: 20 },
-  { id: 'oil-down', kind: 'factor', title: 'Oil −20%', blurb: 'Crude oil falls 20% (WTI in the US, Brent in India).', markets: ['US', 'IN'], factor: 'oil', shock: -20 },
-  { id: 'rates-up', kind: 'factor', title: 'US 10Y +100bp', blurb: 'The US 10-year Treasury yield rises one percentage point.', markets: ['US', 'IN'], factor: 'us10y', shock: 100 },
-  { id: 'rates-down', kind: 'factor', title: 'US 10Y −100bp', blurb: 'The US 10-year Treasury yield falls one percentage point.', markets: ['US', 'IN'], factor: 'us10y', shock: -100 },
-  { id: 'inr-weak', kind: 'factor', title: 'USD/INR +3%', blurb: 'The rupee weakens 3% against the US dollar.', markets: ['IN', 'US'], factor: 'usdinr', shock: 3 },
-  { id: 'gold-up', kind: 'factor', title: 'Gold +15%', blurb: 'Gold rises 15%.', markets: ['US', 'IN'], factor: 'gold', shock: 15 },
-  { id: 'vix-spike', kind: 'factor', title: 'VIX spike (+10 pts)', blurb: 'The VIX volatility index jumps 10 points.', markets: ['US', 'IN'], factor: 'vix', shock: 10 },
+  { id: 'oil-up', kind: 'factor', name: 'Oil', what: 'Crude oil rises (WTI in the US, Brent in India)', markets: ['US', 'IN'], factor: 'oil', side: 'up' },
+  { id: 'oil-down', kind: 'factor', name: 'Oil', what: 'Crude oil falls (WTI in the US, Brent in India)', markets: ['US', 'IN'], factor: 'oil', side: 'down' },
+  { id: 'rates-up', kind: 'factor', name: 'US 10Y', what: 'The US 10-year Treasury yield rises', markets: ['US', 'IN'], factor: 'us10y', side: 'up' },
+  { id: 'rates-down', kind: 'factor', name: 'US 10Y', what: 'The US 10-year Treasury yield falls', markets: ['US', 'IN'], factor: 'us10y', side: 'down' },
+  { id: 'inr-weak', kind: 'factor', name: 'USD/INR', what: 'The rupee weakens against the US dollar', markets: ['IN', 'US'], factor: 'usdinr', side: 'up' },
+  { id: 'gold-up', kind: 'factor', name: 'Gold', what: 'Gold rises', markets: ['US', 'IN'], factor: 'gold', side: 'up' },
+  { id: 'vix-spike', kind: 'factor', name: 'VIX', what: 'The VIX volatility index jumps', markets: ['US', 'IN'], factor: 'vix', side: 'up' },
   {
     id: 'taiwan-chips', kind: 'event', title: 'Taiwan chip disruption', markets: ['US'],
     blurb: 'Chip production in Taiwan is disrupted. Directional only: there is no comparable history to measure.',

@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useMode } from '@/lib/context/ModeContext'
 import { FACTORS, MARKET_FACTORS, shockLabel, type FactorId, type Market } from '@/lib/scenario/factors'
-import { PRESETS, type PresetId } from '@/lib/scenario/presets'
+import { PRESETS, presetBlurb, presetTitle, type Preset, type PresetId, type PresetSize } from '@/lib/scenario/presets'
+import PRESET_SIZES from '@/data/scenario/preset-sizes.json'
 import type { Impact, PortfolioResult, ScenarioResult, SectorBar } from '@/lib/scenario/engine'
 import { pct } from '@/lib/format'
 
@@ -14,6 +15,9 @@ const box: React.CSSProperties = { border: '1px solid var(--border-color)', back
 const head: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-accent)', marginBottom: 8 }
 const meta: React.CSSProperties = { fontSize: 10, color: 'var(--text-muted)' }
 const QUALITY = { strong: 'var(--text-positive)', moderate: 'var(--text-warning)', fair: 'var(--text-muted)' }
+// Preset sizes come from the same data build as the server's (95th/5th percentile 20-day moves).
+const SIZES = PRESET_SIZES.sizes as Record<Market, Record<string, PresetSize>>
+const cardText = (p: Preset, m: Market) => p.kind === 'event' ? { title: p.title, blurb: p.blurb } : { title: presetTitle(p, m, SIZES[m][p.id]), blurb: presetBlurb(p, m, SIZES[m][p.id]) }
 
 const chip = (label: string, c: string, title?: string) => (
   <span title={title} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '0 5px', border: `1px solid ${c}`, color: c, borderRadius: 2, whiteSpace: 'nowrap' }}>{label}</span>
@@ -123,9 +127,9 @@ export default function ScenariosPage() {
             <button key={p.id} onClick={() => setQuery({ preset: p.id })} aria-pressed={active === p.id}
               style={{ ...box, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', color: 'inherit', borderColor: active === p.id ? 'var(--text-accent)' : 'var(--border-color)' }}>
               <div style={{ fontWeight: 700, color: active === p.id ? 'var(--text-accent)' : 'var(--text-primary)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                {p.title}{p.kind === 'event' && chip('DIRECTIONAL', 'var(--text-warning)', 'No measurable history: no percentages')}
+                {cardText(p, market).title}{p.kind === 'event' && chip('DIRECTIONAL', 'var(--text-warning)', 'No measurable history: no percentages')}
               </div>
-              <div style={{ ...meta, marginTop: 3 }}>{p.blurb}</div>
+              <div style={{ ...meta, marginTop: 3 }}>{cardText(p, market).blurb}</div>
             </button>
           ))}
         </div>
@@ -222,6 +226,7 @@ export default function ScenariosPage() {
                     <div key={l.symbol} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: 3 }}>
                       <span style={{ fontWeight: 700 }}>{l.name}</span>
                       {l.impact && <><span style={{ color: color(l.impact.total) }}>{P(l.impact.total)}</span><span style={meta}>{P(l.impact.low)} to {P(l.impact.high)}</span></>}
+                      <span style={{ ...meta, color: l.weightBasis === 'cost' ? 'var(--text-warning)' : 'var(--text-muted)' }}>{l.weightNote}</span>
                       {l.event && <>{chip(l.event.direction.toUpperCase(), l.event.direction === 'hurt' ? 'var(--text-negative)' : 'var(--text-positive)')}<span style={meta}>{l.event.reason}</span></>}
                     </div>
                   ))}

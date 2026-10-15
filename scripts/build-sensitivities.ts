@@ -46,10 +46,12 @@ import path from 'node:path'
 import { allEntities } from '../lib/graph/index.ts'
 import { FACTORS, FACTOR_IDS, MARKET_CONTROL, MARKET_FACTORS, SECTOR_FUNDS, WEEKLY_FACTORS, type FactorId, type Market } from '../lib/scenario/factors.ts'
 import { exposurePath, fundPath } from '../lib/scenario/exposure.ts'
+import { PRESETS, presetSize, type FactorPreset } from '../lib/scenario/presets.ts'
 import { alignedMove, dailyMoves, isReliable, olsHC1, percentile, rng, rollingMoves, RULE, weekly, type Series } from '../lib/scenario/stats.ts'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'data/scenario/sensitivities.json')
+const SIZES_OUT = path.join(ROOT, 'data/scenario/preset-sizes.json') // for the /scenarios page (client-safe, tiny)
 const CACHE = path.join(ROOT, 'data/scenario/.cache')
 const FRESH = process.argv.includes('--fresh')
 const RANGE = '5y', DAILY_YEARS = 2
@@ -255,8 +257,14 @@ async function main() {
     stocks,
     sectors,
   }
+  // Partial data never ships: any symbol that failed (after retries) fails the run and nothing is written.
+  if (failed.length) { console.error(`
+FAILED — nothing written: ${failed.join('; ')}`); process.exit(1) }
   fs.mkdirSync(path.dirname(OUT), { recursive: true })
   fs.writeFileSync(OUT, JSON.stringify(out))
+  // Preset sizes from this data (95th/5th percentile 20-day moves, rounded toward zero) — the engine recomputes the same.
+  const sizes = Object.fromEntries((['US', 'IN'] as Market[]).map(m => [m, Object.fromEntries(PRESETS.filter((p): p is FactorPreset => p.kind === 'factor' && p.markets.includes(m)).map(p => [p.id, presetSize(p, m, factorsOut as never)]))]))
+  fs.writeFileSync(SIZES_OUT, JSON.stringify({ generatedAt: out.meta.generatedAt, sizes }, null, 1))
   console.log(`wrote ${path.relative(ROOT, OUT)} — ${(fs.statSync(OUT).size / 1024).toFixed(1)} KB; ${out.meta.counts.stocks} stocks + ${out.meta.counts.sectorFunds} sector funds, ${reliable}/${pairs.length} reliable (≈${out.meta.counts.expectedByChance} by chance); ${requests} requests, ${cached} from cache, ${((Date.now() - t0) / 1000).toFixed(0)} s${failed.length ? `; FAILED: ${failed.join('; ')}` : ''}`)
 }
 

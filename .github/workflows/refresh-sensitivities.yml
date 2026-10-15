@@ -1,0 +1,48 @@
+name: refresh-sensitivities
+
+# Monthly refresh of the Scenario Engine's data (data/scenario/sensitivities.json and
+# preset-sizes.json) from Yahoo's public chart endpoint — no secrets. Commits to main
+# ONLY when the build succeeds (every symbol downloaded) AND the offline scenario checks
+# pass, including the GATE (oil: XOM/CVX/VLO/MPC/ONGC up, DAL/UAL/IndiGo/BPCL down;
+# JPM up with US 10Y; Energy fund up and airline fund down — all reliable). Any failure
+# fails the run visibly and commits nothing. A commit to main makes Vercel redeploy.
+on:
+  schedule:
+    - cron: '17 6 1 * *' # 06:17 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-sensitivities
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # No npm install: the build and the offline checks use only Node built-ins and the repo's own .ts files.
+      - name: Build sensitivities (Yahoo v8 chart, throttled)
+        run: npm run build:sensitivities -- --fresh
+
+      - name: Offline scenario checks and sanity gate
+        run: npm run test:scenario -- --offline
+
+      - name: Commit refreshed data to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/scenario/sensitivities.json data/scenario/preset-sizes.json
+          if git diff --cached --quiet; then echo "Data unchanged — nothing to commit."; exit 0; fi
+          git commit -m "chore(data): monthly scenario sensitivity refresh ($(date -u +%F))"
+          git push origin HEAD:main
