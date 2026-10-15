@@ -3,7 +3,7 @@ import { getAllNewsCached } from '@/lib/apis/news'
 import { newsCacheHeaders } from '@/lib/cache'
 
 // Dynamic, not ISR (see /api/india/news): a non-empty feed is shared by the CDN for
-// 5 min; an empty one is never cached, so the next request retries.
+// 5 min and never stores an empty one; the loader retries an outage at most once a minute.
 export const dynamic = 'force-dynamic'
 
 export async function GET() {

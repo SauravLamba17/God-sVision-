@@ -260,7 +260,17 @@ export function headlineScore(h: Headline, move: number, end: number, context: M
   const focus = companies <= 2 ? 1 : 0.6
   const tone = (h.sentiment === 'BULLISH' && move > 0) || (h.sentiment === 'BEARISH' && move < 0) ? 0.15 : 0
   const s = r2(clamp01(0.55 * focus * recency(h.publishedAt, end) + tone))
-  return OPINION_FORM.test(h.title) ? Math.min(s, OPINION_CAP) : s
+  if (OPINION_FORM.test(h.title)) return Math.min(s, OPINION_CAP)
+  return Math.max(companies, listedNames(h.title)) >= 4 ? Math.min(s, ROUNDUP_CAP) : s
+}
+
+// A round-up naming ≥4 companies or tickers ("META, TTD, SNAP, GOOGL, BMBL, WDAY Stocks Get New
+// UBS Targets") is about none of them in particular: capped below STRONG, so never a clear driver.
+const ROUNDUP_CAP = 0.45
+const NAME_LIST = /(?:\b[A-Z][\w&.'’-]*(?: [A-Z][\w&.'’-]*){0,3}, )+(?:and )?\b[A-Z][\w&.'’-]*/g
+/** Items in the longest comma-separated list of capitalised names in a title. Exported for tests. */
+export function listedNames(title: string): number {
+  return Math.max(0, ...[...title.matchAll(NAME_LIST)].map(m => m[0].split(', ').length))
 }
 
 /**

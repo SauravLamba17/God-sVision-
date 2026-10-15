@@ -4,7 +4,8 @@ import { newsCacheHeaders } from '@/lib/cache'
 
 // Dynamic, not ISR: ISR stored whatever the build (or a revalidation) returned —
 // including an empty list — for 5 min. The CDN now shares a non-empty response for
-// 5 min; an empty one is never cached, so the next request retries.
+// 5 min and never stores an empty one; the loader keeps an empty list 60s, so an
+// outage retries upstream at most once a minute per instance.
 export const dynamic = 'force-dynamic'
 
 export async function GET() {

@@ -9,7 +9,7 @@
  *     npm run test:evidence -- --cleanup
  */
 import { signIn, cleanupAccount, CLEANUP } from './liveAccount.ts'
-import { explain, headlineScore, isNotAReason, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
+import { explain, headlineScore, isNotAReason, listedNames, sameStory, sessionWindow, SHOW_THRESHOLD } from '../lib/evidence/engine.ts'
 import { BANNED, formatLine } from '../lib/evidence/summary.ts'
 import { needsRecompute, isCurrent, isSameMarketDay } from '../lib/evidence/freshness.ts'
 import type { Explanation, Headline, MarketContext, Quote } from '../lib/evidence/types.ts'
@@ -326,6 +326,17 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
     `${show(jpm)} | ${show(jpmOwn)} | ${show(aapl)} | ${show(unh)} | ${show(gsMover)}`)
 }
 
+// Round-ups naming ≥4 companies/tickers are capped below STRONG (live Part B sample).
+{
+  const ubs = headline('META, TTD, SNAP, GOOGL, BMBL, WDAY Stocks Get New UBS Targets Amid AI And Ad Shifts', 1)
+  const meta = run(q('META', 2.9, 'Meta Platforms'), 'stock', ctx('US', { headlines: [ubs] }))
+  const focused = headline('UBS raises price target on Meta Platforms to $850', 1)
+  check('round-up: a headline naming 4+ companies/tickers never makes a strong driver (META); a focused one still can',
+    listedNames(ubs.title) === 6 && headlineScore(ubs, 2.9, NOW) < 0.5 && headlineScore(ubs, 2.9, NOW) > 0 && meta.summary === 'no clear driver found'
+      && headlineScore(focused, 2.9, NOW) >= 0.5,
+    `round-up ${headlineScore(ubs, 2.9, NOW)}, focused ${headlineScore(focused, 2.9, NOW)}; ${show(meta)}`)
+}
+
 // ── 2c. US market feeds: parsing, outlets, isolation (local HTTP server, no internet) ──
 await import('./serverModules.ts')
 {
@@ -379,24 +390,29 @@ await import('./serverModules.ts')
 
 // ── 2d. News routes never cache an empty result (the real /api/india/news handler, fetch stubbed) ──
 {
-  const realFetch = globalThis.fetch
-  let calls = 0, body = '<rss><channel></channel></rss>'
+  const realFetch = globalThis.fetch, realNow = Date.now
+  let calls = 0, body = '<rss><channel></channel></rss>', skew = 0
   globalThis.fetch = (async () => { calls++; return new Response(body, { status: 200, headers: { 'content-type': 'application/rss+xml' } }) }) as typeof fetch
+  Date.now = () => realNow() + skew // the server cache reads this clock
   try {
     const { GET } = await import('../app/api/india/news/route.ts')
     const r1 = await GET(), j1 = await r1.json(), c1 = calls
     const r2 = await GET(), c2 = calls
-    check('news route: 0 upstream items → no-store, and the next request fetches again (not cached)',
-      j1.data.articles.length === 0 && r1.headers.get('cache-control') === 'no-store' && r2.headers.get('cache-control') === 'no-store' && c1 > 0 && c2 === 2 * c1,
-      `cache-control ${r1.headers.get('cache-control')}; upstream calls ${c1} then ${c2}`)
-    body = `<rss><channel><item><title>Sensex ends higher as banks gain</title><link>https://example.com/a</link><pubDate>${new Date(Date.now() - H).toUTCString()}</pubDate></item></channel></rss>`
-    const r3 = await GET(), j3 = await r3.json(), c3 = calls
-    const r4 = await GET(), c4 = calls
+    skew = 30_000; const r3 = await GET(), c3 = calls
+    skew = 61_000; const r4 = await GET(), c4 = calls
+    const cc = [r1, r2, r3, r4].map(r => r.headers.get('cache-control'))
+    check('news route: 0 upstream items → CDN no-store; server keeps the empty list 60s — one retry a minute, not one per request',
+      j1.data.articles.length === 0 && cc.every(c => c === 'no-store') && c1 > 0 && c2 === c1 && c3 === c1 && c4 === 2 * c1,
+      `cache-control ${cc[0]}; upstream calls at 0s ${c1}, again at 0s ${c2}, at 30s ${c3}, at 61s ${c4}`)
+    body = `<rss><channel><item><title>Sensex ends higher as banks gain</title><link>https://example.com/a</link><pubDate>${new Date(realNow() - H).toUTCString()}</pubDate></item></channel></rss>`
+    skew = 122_000; const r5 = await GET(), j5 = await r5.json(), c5 = calls
+    const r6 = await GET(), c6 = calls
     check('news route: with items → shared by the CDN for 5 min and cached server-side (no refetch)',
-      j3.data.articles.length === 1 && /s-maxage=300/.test(r3.headers.get('cache-control') ?? '') && c3 > c2 && c4 === c3 && /s-maxage=300/.test(r4.headers.get('cache-control') ?? ''),
-      `cache-control ${r3.headers.get('cache-control')}; upstream calls ${c2} → ${c3} → ${c4}`)
+      j5.data.articles.length === 1 && /s-maxage=300/.test(r5.headers.get('cache-control') ?? '') && c5 === c4 + c1 && c6 === c5 && /s-maxage=300/.test(r6.headers.get('cache-control') ?? ''),
+      `cache-control ${r5.headers.get('cache-control')}; upstream calls ${c4} → ${c5} → ${c6}`)
   } finally {
     globalThis.fetch = realFetch
+    Date.now = realNow
   }
 }
 

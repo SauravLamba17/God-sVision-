@@ -58,8 +58,12 @@ async function fetchFeed(feed: { name: string; url: string }): Promise<IndiaNews
   }
 }
 
+export const EMPTY_TTL = 60
+
 export async function getIndiaNewsCached() {
-  return readThrough('india_news', 300, async () => {
+  // An empty list (every feed down or blocked) is kept for 60s only — one retry a minute per
+  // instance during an outage, not one per request; the route still tells the CDN not to store it.
+  return readThrough('india_news', d => (d.articles.length ? 300 : EMPTY_TTL), async () => {
     const batches = await Promise.allSettled(INDIA_NEWS_FEEDS.map(fetchFeed))
     const all: IndiaNewsItem[] = []
     const seen = new Set<string>()
@@ -78,8 +82,6 @@ export async function getIndiaNewsCached() {
     // engine needs the whole session's stories. The route still serves 40.
     const cutoff = Date.now() - 48 * 3600_000
     const articles = all.filter(a => new Date(a.publishedAt).getTime() >= cutoff).slice(0, 200)
-    // Never cache an empty list: throwing lets readThrough serve the last good one, or the route answer no-store and retry next time.
-    if (!articles.length) throw new Error('no India news items')
     return { articles, total: articles.length, fetchedAt: Date.now() }
   }, 60)
 }

@@ -49,6 +49,13 @@ async function load<T>(inputs: Record<string, Status>, name: string, fn: () => P
   }
 }
 
+// A cached-empty news list (outage) is reported as unavailable, not 'ok'.
+const nonEmpty = <T>(fn: () => Promise<{ data: T; source: string }>, items: (d: T) => unknown[]) => async () => {
+  const r = await fn()
+  if (!items(r.data).length) throw new Error('no items')
+  return r
+}
+
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 // regularMarketTime arrives as unix seconds (chart API), a Date (yahoo-finance2)
 // or an ISO string (a Date that went through the JSON cache).
@@ -166,7 +173,7 @@ export async function buildContext(market: Market): Promise<MarketContext> {
   if (market === 'US') {
     const [movers, news, marketNews, earnings] = await Promise.all([
       load<any>(inputs, 'movers', getMarketMoversCached),
-      load<any>(inputs, 'news', getAllNewsCached),
+      load<any>(inputs, 'news', nonEmpty(getAllNewsCached, d => d.items)),
       load<any[]>(inputs, 'market news', () => getMarketNewsCached('US')),
       load<any[]>(inputs, 'earnings calendar', getUpcoming),
     ])
@@ -190,8 +197,8 @@ export async function buildContext(market: Market): Promise<MarketContext> {
       load<any>(inputs, 'nifty 50 quotes', getNifty50QuotesCached),
       load<any>(inputs, 'india indices', getIndiaIndicesCached),
       load<any>(inputs, 'usd/inr', getIndiaForexCached),
-      load<any>(inputs, 'india news', getIndiaNewsCached),
-      load<any>(inputs, 'news', getAllNewsCached),
+      load<any>(inputs, 'india news', nonEmpty(getIndiaNewsCached, d => d.articles)),
+      load<any>(inputs, 'news', nonEmpty(getAllNewsCached, d => d.items)),
     ])
     const at = nifty?.fetchedAt ?? now
     for (const q of nifty?.quotes ?? []) { const x = yahooToQuote(q, at); if (x) ctx.quotes[x.symbol] = x }
