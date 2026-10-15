@@ -101,6 +101,23 @@ function invert(A: number[][]): number[][] | null {
   return M.map(r => r.slice(k))
 }
 
+/** Keeping a link that was reliable last refresh needs less: |t| ≥ 2 (approved 2026-10-15). */
+export const KEEP_T = 2
+export type Change = 'new' | 'kept' | 'dropped'
+/**
+ * Hysteresis between refreshes, so borderline links don't flicker month to month.
+ *  was reliable → kept if n ≥ 250, |t| ≥ 2, both halves share the sign, and the sign is unchanged; else dropped
+ *  was not      → reliable only by the full rule (isReliable), marked new
+ * `change` is absent when the link was unreliable before and still is.
+ */
+export function decide(f: { n: number; t: number; b: number; halves: readonly [number, number] | null }, hasPath: boolean, prev?: { reliable: boolean; b: number } | null): { reliable: boolean; change?: Change } {
+  if (prev?.reliable) {
+    const keep = f.n >= RULE.minN && Math.abs(f.t) >= KEEP_T && !!f.halves && f.halves.every(h => Math.sign(h) === Math.sign(f.b)) && Math.sign(f.b) === Math.sign(prev.b)
+    return keep ? { reliable: true, change: 'kept' } : { reliable: false, change: 'dropped' }
+  }
+  return isReliable(f, hasPath) ? { reliable: true, change: 'new' } : { reliable: false }
+}
+
 /** Moves over `k` trading days (overlapping windows), in the series' unit. */
 export function rollingMoves(s: Series, unit: Unit, k = 20): number[] {
   const out: number[] = []

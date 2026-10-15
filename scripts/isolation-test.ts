@@ -126,12 +126,15 @@ async function run() {
   }
   // A also holds a covered stock (XOM, unusual size) so A's result has a weighted line to protect.
   await A.json('/api/portfolio', 'POST', { ticker: 'XOM', name: 'Isolation A', quantity: 7.3125, buyPrice: 11.875, buyDate: '2026-01-02' })
+  // B holds a different covered stock: both requests go through the shared (public, ticker-keyed) price lookup.
+  await B.json('/api/portfolio', 'POST', { ticker: 'MPC', name: 'Isolation B', quantity: 3.5, buyPrice: 9.25, buyDate: '2026-01-02' })
   const aStress = await stress(A), bStress = await stress(B)
   const aLine = (() => { try { return JSON.parse(aStress.body).data?.lines?.find((l: any) => l.symbol === 'XOM') } catch { return null } })()
   record('A POST /api/scenario/portfolio — XOM weighted and labelled', 'value or cost label', aLine ? aLine.weightNote : 'no XOM line', !!aLine && /^weighted by (current value|cost)/.test(aLine.weightNote))
   record('A POST /api/scenario/portfolio — own holdings', 'own ticker', aStress.body.includes(TICKER) ? 'own ticker' : `missing (${aStress.status})`, aStress.status === 200 && aStress.body.includes(TICKER))
   const bHoldings = (() => { try { return JSON.parse(bStress.body).data?.holdings } catch { return 'unparsable' } })()
-  record('B POST /api/scenario/portfolio — no A holding or result', 'no A item, 0 holdings', bStress.body.includes(TICKER) ? 'A item visible' : `no A item, ${bHoldings} holdings`, bStress.status === 200 && !bStress.body.includes(TICKER) && !bStress.body.includes('XOM') && !bStress.body.includes('7.3125') && bHoldings === 0)
+  record('B POST /api/scenario/portfolio — only B’s own holding, no A holding or result', 'own MPC only, 1 holding', bStress.body.includes(TICKER) || bStress.body.includes('XOM') ? 'A item visible' : `${bStress.body.includes('MPC') ? 'own MPC' : 'MPC missing'}, ${bHoldings} holding(s)`, bStress.status === 200 && !bStress.body.includes(TICKER) && !bStress.body.includes('XOM') && !bStress.body.includes('7.3125') && bStress.body.includes('MPC') && bHoldings === 1)
+  record('A POST /api/scenario/portfolio — no B holding', 'no MPC', aStress.body.includes('MPC') || aStress.body.includes('9.25') ? 'B item visible' : 'no MPC', !aStress.body.includes('MPC') && !aStress.body.includes('9.25'))
   record('POST /api/scenario/portfolio Cache-Control', 'private, no-store', `${aStress.cc} | ${bStress.cc}`, aStress.cc === 'private, no-store' && bStress.cc === 'private, no-store')
 
   // ── B writes against A's items ────────────────────────────────────────────

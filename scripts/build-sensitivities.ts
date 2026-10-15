@@ -47,7 +47,7 @@ import { allEntities } from '../lib/graph/index.ts'
 import { FACTORS, FACTOR_IDS, MARKET_CONTROL, MARKET_FACTORS, SECTOR_FUNDS, WEEKLY_FACTORS, type FactorId, type Market } from '../lib/scenario/factors.ts'
 import { exposurePath, fundPath } from '../lib/scenario/exposure.ts'
 import { PRESETS, presetSize, type FactorPreset } from '../lib/scenario/presets.ts'
-import { alignedMove, dailyMoves, isReliable, olsHC1, percentile, rng, rollingMoves, RULE, weekly, type Series } from '../lib/scenario/stats.ts'
+import { alignedMove, dailyMoves, decide, isReliable, KEEP_T, olsHC1, percentile, rng, rollingMoves, RULE, weekly, type Change, type Series } from '../lib/scenario/stats.ts'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'data/scenario/sensitivities.json')
@@ -103,7 +103,7 @@ const r4 = (n: number) => Number(n.toPrecision(4))
 const since = (s: Series, from: string): Series => { const i = s.dates.findIndex(d => d >= from); return i < 0 ? { dates: [], closes: [] } : { dates: s.dates.slice(i), closes: s.closes.slice(i) } }
 
 type Design = { y: number[]; X: number[][] } // X rows: [1, market, ...factors]
-interface FactorFit { b: number; se: number; t: number; r2: number; n: number; bMarket: number; halves: [number, number] | null; freq: 'daily' | 'weekly'; path: string | null; reliable: boolean }
+interface FactorFit { b: number; se: number; t: number; r2: number; n: number; bMarket: number; halves: [number, number] | null; freq: 'daily' | 'weekly'; path: string | null; reliable: boolean; change?: Change }
 
 /** Fit, plus the same model on each half of the rows (in date order). Column `col` of X is the coefficient wanted. */
 function fitWithHalves(d: Design, col: number) {
@@ -123,6 +123,9 @@ function permuted(d: Design, seed: number): Design {
 
 async function main() {
   const t0 = Date.now()
+  // Last refresh's results: links reliable then are kept on a lower bar (hysteresis, see decide()).
+  const prev = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : null
+  type Prev = Record<string, { reliable: boolean; b: number }> | undefined
   const factorSeries = {} as Record<FactorId, Series>
   for (const id of FACTOR_IDS) factorSeries[id] = await series(FACTORS[id].symbol, false)
   const end = factorSeries.wti.dates.at(-1)!
@@ -164,7 +167,7 @@ async function main() {
 
   // ── Market responses (c), daily and weekly; USD/INR weekly — always computed.
   // Reliable by the same rule (a market-level link needs no graph path).
-  const market = {} as Record<Market, Record<string, { c: number; se: number; t: number; n: number; halves: [number, number] | null; freq: string; reliable: boolean }>>
+  const market = {} as Record<Market, Record<string, { c: number; se: number; t: number; n: number; halves: [number, number] | null; freq: string; reliable: boolean; change?: Change }>>
   for (const mk of ['US', 'IN'] as Market[]) {
     market[mk] = {}
     for (const freq of ['daily', 'weekly'] as const) {
@@ -172,14 +175,15 @@ async function main() {
       MARKET_FACTORS[mk].forEach((id, j) => {
         if ((freq === 'weekly') !== WEEKLY_FACTORS.has(id)) return
         const c = fit.full.coefs[j + 1], halves = fit.halves ? [fit.halves[0][j + 1].b, fit.halves[1][j + 1].b] as [number, number] : null
-        market[mk][id] = { c: r4(c.b), se: r4(c.se), t: r4(c.t), n: fit.full.n, halves: halves && [r4(halves[0]), r4(halves[1])], freq, reliable: isReliable({ n: fit.full.n, t: c.t, b: c.b, halves }, true) }
+        const d = decide({ n: fit.full.n, t: c.t, b: c.b, halves }, true, prev?.market?.[mk]?.[id] && { reliable: prev.market[mk][id].reliable, b: prev.market[mk][id].c })
+        market[mk][id] = { c: r4(c.b), se: r4(c.se), t: r4(c.t), n: fit.full.n, halves: halves && [r4(halves[0]), r4(halves[1])], freq, ...d }
       })
     }
   }
 
   /** Every factor's fit for one stock/fund; plus permutation passes for the chance estimate. */
   const chance: Record<string, number> = Object.fromEntries(FACTOR_IDS.map(id => [id, 0]))
-  const fitsFor = (s: Series, mk: Market, pathOf: (id: FactorId) => string | null) => {
+  const fitsFor = (s: Series, mk: Market, pathOf: (id: FactorId) => string | null, before: Prev) => {
     const designs = { daily: dailyDesign(s, mk), weekly: weeklyDesign(s, mk) }
     const out: Record<string, FactorFit> = {}
     for (const freq of ['daily', 'weekly'] as const) {
@@ -191,7 +195,7 @@ async function main() {
         const c = fit.full.coefs[j + 2], halves = fit.halves ? [fit.halves[0][j + 2].b, fit.halves[1][j + 2].b] as [number, number] : null
         const path = pathOf(id)
         const f = { b: c.b, se: c.se, t: c.t, r2: fit.full.r2, n: fit.full.n, bMarket: fit.full.coefs[1].b, halves }
-        out[id] = { b: r4(f.b), se: r4(f.se), t: r4(f.t), r2: r4(f.r2), n: f.n, bMarket: r4(f.bMarket), halves: halves && [r4(halves[0]), r4(halves[1])], freq, path, reliable: isReliable(f, !!path) }
+        out[id] = { b: r4(f.b), se: r4(f.se), t: r4(f.t), r2: r4(f.r2), n: f.n, bMarket: r4(f.bMarket), halves: halves && [r4(halves[0]), r4(halves[1])], freq, path, ...decide(f, !!path, before?.[id]) }
       })
       for (let p = 0; p < PERMUTATIONS; p++) {
         const pf = fitWithHalves(permuted(d, 1000 + p), 0)
@@ -212,7 +216,7 @@ async function main() {
     const mk: Market = e.id.endsWith('.NS') ? 'IN' : 'US'
     try {
       const s = await series(e.id, true)
-      stocks[e.id] = { name: e.name, market: mk, sector: e.sector ?? null, industry: e.industry ?? null, window: { start: s.dates[0], end: s.dates.at(-1) }, factors: fitsFor(s, mk, id => exposurePath(e.id, id)) }
+      stocks[e.id] = { name: e.name, market: mk, sector: e.sector ?? null, industry: e.industry ?? null, window: { start: s.dates[0], end: s.dates.at(-1) }, factors: fitsFor(s, mk, id => exposurePath(e.id, id), prev?.stocks?.[e.id]?.factors) }
       process.stdout.write(`\r  stocks ${i + 1}/${companies.length} (${requests} requests, ${cached} from cache)   `)
     } catch (err) { failed.push(`${e.id}: ${(err as Error).message}`) }
   }
@@ -221,7 +225,7 @@ async function main() {
   for (const f of SECTOR_FUNDS) {
     try {
       const s = await series(f.symbol, true)
-      sectors[f.symbol] = { name: f.name, market: f.market, sector: f.sector ?? null, members: f.members ?? null, window: { start: s.dates[0], end: s.dates.at(-1) }, factors: fitsFor(s, f.market, id => fundPath(f, id, ids)) }
+      sectors[f.symbol] = { name: f.name, market: f.market, sector: f.sector ?? null, members: f.members ?? null, window: { start: s.dates[0], end: s.dates.at(-1) }, factors: fitsFor(s, f.market, id => fundPath(f, id, ids), prev?.sectors?.[f.symbol]?.factors) }
     } catch (err) { failed.push(`${f.symbol}: ${(err as Error).message}`) }
   }
   console.log()
@@ -247,6 +251,8 @@ async function main() {
       method: 'Joint OLS with the market as a control and all of the market\'s factors together; HC1 robust standard errors. stock % = a + bMarket·market % + Σ b_k·factor_k. Daily (2y) for all factors except USD/INR: weekly non-overlapping ISO-week returns (5y). Market response: market % = a + Σ c_k·factor_k. Total effect = b + bMarket·c.',
       alignment: 'US: same date. India daily: previous US session for oil, gold, dollar index, US 10Y and VIX; same day for USD/INR and the Nifty. Weekly: same ISO week.',
       reliableRule: `n >= ${RULE.minN}, |t| >= ${RULE.minT} (HC1), same sign in both halves of the window; |t| >= ${RULE.minTNoPath} when the graph has no business link`,
+      keepRule: `a link reliable at the previous refresh stays reliable at |t| >= ${KEEP_T} with both halves and the overall sign unchanged`,
+      previousGeneratedAt: prev?.meta?.generatedAt ?? null,
       chance: `Permutation test (${PERMUTATIONS} shuffles of factor rows against stock rows, same rule): average false passes`,
       units: { pct: 'percent', bp: 'basis points', pt: 'index points' },
       counts: { stocks: Object.keys(stocks).length, sectorFunds: Object.keys(sectors).length, pairs: pairs.length, reliable, unreliable: pairs.length - reliable, expectedByChance: r4(Object.values(chance).reduce((a, b) => a + b, 0)), perFactor, requests, fromCache: cached },
@@ -257,6 +263,18 @@ async function main() {
     stocks,
     sectors,
   }
+  // Change summary vs the previous refresh (also written to the GitHub Actions job summary).
+  const changes = { new: [] as string[], kept: [] as string[], dropped: [] as string[] }
+  for (const group of [stocks, sectors]) for (const [sym, e] of Object.entries(group as Record<string, { factors: Record<string, FactorFit> }>))
+    for (const [f, fit] of Object.entries(e.factors)) if (fit.change) changes[fit.change].push(`${sym}/${f} (b ${fit.b}, t ${fit.t})`)
+  for (const mk of ['US', 'IN'] as Market[]) for (const [f, fit] of Object.entries(market[mk])) if (fit.change) changes[fit.change].push(`${mk === 'US' ? 'S&P 500' : 'Nifty 50'}/${f} (c ${fit.c}, t ${fit.t})`)
+  const summary = [
+    `Sensitivity refresh vs ${prev?.meta?.generatedAt ?? 'no previous file'}: ${changes.new.length} new, ${changes.kept.length} kept, ${changes.dropped.length} dropped`,
+    ...(['new', 'dropped'] as const).map(k => `  ${k.toUpperCase()}: ${changes[k].join('; ') || 'none'}`),
+  ].join('\n')
+  console.log(summary)
+  if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, '### Scenario sensitivities\n\n```\n' + summary + '\n```\n')
+
   // Partial data never ships: any symbol that failed (after retries) fails the run and nothing is written.
   if (failed.length) { console.error(`
 FAILED — nothing written: ${failed.join('; ')}`); process.exit(1) }

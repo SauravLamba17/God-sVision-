@@ -252,8 +252,8 @@ export const VALUE_NOTE = 'weighted by current value (cached price)'
 export const COST_NOTE = 'weighted by cost, no current price'
 
 /**
- * The user's holdings under a scenario, weighted by current value — quantity × a price
- * the app already has cached (`prices`, by symbol, in the holding's own currency) — or,
+ * The user's holdings under a scenario, weighted by current value — quantity × a recent
+ * price (`prices`, by symbol, in the holding's own currency; see lib/scenario/prices.ts) — or,
  * when no cached price exists, by cost (quantity × buy price), labelled as such. Each
  * market's group runs its own version of the scenario (oil means WTI for US holdings,
  * Brent for Indian ones). The group range adds the holdings' bands as if they moved
@@ -304,7 +304,7 @@ export function portfolioImpact(data: SensitivityData, input: { preset: PresetId
   return {
     groups, lines, notEstimated,
     notes: [
-      'Weights use current value from prices the app already has cached; a holding without one uses cost (quantity × buy price) and is labelled.',
+      'Weights use current value (prices up to 5 minutes old, from the app’s caches or one shared lookup); a holding without a price uses cost (quantity × buy price) and is labelled.',
       'US and Indian holdings are shown separately in their own currency, never converted.',
       'Holdings without a reliable historical link are listed as not estimated — never guessed.',
     ],

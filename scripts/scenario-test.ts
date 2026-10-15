@@ -13,7 +13,8 @@ import fs from 'node:fs'
 import { assertScenarioWording, COST_NOTE, portfolioImpact, runScenario, SCENARIO_BANNED, validateShock, VALUE_NOTE, type ScenarioResult, type SensitivityData } from '../lib/scenario/engine.ts'
 import { FACTOR_IDS, FACTORS, MARKET_FACTORS, SECTOR_FUNDS, type FactorId, type Market } from '../lib/scenario/factors.ts'
 import { PRESETS, presetFactor, presetSize, type FactorPreset } from '../lib/scenario/presets.ts'
-import { alignedMove, dailyMoves, isoWeek, isReliable, olsHC1, rng, weekly } from '../lib/scenario/stats.ts'
+import { alignedMove, dailyMoves, decide, isoWeek, isReliable, olsHC1, rng, weekly } from '../lib/scenario/stats.ts'
+import { MAX_TICKERS, parseSpark, sparkUrls } from '../lib/scenario/spark.ts'
 import { allEntities, getEntity } from '../lib/graph/index.ts'
 import { signIn, cleanupAccount, CLEANUP } from './liveAccount.ts'
 
@@ -117,7 +118,10 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
   const dateOk = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))
   const windows = [data.meta.window.daily, data.meta.window.weekly, ...Object.values(data.stocks).map(s => s.window), ...Object.values(data.sectors).map(s => s.window), ...Object.values(data.factors).map(f => f.window)]
   const notInGraph = Object.keys(data.stocks).filter(s => getEntity(s)?.type !== 'company')
-  const wrongRule = Object.entries(data.stocks).flatMap(([s, e]) => Object.entries(e.factors).filter(([, f]) => f!.reliable !== isReliable(f!, !!f!.path)).map(([k]) => `${s}/${k}`))
+  // Flags follow the rule for new links and the keep rule for links reliable last refresh (hysteresis).
+  const ruleOk = (f: any) => f.change === 'kept' ? f.reliable && decide(f, !!f.path, { reliable: true, b: f.b }).reliable
+    : f.change === 'new' ? f.reliable && isReliable(f, !!f.path) : f.change === 'dropped' ? !f.reliable : !f.reliable && !isReliable(f, !!f.path)
+  const wrongRule = [...Object.entries(data.stocks), ...Object.entries(data.sectors)].flatMap(([s, e]) => Object.entries(e.factors).filter(([, f]) => !ruleOk(f)).map(([k]) => `${s}/${k}`))
   const missingFactors = Object.entries(data.stocks).filter(([, e]) => MARKET_FACTORS[e.market].some(f => !e.factors[f])).map(([s]) => s)
   check('data: no NaN/Infinity, valid dates, every stock in the graph, every fund configured, reliable flags match the rule',
     !bad.length && windows.every(w => dateOk(w.start) && dateOk(w.end) && w.start < w.end) && !notInGraph.length && Object.keys(data.sectors).every(s => SECTOR_FUNDS.some(f => f.symbol === s)) && !wrongRule.length && FACTOR_IDS.every(f => data.factors[f]),
@@ -158,6 +162,44 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
       && !isReliable({ n: 300, t: 4, b: 1, halves: [-0.1, 2] }, true) && !isReliable({ n: 249, t: 9, b: 1, halves: [1, 1] }, true))
 }
 
+// ── 8b. Hysteresis between monthly refreshes ────────────────────────────────
+{
+  const f = (t: number, b = 1, halves: [number, number] = [b, b], n = 300) => ({ n, t, b, halves })
+  const was = { reliable: true, b: 0.5 }
+  const cases: [string, ReturnType<typeof decide>, boolean, string | undefined][] = [
+    ['kept at |t| 2.2 (was reliable, same sign)', decide(f(2.2, 0.4), true, was), true, 'kept'],
+    ['kept at |t| 2.2 even without a business link', decide(f(2.2, 0.4), false, was), true, 'kept'],
+    ['dropped below |t| 2', decide(f(1.9, 0.4), true, was), false, 'dropped'],
+    ['dropped when the overall sign flips', decide(f(-3.5, -0.4), true, was), false, 'dropped'],
+    ['dropped when the halves disagree', decide(f(3, 0.4, [0.6, -0.1]), true, was), false, 'dropped'],
+    ['new needs the full rule: |t| 2.6 with a link', decide(f(2.6), true, null), true, 'new'],
+    ['new needs |t| ≥ 3 without a link', decide(f(2.6), false, null), false, undefined],
+    ['previously unreliable at |t| 2.3 stays unreliable (no keep bar)', decide(f(2.3), true, { reliable: false, b: 1 }), false, undefined],
+  ]
+  const bad = cases.filter(([, d, rel, ch]) => d.reliable !== rel || d.change !== ch).map(([n, d]) => `${n}: got ${JSON.stringify(d)}`)
+  check('hysteresis: kept at |t| ≥ 2 with stable sign and halves; dropped otherwise; new links need the full rule', !bad.length, bad.join(' | '))
+  const changes = [...Object.values(data.stocks), ...Object.values(data.sectors)].flatMap(e => Object.values(e.factors).map(x => (x as any).change)).filter(Boolean)
+  check(`hysteresis: the data file records new/kept/dropped (${['new', 'kept', 'dropped'].map(k => `${changes.filter(c => c === k).length} ${k}`).join(', ')})`, changes.every(c => ['new', 'kept', 'dropped'].includes(c)) && changes.length > 0)
+}
+
+// ── 8c. Shared price lookup: the request carries only the sorted ticker list ──
+{
+  const urls = sparkUrls(['xom', 'AAPL', 'XOM', ' ongc.ns ', 'AAPL'])
+  const many = sparkUrls(Array.from({ length: 70 }, (_, i) => `T${String(i).padStart(2, '0')}`))
+  const syms = (u: string) => decodeURIComponent(new URL(u).searchParams.get('symbols')!).split(',')
+  check('prices: one request per ≤ 20 sorted, de-duplicated tickers; at most 50 tickers; nothing but symbols, range and interval in the URL',
+    urls.length === 1 && syms(urls[0]).join() === 'AAPL,ONGC.NS,XOM' && [...new URL(urls[0]).searchParams.keys()].join() === 'symbols,range,interval'
+      && many.length === 3 && many.flatMap(syms).length === MAX_TICKERS && many.every(u => syms(u).length <= 20) && many.flatMap(syms).join() === [...many.flatMap(syms)].sort().join(),
+    urls[0])
+  const parsed = parseSpark({ spark: { result: [
+    { symbol: 'XOM', response: [{ meta: { regularMarketPrice: 177.1, currency: 'USD' } }] },
+    { symbol: 'ONGC.NS', response: [{ meta: { regularMarketPrice: 250.5, currency: 'INR' } }] },
+    { symbol: 'BP.L', response: [{ meta: { regularMarketPrice: 480, currency: 'GBp' } }] },
+    { symbol: 'NEM', response: [{ meta: { regularMarketPrice: 0, currency: 'USD' } }] },
+  ] } })
+  check('prices: parsed in the listing currency only (USD for US, INR for .NS); zero or foreign-currency quotes ignored', JSON.stringify(parsed) === JSON.stringify({ XOM: 177.1, 'ONGC.NS': 250.5 }), JSON.stringify(parsed))
+}
+
 // ── 9. Portfolio ─────────────────────────────────────────────────────────────
 {
   const holdings = [
@@ -193,6 +235,19 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
 
 // ── 11. Live API ─────────────────────────────────────────────────────────────
 const live: string[] = []
+if (!OFFLINE) {
+  // The shared lookup gives up after 4 s and the holding falls back to cost (app modules: local runs only).
+  await import('./serverModules.ts')
+  const { cachedPrices } = await import('../lib/scenario/prices.ts')
+  const realFetch = globalThis.fetch
+  globalThis.fetch = ((_u: unknown, init?: RequestInit) => new Promise((_, reject) => init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))))) as typeof fetch
+  const alive = setTimeout(() => {}, 10_000) // AbortSignal.timeout's timer is unref'd: keep this script's event loop open meanwhile
+  const t0 = performance.now(), p = await cachedPrices(['ZZTEST1', 'ZZTEST2'], () => null), ms = performance.now() - t0
+  clearTimeout(alive)
+  globalThis.fetch = realFetch
+  const fallback = portfolioImpact(data, { preset: 'oil-up' }, [{ ticker: 'XOM', quantity: 1, buyPrice: 100 }], p)
+  check('prices: an upstream that hangs is cut off at 4 s and holdings fall back to cost, labelled', Object.keys(p).length === 0 && ms >= 3900 && ms < 6000 && fallback.lines[0].weightNote === COST_NOTE, `${ms.toFixed(0)} ms`)
+}
 if (!OFFLINE) {
   const session = await signIn()
   if (typeof session === 'string') check('live check', false, `skipped: ${session}`)
