@@ -102,6 +102,7 @@ export function whyTodayFacts(s: Sheet, ex: Explanation, session: Session, data:
       if (!quotable(title, d.source.name, d.source.url)) continue
       const who = d.type === 'related_news' ? `${d.label.replace(/^related: /, '').replace(/ in headlines$/, '')}: ` : ''
       const id = s.add({ kind: 'headline', section: 'news', text: `${who}“${title}” (${src.name}, ${fmtWhen(d.timestamp, e.market)})`, quote: title, label: d.label, strong, source: src, status: 'cached' })
+      // The first line names a headline only when it passes STRONG; weaker ones stay in Related news.
       if (strong && !topNews) topNews = { id, text: `${src.name} reported “${title}”` }
       continue
     }

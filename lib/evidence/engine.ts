@@ -23,6 +23,9 @@
 //                 generated recaps and quote pages, personal finance, routine Fed notices
 //               near-duplicate titles (same story from two outlets) count once
 //               0 if it describes a move over months ("slump 27% YTD") with no cue for this session
+//               0 if it describes another period's level or span ("down 28% from January high",
+//                 "slides 6% in a month", "18-month low") — a level counts only when hit ("hits 52-week high")
+//               0 for opinion / explainer pieces ("experts' views", "explained", "Why X can …")
 //               0 if the headline states a price direction opposite to the live move
 //               0 if its keyword tone is opposite (price target raised on a −6% day)
 //               capped at 0.25 for questions / opinion phrasing ("Can … ?", "risk:", "here's why")
@@ -170,7 +173,25 @@ export const statedDirection = (title: string): 1 | -1 | 0 => {
 const MARKET_ANY = /\b(stocks|equities|markets?|index|indices|benchmarks?|yields?|bonds?|rate[- ](cut|hike)s?|inflation|GDP|rall(y|ies)|sell-?off)\b/i
 // A move over months ("slump 27% YTD") is not evidence for today's move, unless
 // the headline also points at this session ("…in one year! ITC shares rise on…").
-const LONG_HORIZON = /\b(YTD|year[- ]to[- ]date|this year|in (one|a|1|two|2|three|3) years?|past (week|month|year)|in \d+ (days|sessions|weeks|months|years)|52-week|since (January|listing|IPO)|by (FY ?)?20\d\d)\b/i
+// Also a change measured from another period's level or over another span: "slides 6% in a month",
+// "down 28% from January high", "off its record high", "over the past quarter", "since March".
+const MONTHS = 'January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec'
+const LONG_HORIZON = new RegExp(String.raw`\b(YTD|year[- ]to[- ]date|this year|in (one|a|1|two|2|three|3) years?|past (week|month|year)|in \d+ (days|sessions|weeks|months|years)|since (${MONTHS}|listing|IPO|the start of the year)|by (FY ?)?20\d\d`
+  + String.raw`|in (a|one|two|three|six|\d+) (weeks?|months?|quarters?)|over the (past|last) (\w+ )?(weeks?|months?|quarters?|years?)`
+  + String.raw`|(from|off|below|above) (its |the |a |their )?((${MONTHS})|record|peak|all[- ]time|lifetime|52[- ]week|multi[- ]year|\d+[- ](day|week|month|year)|year's|recent|yearly) (highs?|lows?|peaks?|levels?))\b`, 'i')
+// A level from another period ("18-month low", "52-week high", "all-time high") is today's news only
+// when the headline says it was hit or is being approached in the session ("Infosys hits 52-week high on
+// results", "Nifty at record high", "ExxonMobil Stock Is on Pace for a Record High");
+// otherwise it describes a longer span ("trades near its 52-week low", "30% below its all-time high").
+const LEVEL = /\b((\d+|multi|several)[- ](day|week|month|year)|all[- ]time|record|lifetime) (highs?|lows?)\b/i
+const LEVEL_HIT = /\b(hits?|hitting|touch(es|ed|ing)?|scal(e|es|ed|ing)|reach(es|ed|ing)?|marks?|clock(s|ed)?|sets?|at|to|nears|nearing|approach(es|ed|ing)?|on (pace|track|course) for)( (a|an|its|their|fresh|new|record))*\s*$/i
+/** A level from another period without a same-day hit. Exported for tests. */
+export function levelOnly(title: string): boolean {
+  const m = LEVEL.exec(title)
+  return !!m && !LEVEL_HIT.test(title.slice(0, m.index)) && !THIS_SESSION.test(title)
+}
+/** Describes another period than this session (and doesn't also point at this session). Exported for tests. */
+export const otherPeriod = (title: string) => (LONG_HORIZON.test(title) && !THIS_SESSION.test(title)) || levelOnly(title)
 const THIS_SESSION = /\b(today|intraday|session|on (Mon|Tues|Wednes|Thurs|Fri)day)\b|\bshares? (ris\w*|rose|jump\w*|surg\w*|soar\w*|fall\w*|fell|drop\w*|slump\w*|plung\w*|tumbl\w*|climb\w*|gain\w*|slid\w*|sink\w*|sank)\b/i
 const MARKET_TERMS: Record<Market, Matcher> = {
   US: { test: s => MARKET_ANY.test(s) || /\b(Wall Street|Wall St|Nasdaq|Dow|S&P|Fed|Treasur(y|ies))\b/i.test(s) },
@@ -180,7 +201,7 @@ const MARKET_TERMS: Record<Market, Matcher> = {
 // Recommendation lists and listicles describe opinions, not a reason for a move.
 const LISTICLE = /\b(stocks?|shares?|picks?|bets?) (to|for) (buy|add|watch|sell|hold|consider|own|accumulate)\b|\b(top|best) (\w+ )?(stock |share )?picks?\b|\bbest (\w+ )?(stocks?|shares?)\b|\bstocks? (in focus|in (the )?news)\b|\bbetter buy\b|\bmultibaggers?\b|\btrading (ideas|picks)\b|\b\d+ (\w+ ){0,3}stocks?\b|\bround-?up\b/i
 // Valuation/opinion pieces and fund-holdings filings ("X Capital decreases stock holdings in Oracle").
-const OPINION = /\b(undervalued|overvalued|fair value|intrinsic value|priced below|(a|the) (screaming |strong |no-brainer )?buy|stock forecasts?|did you miss|should you (buy|sell)|is it (time|too late) to|worth buying|buying opportunity|price prediction|(stock|share) price today|(increases|decreases|raises|lowers|trims|boosts|cuts|acquires|sells|buys|takes|has) (its |new )?(stock )?(holdings?|position) in)\b|\bvs\.? /i
+const OPINION = /\b(undervalued|overvalued|fair value|intrinsic value|priced below|(a|the) (screaming |strong |no-brainer )?buy|stock forecasts?|did you miss|should you|is it (time|too late) to|experts?['’]? (views?|say|opinions?|take)|what (experts|analysts) (say|think)|explained|explainer|worth buying|buying opportunity|price prediction|(stock|share) price today|(increases|decreases|raises|lowers|trims|boosts|cuts|acquires|sells|buys|takes|has) (its |new )?(stock )?(holdings?|position) in)\b|\bvs\.? /i
 // Recaps restate the move itself — circular, not a reason ("stocks making the biggest moves").
 const RECAP = /\b(out|under)performs (competitors|the market|market)\b|\b(strong|poor|weak) trading day\b|\bbiggest (moves|movers)\b|\btop (gainers|losers)\b|\bstocks making\b|\b(opening|closing) bell\b|\bmarket wrap\b|\bstocks? (trade|trading|traded) (up|down|higher|lower)\b|\bwhat you need to know\b|\bquote (&|and) history\b|\bprice history\b|\bhistorical data\b|\bstock price, news\b/i
 // Noise from the US market feeds (CNBC, Investing.com, Google News searches — Oct 2026 samples).
@@ -197,7 +218,9 @@ const GENERATED = /^\s*file photo\b|\b(opened|moved) (up|down) by \d|\bis (up|do
 const PERSONAL = /\b(credit cards?|savings accounts?|CD rates?|mortgage rates? today|personal loans?|high-yield savings|best (brokers?|banks?|apps?)|apps? for (active )?(traders|investors)|how to (invest|save|retire|hedge|budget|pay off)|retirement (savings|plan(ning)?)|side hustle|net worth)\b|401\(k\)/i
 // Routine Federal Reserve notices ("approval of application by Isabella Bank Corporation").
 const ROUTINE = /\bapproval of (an )?application\b|\bwith former employees? of\b|\bcomment period\b|\brequests? (public )?comment\b|\btermination of enforcement action\b|\bfeedback letters\b/i
-const NOT_A_REASON = { test: (s: string) => LISTICLE.test(s) || OPINION.test(s) || RECAP.test(s) || PREVIEW.test(s) || HOUSE.test(s) || GENERATED.test(s) || PERSONAL.test(s) || ROUTINE.test(s) }
+// Speculative explainers: "Why Nvidia Stock Can Defy the Chip Slump", "Why AI Debt Fears Aren't Over".
+const EXPLAINER = /\bwhy\b[^?]*\b(can|could|may|might|will|won['’]t|aren['’]t|isn['’]t|should|shouldn['’]t)\b/i
+const NOT_A_REASON = { test: (s: string) => LISTICLE.test(s) || OPINION.test(s) || EXPLAINER.test(s) || RECAP.test(s) || PREVIEW.test(s) || HOUSE.test(s) || GENERATED.test(s) || PERSONAL.test(s) || ROUTINE.test(s) }
 /** Listicle, opinion, recap or feed noise — never a reason for a move. Exported for tests and news-compare. */
 export const isNotAReason = (title: string) => NOT_A_REASON.test(title)
 
@@ -255,7 +278,7 @@ export function headlineScore(h: Headline, move: number, end: number, context: M
   if ((up && !down && move < 0) || (down && !up && move > 0)) return 0
   if (toneOpposes(h, move)) return 0
   if (!context.test(h.title) || NOT_A_REASON.test(h.title)) return 0
-  if (LONG_HORIZON.test(h.title) && !THIS_SESSION.test(h.title)) return 0
+  if (otherPeriod(h.title)) return 0
   const companies = h.entities.filter(id => getEntity(id)?.type === 'company').length
   const focus = companies <= 2 ? 1 : 0.6
   const tone = (h.sentiment === 'BULLISH' && move > 0) || (h.sentiment === 'BEARISH' && move < 0) ? 0.15 : 0
@@ -267,10 +290,11 @@ export function headlineScore(h: Headline, move: number, end: number, context: M
 // A round-up naming ≥4 companies or tickers ("META, TTD, SNAP, GOOGL, BMBL, WDAY Stocks Get New
 // UBS Targets") is about none of them in particular: capped below STRONG, so never a clear driver.
 const ROUNDUP_CAP = 0.45
-const NAME_LIST = /(?:\b[A-Z][\w&.'’-]*(?: [A-Z][\w&.'’-]*){0,3}, )+(?:and )?\b[A-Z][\w&.'’-]*/g
+// The last item may be several words and may follow "and" ("NVIDIA, Philip Morris International, Home Depot and CPI Aerostructures").
+const NAME_LIST = /(?:\b[A-Z][\w&.'’-]*(?: [A-Z][\w&.'’-]*){0,3}, )+(?:and )?\b[A-Z][\w&.'’-]*(?: [A-Z][\w&.'’-]*){0,3}(?: and [A-Z][\w&.'’-]*)?/g
 /** Items in the longest comma-separated list of capitalised names in a title. Exported for tests. */
 export function listedNames(title: string): number {
-  return Math.max(0, ...[...title.matchAll(NAME_LIST)].map(m => m[0].split(', ').length))
+  return Math.max(0, ...[...title.matchAll(NAME_LIST)].map(m => m[0].split(', ').length + (/ and [A-Z]/.test(m[0].split(', ').at(-1)!) ? 1 : 0)))
 }
 
 /**
@@ -279,7 +303,7 @@ export function listedNames(title: string): number {
  */
 export function isMarketNews(title: string): boolean {
   const context = FINANCIAL.test(title) || MARKET_ANY.test(title) || MACRO.test(title)
-  return context && !NOT_A_REASON.test(title) && !OPINION_FORM.test(title) && !(LONG_HORIZON.test(title) && !THIS_SESSION.test(title))
+  return context && !NOT_A_REASON.test(title) && !OPINION_FORM.test(title) && !otherPeriod(title)
 }
 // Commodity / macro context for themes ("Brent tops $95 as supply worries grow").
 const MACRO = /\b(prices?|supply|supplies|demand|inventor(y|ies)|output|production|exports?|imports?|shipments?|interest rates?|inflation|GDP|currency|rupee|dollar|yen|yuan|euro|Fed|FOMC|Federal Reserve|central bank|RBI|ECB|BOJ|monetary policy|rate path)\b/i

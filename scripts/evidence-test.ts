@@ -177,6 +177,25 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
   const today = headline('35% dip in one year! ITC shares rise on better Q2 results buzz', 1)
   check('trap: a long-horizon move ("27% YTD") is not evidence for today', headlineScore(ytd, -1.7, NOW) === 0 && headlineScore(today, 5.1, NOW) >= 0.3,
     `ytd ${headlineScore(ytd, -1.7, NOW)}, same-session ${headlineScore(today, 5.1, NOW)}`)
+  // From the Research Agent report (16 Oct): another period's level or span, and opinion/explainer pieces.
+  const otherSpan = [
+    ['Reliance Industries hits 18-month low; stock down 28% from January high', -1.0],
+    ["RIL shares: Reliance Industries stock slides 6% in a month, can Jio Platforms IPO aid the bounce back? Experts' views", -1.0],
+    ['Why Nvidia Stock Can Defy the Broader Chip Sector Slump', -0.3],
+    ['CoreWeave Stock Drops. Why AI Debt Fears Aren’t Over Despite Nvidia’s Confidence.', -0.3],
+    ['Nvidia trades near its 52-week low as chip stocks slump', -2.0],
+    ['Infosys is down 30% from its all-time high: what experts say', -1.0],
+    ['TCS results explained: should you hold the stock?', 1.0],
+  ] as const
+  const kept = [['Infosys hits 52-week high on results', 3.0], ['ExxonMobil Stock Is on Pace for a Record High. Preliminary Earnings Are Both Good and Bad.', 2.5], ['Bajaj Finance stock at record high after Q2 profit jumps', 2.2], ['Tata Steel shares fall to 18-month low on weak China demand', -2.5]] as const
+  const scoreAll = (xs: readonly (readonly [string, number])[]) => xs.map(([t, m]) => ({ t, s: headlineScore(headline(t, 1), m, NOW) }))
+  const dropped = scoreAll(otherSpan), stay = scoreAll(kept)
+  check('trap: another period’s level or span (“18-month low … from January high”, “6% in a month”, “near its 52-week low”) and opinion/explainers (“Experts’ views”, “Why … can”, “explained”) score 0',
+    dropped.every(x => x.s === 0), dropped.filter(x => x.s > 0).map(x => `${x.s} ${x.t}`).join(' | '))
+  const zacks = headline('The Zacks Analyst Blog Highlights NVIDIA, Philip Morris International, Home Depot and CPI Aerostructures', 1)
+  check('trap: a round-up whose last name follows “and” counts every name and stays below STRONG', listedNames(zacks.title) === 4 && headlineScore(zacks, -1.4, NOW) < 0.5, `${listedNames(zacks.title)} names, score ${headlineScore(zacks, -1.4, NOW)}`)
+  check('trap: a level hit in this session is still news (“hits 52-week high on results”, “stock at record high after Q2 profit”, “shares fall to 18-month low”)',
+    stay.every(x => x.s >= 0.5), stay.map(x => `${x.s} ${x.t}`).join(' | '))
 
   // Listicles / recommendations are opinions, not a reason for a move.
   const lists = [

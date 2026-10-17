@@ -11,12 +11,13 @@ import https from 'node:https'
 import fs from 'node:fs'
 import { parseQuestion, Question } from '../lib/research/parse.ts'
 import type { Answer, Fact, FactSheet, Parsed } from '../lib/research/types.ts'
-import { AI_TIMEOUT_MS, narrateWith, proseCacheKey, validateProse } from '../lib/research/prose.ts'
+import { AI_TIMEOUT_MS, buildPrompt, MAX_SENTENCES, narrateWith, proseCacheKey, validateProse } from '../lib/research/prose.ts'
 import { constituentFacts, headlineFacts, newSheet, NO_LINK, overallStatus, p1, quotable, reliableLink, whyTodayFacts, windowFacts, windowHeadlines, type Closes } from '../lib/research/build.ts'
 import { answerText, composeAnswer, RESEARCH_BANNED } from '../lib/research/answer.ts'
 import type { SensitivityData } from '../lib/scenario/engine.ts'
 import type { Explanation, Headline } from '../lib/evidence/types.ts'
-import { BANNED } from '../lib/evidence/summary.ts'
+import { BANNED, STRONG } from '../lib/evidence/summary.ts'
+import { headlineScore } from '../lib/evidence/engine.ts'
 import { matchEntitiesInText } from '../lib/graph/index.ts'
 import { scoreHeadlines } from '../lib/apis/newsSentiment.ts'
 import { BASE, CLEANUP, cleanupAccount, signIn } from './liveAccount.ts'
@@ -190,6 +191,15 @@ let relFS!: FactSheet
   const both = newSheet()
   whyTodayFacts(both, ex('NVDA', 'Nvidia', -2.1, [drv('market', 0.6, 'moved with Nasdaq (−1.5%)', 'Nasdaq −1.5%.'), drv('sector', 0.55, 'tech (−1.9%)', 'XLK −1.9%.')]), ses, DATA)
   const bothA = keepText(composeAnswer(sheetOf(p, both)))
+  // The CoreWeave / Jensen Huang headline, scored by the real engine: fresh it passes STRONG (0.55 for a CEO
+  // headline + 0.15 tone on a down day), 30 h old it does not — and then it stays in Related news only.
+  const HUANG = "Nvidia CEO Jensen Huang addresses CoreWeave stock plunge: 'I'm optimistic'"
+  const huang = (hoursAgo: number) => headlineScore(headline(HUANG, NOW - hoursAgo * H, 'Yahoo Finance'), -0.3, NOW)
+  const withHuang = (score: number) => { const t = newSheet(); whyTodayFacts(t, ex('NVDA', 'Nvidia', -0.3, [drv('market', 0.6, 'moved with Nasdaq (−0.7%)', 'Nasdaq −0.7%.'), drv('news', score, 'related headline', HUANG, 'Yahoo Finance')]), ses, DATA); return { t, a: keepText(composeAnswer(sheetOf(p, t))) } }
+  const weak = withHuang(huang(30)), strongH = withHuang(huang(4))
+  check('answer: the CoreWeave/Jensen Huang headline is in the first line only when it passes STRONG; weaker, it stays in Related news',
+    huang(30) < STRONG && !weak.a.headline.text.includes('Jensen Huang') && weak.a.sections.find(x => x.key === 'news')!.sentences.some(x => x.text.includes('Jensen Huang'))
+      && huang(4) >= STRONG && strongH.a.headline.text.includes('Jensen Huang'), `scores: 30 h old ${huang(30)}, 4 h old ${huang(4)} | weak line: ${weak.a.headline.text}`)
   check('answer (today): market and sector read as one clause, both cited', bothA.headline.text === 'Nvidia is down 2.1% today; moved with Nasdaq (−1.5%) and tech (−1.9%).' && bothA.headline.cites.length === 3, bothA.headline.text)
   const a = keepText(composeAnswer(sheetOf(p, s)))
   check('answer (today): headline names strong drivers and the strongest quotable headline — “…; moved with Nasdaq (−1.5%); Reuters reported “…””',
@@ -256,6 +266,12 @@ let relFS!: FactSheet
   const priv = await narrateWith({ ...fsx, private: true, parsed: { ...fsx.parsed, intent: 'PORTFOLIO' } }, { reserve: async () => { called = true; return true }, call: async () => { called = true; return good } })
   check('AI: PORTFOLIO (private) is never narrated — no budget touched, no call', !priv.ok && !priv.called && !called)
   const key = proseCacheKey(fsx, Date.parse('2026-10-16T10:30:00Z'))
+  const marketFs: FactSheet = { ...fsx, parsed: { ...fsx.parsed, intent: 'MARKET_TODAY' } }
+  check('AI prompt: states the sentence limit — at most 6, and at most 5 for the market covering indices, sectors and the top theme',
+    /- Write at most 6 sentences\./.test(buildPrompt(fsx)) && /- Write at most 5 sentences, covering the indices, the sectors and the top theme\./.test(buildPrompt(marketFs)) && !/2 to 5 sentences/.test(buildPrompt(fsx)))
+  const seven = Array.from({ length: 7 }, (_, i) => `Over the past 5 sessions, Reliance Industries moved ${p1(ret.value!)} in check ${i + 1} [${ret.id}].`).join(' ')
+  const tooMany = await narrateWith(fsx, fake(seven))
+  check(`AI: an answer over ${MAX_SENTENCES} sentences is rejected and falls back (fake provider)`, !tooMany.ok && tooMany.reason === '7 sentences', tooMany.ok ? 'accepted' : tooMany.reason)
   check('AI cache key: intent, market, entities, window, shock and data hour only — no user data', key === `ai:research:v1:WHY_MOVE:IN:RELIANCE.NS:week:-:${Math.floor(Date.parse('2026-10-16T10:30:00Z') / 3600_000)}`, key)
 }
 
