@@ -257,7 +257,7 @@ export function windowHeadlines(hs: Headline[], target: EntityRef, stock: Closes
     const sess = ends.find(e => h.publishedAt <= e.end)
     const move = sess && dayMove(stock, sess.d)
     if (!sess || move == null) return []
-    const score = headlineScore(h, move, sess.end)
+    const score = headlineScore(h, move, sess.end, undefined, target)
     return score >= SHOW_THRESHOLD ? [{ h, score, day: sess.d, move }] : []
   }).sort((a, b) => b.score - a.score)
   const kept: typeof scored = []

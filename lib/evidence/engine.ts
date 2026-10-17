@@ -50,7 +50,7 @@
 // the result leads with "no clear driver found" — a valid, honest answer.
 
 import type { Driver, Explanation, Headline, MarketContext, Market, Quote } from './types.ts'
-import { getEntity, getLinks, matchEntitiesInText, resolveEntity } from '../graph/index.ts'
+import { allEntities, getEntity, getLinks, matchEntitiesInText, resolveEntity } from '../graph/index.ts'
 import { STRONG, summarize } from './summary.ts'
 import { pct } from '../format.ts'
 
@@ -272,8 +272,73 @@ function distinctTop<T extends { h: Headline }>(xs: T[], k: number): T[] {
   return kept
 }
 
-/** Relevance of one headline to a move (see SCORING). Exported for tests. */
-export function headlineScore(h: Headline, move: number, end: number, context: Matcher = FINANCIAL): number {
+// ── Whose price move? ─────────────────────────────────────────────────────────
+// A price-move word ("plunge", "surges", "falls") belongs to the stock named right before it:
+// "X shares plunge", "X's stock falls", "CoreWeave Stock Drops", "shares of X jump", or the company
+// (or list of companies) immediately before it in the same clause ("Reliance, Airtel rally").
+// Anything else — a market, a sector, a pronoun, words in between — is unclear and changes nothing.
+const MOVE_WORD = new RegExp(String.raw`${STATED_UP.source}|${STATED_DOWN.source}|\b(slip(s|ped)?|dip(s|ped)?|tank(s|ed)?|spike[sd]?|skid(s|ded)?|skyrocket\w*)\b`, 'gi')
+const NAME = String.raw`[A-Z0-9][\w&.'’-]*(?: [A-Z0-9][\w&.'’-]*){0,3}`
+const LIST = String.raw`${NAME}(?:(?:, | and | & )${NAME})*`
+const SHARE_WORD = String.raw`(?:[Ss]tocks?|[Ss]hares|[Ss]hare [Pp]rice|[Ss]tock [Pp]rice|ADRs?)`
+const OWN_SHARES = new RegExp(String.raw`(${LIST})(?:['’]s?)? ${SHARE_WORD}(?: [\w-]+){0,2}\s*$`)
+const SHARES_OF = new RegExp(String.raw`${SHARE_WORD} (?:of|in) (${LIST})(?: [\w-]+)?\s*$`)
+const CLAUSE_END = /[.;:|?!]\s|\s[-–—]\s/g
+// "Nvidia-backed CoreWeave": the qualifier names a different company than the subject.
+const QUALIFIER = /^[\w&.'’]+-(backed|owned|linked|supported|funded|based)\s+/i
+const asIds = (name: string) => matchEntitiesInText(name).filter(m => m.entity.type === 'company').map(m => m.entity.id)
+const TAIL = new RegExp(String.raw`(${LIST})(?:['’]s)?\s*$`)
+// A company's first name word stands for it in a headline ("India's Reliance") only when no other company shares it.
+let firstWords: Map<string, number> | null = null
+const firstWordOf = (name: string) => coreName(name).split(' ')[0].toLowerCase()
+function uniqueFirstWord(name: string): string | null {
+  firstWords ??= allEntities().filter(e => e.type === 'company').reduce((m, e) => m.set(firstWordOf(e.name), (m.get(firstWordOf(e.name)) ?? 0) + 1), new Map<string, number>())
+  const w = firstWordOf(name)
+  return w.length >= 5 && firstWords.get(w) === 1 ? w : null
+}
+
+/** Whose stock each price-move word in the title describes. Exported for tests. */
+export function moveOwners(title: string, target: { id: string; name: string }): ('own' | 'other' | null)[] {
+  const core = coreName(target.name).toLowerCase(), base = target.id.replace(/\.NS$/, '').toUpperCase(), first = uniqueFirstWord(target.name)
+  const isTarget = (name: string) => {
+    const n = name.replace(QUALIFIER, '')
+    return asIds(n).includes(target.id) || (core.length >= 3 && n.toLowerCase().includes(core)) || n.toUpperCase() === base
+      || (!!first && n.toLowerCase().split(/[\s'’]+/).includes(first))
+  }
+  const out: ('own' | 'other' | null)[] = []
+  for (const m of title.matchAll(MOVE_WORD)) {
+    const before = title.slice(0, m.index)
+    let cut = 0
+    for (const c of before.matchAll(CLAUSE_END)) cut = c.index! + c[0].length
+    const clause = before.slice(cut)
+    const named = OWN_SHARES.exec(clause) ?? SHARES_OF.exec(clause)
+    if (named) { const names = named[1].split(/, | and | & /); out.push(names.some(isTarget) ? 'own' : 'other'); continue }
+    // Else: the name — or list of names — immediately before the move word ("Reliance, Airtel rally").
+    // Another company only when one of them is a listed company in the graph; else unclear.
+    const tail = TAIL.exec(clause)
+    const names = tail ? tail[1].split(/, | and | & /) : []
+    out.push(names.some(isTarget) ? 'own' : names.some(n => asIds(n.replace(QUALIFIER, '')).length) ? 'other' : null)
+  }
+  return out
+}
+
+// The explained company as the actor or target of real news ("Nvidia invests $2B in CoreWeave",
+// "Microsoft signs deal with Nvidia", "UBS upgrades Nvidia") — not a passing mention ("Nvidia CEO …
+// addresses", "despite Nvidia's confidence", "Nvidia-backed").
+const ACTOR = /^(?:['’]s)?(?: [\w-]+){0,2}? (invests?|invested|acquir\w*|buys?|bought|sells?|sold|signs?|signed|agrees?|agreed|wins?|won|launch\w*|announc\w*|reports?|reported|posts?|posted|unveil\w*|partners?|partnered|sues?|sued|beats?|miss(es|ed)?|rais\w*|cuts?|hikes?|hiked|expands?|completes?|closes?|takes?|picks?|backs?|commits?|pledges?|orders?|ordered|supplies|supplied|files?|filed|plans?)\b/i
+const TARGET_OF = /\b(invest\w*|stake|deal|agreement|order|contract|partnership|tie-?up|lawsuit|suit|probe|ban|curbs?|sanctions?|tariffs?|fine|acquisition|bid|offer|upgrade|downgrade|rating)(?: [\w-]+){0,2} (with|from|by|in|against|on|for|of|to)\s*$|\b(sues?|sued|acquires?|buys?|bans?|probes?|fines?|backs?|picks?|chooses?|selects?|upgrades?|downgrades?|joins?|outbids?)\s*$/i
+export function realNewsAbout(title: string, target: { id: string; name: string }): boolean {
+  const core = coreName(target.name)
+  const spots = matchEntitiesInText(title).filter(m => m.entity.id === target.id).map(m => ({ i: m.index, len: m.text.length }))
+  if (!spots.length && core.length >= 3) for (const m of title.matchAll(new RegExp(`(?<![\\w&])${esc(core)}(?![\\w&])`, 'g'))) spots.push({ i: m.index!, len: m[0].length })
+  return spots.some(({ i, len }) => ACTOR.test(title.slice(i + len)) || TARGET_OF.test(title.slice(0, i)))
+}
+const OTHER_MOVE_CAP = 0.45
+
+/** Relevance of one headline to a move (see SCORING). `target` = the stock being explained
+ *  (omit for index news): another company's price move gives no tone bonus, and with only a
+ *  passing mention of the target the headline is capped below STRONG. Exported for tests. */
+export function headlineScore(h: Headline, move: number, end: number, context: Matcher = FINANCIAL, target?: { id: string; name: string }): number {
   const up = STATED_UP.test(h.title), down = STATED_DOWN.test(h.title)
   if ((up && !down && move < 0) || (down && !up && move > 0)) return 0
   if (toneOpposes(h, move)) return 0
@@ -281,9 +346,13 @@ export function headlineScore(h: Headline, move: number, end: number, context: M
   if (otherPeriod(h.title)) return 0
   const companies = h.entities.filter(id => getEntity(id)?.type === 'company').length
   const focus = companies <= 2 ? 1 : 0.6
-  const tone = (h.sentiment === 'BULLISH' && move > 0) || (h.sentiment === 'BEARISH' && move < 0) ? 0.15 : 0
+  // Every move word clearly another company's → that move is not this stock's (unclear → unchanged).
+  const owners = target ? moveOwners(h.title, target) : []
+  const otherMove = owners.length > 0 && owners.every(o => o === 'other')
+  const tone = !otherMove && ((h.sentiment === 'BULLISH' && move > 0) || (h.sentiment === 'BEARISH' && move < 0)) ? 0.15 : 0
   const s = r2(clamp01(0.55 * focus * recency(h.publishedAt, end) + tone))
   if (OPINION_FORM.test(h.title)) return Math.min(s, OPINION_CAP)
+  if (otherMove && !realNewsAbout(h.title, target!)) return Math.min(s, OTHER_MOVE_CAP)
   return Math.max(companies, listedNames(h.title)) >= 4 ? Math.min(s, ROUNDUP_CAP) : s
 }
 
@@ -402,7 +471,7 @@ function stockDrivers(t: Quote, ctx: MarketContext): Driver[] {
   const win = sessionWindow(t, ctx.market, now)
   const mentioned = ctx.headlines.filter(h => inWindow(h, win) && mentionsTarget(h, t.symbol, t.name))
   const directAll = mentioned
-    .map(h => ({ h, s: headlineScore(h, m, win.end) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s)
+    .map(h => ({ h, s: headlineScore(h, m, win.end, FINANCIAL, { id: t.symbol, name: ent?.name ?? t.name }) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s)
   const direct = distinctTop(directAll, 3)
   for (const { h, s } of direct) {
     out.push({ type: 'news', score: s, label: 'related headline', evidence: h.title,

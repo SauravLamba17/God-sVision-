@@ -192,6 +192,30 @@ const run = (t: Quote, kind: 'stock' | 'index', c: MarketContext) => { const e =
   const dropped = scoreAll(otherSpan), stay = scoreAll(kept)
   check('trap: another period’s level or span (“18-month low … from January high”, “6% in a month”, “near its 52-week low”) and opinion/explainers (“Experts’ views”, “Why … can”, “explained”) score 0',
     dropped.every(x => x.s === 0), dropped.filter(x => x.s > 0).map(x => `${x.s} ${x.t}`).join(' | '))
+  // A price move must belong to the stock being explained (scored with and without the target, same headline).
+  const NV = { id: 'NVDA', name: 'Nvidia' }, RIL = { id: 'RELIANCE.NS', name: 'Reliance Industries' }, JSW = { id: 'JSWSTEEL.NS', name: 'JSW Steel' }
+  const pair = (t: string, m: number, tg: { id: string; name: string }) => { const x = headline(t, 1); return { t, before: headlineScore(x, m, NOW), after: headlineScore(x, m, NOW, undefined, tg) } }
+  const capped = [
+    pair("Nvidia CEO Jensen Huang addresses CoreWeave stock plunge: 'I'm optimistic'", -0.3, NV),
+    pair('Adani Ports shares tumble; Reliance Industries says retail arm on track', -1.0, RIL),
+    pair("Tata Steel shares slump despite JSW Steel's record output", -1.5, JSW),
+  ]
+  check('move owner: another company’s price move with only a passing mention of the explained stock → below STRONG (Huang/CoreWeave for NVDA; 2 India cases)',
+    capped.every(x => x.before >= 0.5 && x.after < 0.5), capped.map(x => `${x.before}→${x.after} ${x.t}`).join(' | '))
+  const unchanged = [
+    pair('Nvidia shares plunge on export curbs', -3.0, NV),
+    pair('Nvidia invests $2 billion in CoreWeave stake', 2.0, NV),
+    pair('Microsoft signs deal with Nvidia', 2.0, NV),
+    pair("India's Reliance, Airtel rally as Jio Platforms IPO recasts valuations", 3.0, RIL),
+    pair('Jio Platforms IPO effect: Reliance Industries, Network18, RIIL shares surge up to 13%', 3.0, RIL),
+  ]
+  check('move owner: the stock’s own move, or real news about it with no other company’s move, is unchanged (NVDA plunge, invests, deal; Reliance in a list)',
+    unchanged.every(x => x.before === x.after && x.after > 0), unchanged.map(x => `${x.before}→${x.after} ${x.t}`).join(' | '))
+  const actor = [pair('CoreWeave shares surge after Nvidia invests $2 billion', 2.0, NV), pair('Paytm shares surge after Reliance Industries signs payments deal', 2.0, RIL)]
+  check('move owner: actor in real news, another company’s move → no tone bonus, but no STRONG cap (NVDA invests; Reliance signs)',
+    actor.every(x => x.before === 0.7 && x.after === 0.55), actor.map(x => `${x.before}→${x.after} ${x.t}`).join(' | '))
+  const unclear = pair('Nvidia CEO says chip stocks fall on tariff fears', -1.0, NV)
+  check('move owner: an unclear subject (“chip stocks fall”) changes nothing', unclear.before === unclear.after, `${unclear.before}→${unclear.after}`)
   const zacks = headline('The Zacks Analyst Blog Highlights NVIDIA, Philip Morris International, Home Depot and CPI Aerostructures', 1)
   check('trap: a round-up whose last name follows “and” counts every name and stays below STRONG', listedNames(zacks.title) === 4 && headlineScore(zacks, -1.4, NOW) < 0.5, `${listedNames(zacks.title)} names, score ${headlineScore(zacks, -1.4, NOW)}`)
   check('trap: a level hit in this session is still news (“hits 52-week high on results”, “stock at record high after Q2 profit”, “shares fall to 18-month low”)',
