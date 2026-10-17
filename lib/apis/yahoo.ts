@@ -98,6 +98,7 @@ async function fetchOneQuoteByChart(ticker: string): Promise<any | null> {
       regularMarketDayLow: meta.regularMarketDayLow || price,
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
+      regularMarketTime: meta.regularMarketTime, // unix seconds of the last trade (session windows need it)
       currency: meta.currency,
       exchange: meta.exchangeName,
       quoteType: meta.instrumentType,

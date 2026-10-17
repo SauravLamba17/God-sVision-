@@ -61,5 +61,12 @@ export function geminiProvider(): AIProvider | null {
       const res = await track('Gemini', () => prose.generateContent(`${BRAIN_SYSTEM}\n\nFacts (JSON):\n${JSON.stringify(input)}`))
       return res.response.text().trim()
     },
+    // Research prose: the caller (lib/research/narrate.ts) reserves the per-user and on-demand budget first.
+    async research(prompt) {
+      if (process.env.NEXT_PHASE === 'phase-production-build') throw new Error('AI disabled during build')
+      const prose = genAI!.getGenerativeModel({ model: 'gemini-2.5-flash-lite', generationConfig: { temperature: 0.2, maxOutputTokens: 500 } })
+      const res = await track('Gemini', () => prose.generateContent(prompt))
+      return res.response.text().trim()
+    },
   }
 }

@@ -15,14 +15,14 @@ import 'server-only'
 import { getCache } from '@/lib/cache'
 import { DEFAULT_TICKERS } from '@/lib/apis/yahoo'
 import { recordFeed } from '@/lib/feedHealth'
-import { parseSpark, sparkUrls } from './spark'
+import { parseSparkQuotes, sparkUrls, type SparkQuote } from './spark'
 
 type Q = { symbol?: string; regularMarketPrice?: number; price?: number }
 const SHARED_TTL = 300
 const TIMEOUT_MS = 4000
 
-/** One shared, cached spark lookup per ≤ 20 tickers. Failures → no prices (never throws). */
-async function sharedPrices(tickers: string[]): Promise<Record<string, number>> {
+/** One shared, cached spark lookup per ≤ 20 tickers: price, day change and last-trade time. Failures → no quotes (never throws). */
+export async function sharedQuotes(tickers: string[]): Promise<Record<string, SparkQuote>> {
   const results = await Promise.all(sparkUrls(tickers).map(async url => {
     const t0 = performance.now()
     try {
@@ -31,7 +31,7 @@ async function sharedPrices(tickers: string[]): Promise<Record<string, number>> 
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', Accept: 'application/json' },
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const prices = parseSpark(await res.json())
+      const prices = parseSparkQuotes(await res.json())
       recordFeed('Yahoo spark (portfolio prices)', true, performance.now() - t0, undefined, res.status, Object.keys(prices).length)
       return prices
     } catch (e) {
@@ -61,6 +61,6 @@ export async function cachedPrices(tickersInOrder: string[], resolve: (ticker: s
   const singles = await Promise.all(wanted.filter(s => !(s in out)).flatMap(s => [read<Q>(`quote_${s}`), read<Q[]>(`quotes_${s}`)]))
   for (const c of singles) take(Array.isArray(c) ? c[0] : c)
   // Still missing a price → the shared spark lookup for the whole list (stable key per portfolio).
-  if (wanted.some(s => !(s in out))) for (const [s, p] of Object.entries(await sharedPrices(wanted))) if (!(s in out)) out[s] = p
+  if (wanted.some(s => !(s in out))) for (const [s, q] of Object.entries(await sharedQuotes(wanted))) if (!(s in out)) out[s] = q.price
   return out
 }

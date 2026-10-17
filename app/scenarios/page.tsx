@@ -43,7 +43,7 @@ function Bars({ bars }: { bars: SectorBar[] }) {
           </span>
         </div>
       ))}
-      <div style={meta}>Sector funds/indices where they exist; otherwise the median of constituents with a reliable link (count shown). Thin line = 90% range.</div>
+      <div style={meta}>Sector funds/indices where they exist; otherwise the median of constituents with a reliable link, when at least 3 have one (count shown). Thin line = 90% range.</div>
     </div>
   )
 }

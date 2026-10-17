@@ -137,6 +137,23 @@ async function run() {
   record('A POST /api/scenario/portfolio — no B holding', 'no MPC', aStress.body.includes('MPC') || aStress.body.includes('9.25') ? 'B item visible' : 'no MPC', !aStress.body.includes('MPC') && !aStress.body.includes('9.25'))
   record('POST /api/scenario/portfolio Cache-Control', 'private, no-store', `${aStress.cc} | ${bStress.cc}`, aStress.cc === 'private, no-store' && bStress.cc === 'private, no-store')
 
+  // Research Agent: a portfolio question reads only the asker's holdings; public answers carry no user data.
+  const research = async (c: Client, question: string, market = 'US') => {
+    const r = await c.json('/api/research', 'POST', { question, market })
+    return { status: r.status, cc: r.headers.get('cache-control'), body: await r.text() }
+  }
+  const aPf = await research(A, 'how is my portfolio doing'), bPf = await research(B, 'what happens to my holdings if oil jumps')
+  record('A POST /api/research (portfolio) — own holdings, no B holding', 'XOM, no MPC', `${aPf.status} ${aPf.body.includes('XOM') ? 'XOM' : 'no XOM'}, ${aPf.body.includes('MPC') ? 'MPC VISIBLE' : 'no MPC'}`,
+    aPf.status === 200 && aPf.body.includes('XOM') && !aPf.body.includes('MPC') && !aPf.body.includes('9.25'))
+  record('B POST /api/research (portfolio) — never A’s holdings', 'MPC only', `${bPf.status} ${bPf.body.includes('MPC') ? 'MPC' : 'no MPC'}, ${[TICKER, 'XOM', '7.3125'].filter(x => bPf.body.includes(x)).join('/') || 'no A item'}`,
+    bPf.status === 200 && bPf.body.includes('MPC') && ![TICKER, 'XOM', '7.3125', '11.875'].some(x => bPf.body.includes(x)))
+  record('POST /api/research (portfolio) Cache-Control', 'private, no-store', `${aPf.cc} | ${bPf.cc}`, aPf.cc === 'private, no-store' && bPf.cc === 'private, no-store')
+  const aPub = await research(A, 'what if oil jumps 20%'), bPub = await research(B, 'what if oil jumps 20%')
+  const userData = [EMAIL_A, EMAIL_B, userA.id, TICKER, '7.3125', '11.875', '9.25']
+  const strip = (b: string) => { try { const j = JSON.parse(b); delete j.timings; return JSON.stringify(j) } catch { return b } }
+  record('POST /api/research (public) — no user data, same answer for A and B', 'identical, no user data', `${aPub.status}/${bPub.status} ${strip(aPub.body) === strip(bPub.body) ? 'identical' : 'DIFFERENT'}, ${userData.filter(x => aPub.body.includes(x) || bPub.body.includes(x)).join('/') || 'no user data'}`,
+    aPub.status === 200 && strip(aPub.body) === strip(bPub.body) && !userData.some(x => aPub.body.includes(x) || bPub.body.includes(x)))
+
   // ── B writes against A's items ────────────────────────────────────────────
   const denied = (s: number) => s === 403 || s === 404
   const attack = async (label: string, res: Response, survived: () => Promise<boolean>) => {
@@ -188,6 +205,7 @@ async function run() {
     ['GET', '/api/user/gv-key'], ['POST', '/api/user/gv-key'],
     ['POST', '/api/stripe/checkout'], ['POST', '/api/stripe/portal'],
     ['POST', '/api/scenario/portfolio', { preset: 'oil-up' }],
+    ['POST', '/api/research', { question: 'how is my portfolio doing', market: 'US' }],
   ]
   for (const [method, path, body] of unauth) {
     const res = body === undefined ? await anon.req(path, { method }) : await anon.json(path, method, body)

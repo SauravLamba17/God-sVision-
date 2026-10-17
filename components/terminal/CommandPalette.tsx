@@ -32,6 +32,7 @@ const PAGES: SearchItem[] = [
   { id: 'bonds',       label: 'BONDS',        sublabel: 'Fixed income / bonds',       category: 'PAGE', href: '/bonds' },
   { id: 'backtest',    label: 'BACKTEST',     sublabel: 'Backtesting engine',         category: 'PAGE', href: '/backtest' },
   { id: 'scenarios',   label: 'SCENARIOS',    sublabel: 'What-if: oil, rates, rupee', category: 'PAGE', href: '/scenarios' },
+  { id: 'research',    label: 'RESEARCH',     sublabel: 'Ask why a stock moved, with sources', category: 'PAGE', href: '/research' },
   { id: 'sheets',      label: 'SHEETS',       sublabel: 'Google Sheets add-on setup', category: 'PAGE', href: '/sheets' },
   { id: 'insiders',     label: 'INSIDERS',      sublabel: 'SEC Form 4 insider transactions', category: 'PAGE', href: '/insiders' },
   { id: 'centralbanks',label: 'CENTRAL BANKS', sublabel: 'Fed/ECB/BOE speeches & rates',   category: 'PAGE', href: '/centralbanks' },

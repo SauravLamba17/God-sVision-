@@ -10,7 +10,7 @@
  *  checks are the oil / rates / sector sanity gate a data refresh must pass.
  */
 import fs from 'node:fs'
-import { assertScenarioWording, COST_NOTE, portfolioImpact, runScenario, SCENARIO_BANNED, validateShock, VALUE_NOTE, type ScenarioResult, type SensitivityData } from '../lib/scenario/engine.ts'
+import { assertScenarioWording, COST_NOTE, MIN_MEDIAN, portfolioImpact, runScenario, SCENARIO_BANNED, validateShock, VALUE_NOTE, type ScenarioResult, type SensitivityData } from '../lib/scenario/engine.ts'
 import { FACTOR_IDS, FACTORS, MARKET_FACTORS, SECTOR_FUNDS, type FactorId, type Market } from '../lib/scenario/factors.ts'
 import { PRESETS, presetFactor, presetSize, type FactorPreset } from '../lib/scenario/presets.ts'
 import { alignedMove, dailyMoves, decide, isoWeek, isReliable, olsHC1, rng, weekly } from '../lib/scenario/stats.ts'
@@ -73,6 +73,13 @@ for (const market of ['US', 'IN'] as Market[]) for (const p of PRESETS.filter(p 
     ...r.notEstimated.filter(n => r.stocks.some(i => i.symbol === n.symbol)).map(n => `${r.title}: ${n.symbol} both`),
   ])
   check(`reliability: every number comes from a reliable link (${all.length} scenarios checked)`, leaks.length === 0, leaks.slice(0, 5).join(' | '))
+  // A constituent-median bar needs ≥ 3 reliable constituents; with fewer there is no bar, but the stocks still show.
+  const thin = all.flatMap(r => r.sectors.filter(s => s.basis === 'median' && (s.count?.reliable ?? 0) < MIN_MEDIAN).map(s => `${r.market} ${r.title}: ${s.name} (${s.count?.reliable})`))
+  const oilIn = run('IN', { preset: 'oil-up' })
+  const energyIn = oilIn.stocks.filter(i => getEntity(i.symbol)?.sector === 'sector:energy')
+  check('sector bars: a constituent median needs ≥ 3 reliable constituents (Indian Energy, 2 reliable: no bar, ONGC and BPCL still listed)',
+    !thin.length && !oilIn.sectors.some(s => s.id === 'sector:energy') && energyIn.length > 0 && energyIn.length < MIN_MEDIAN && oilIn.sectors.some(s => s.basis === 'fund'),
+    thin.slice(0, 3).join(' | ') || energyIn.map(i => i.symbol).join(', '))
   const r = run('IN', { preset: 'inr-weak' })
   check('USD/INR +3% (India): no stock numbers (no reliable weekly link) but the Nifty\'s own reaction is shown', r.stocks.length === 0 && r.marketReaction?.reliable === true && (r.marketReaction.value ?? 0) < 0, r.marketReaction?.text)
   const rates = run('IN', { preset: 'rates-up' })

@@ -14,13 +14,21 @@ export function sparkUrls(tickers: string[]): string[] {
 
 const currencyOk = (symbol: string, currency: unknown) => currency === (symbol.endsWith('.NS') ? 'INR' : 'USD')
 
-/** Spark response → price by symbol (listing currency only). */
-export function parseSpark(json: unknown): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const r of (json as { spark?: { result?: { symbol?: string; response?: { meta?: { regularMarketPrice?: number; currency?: string } }[] }[] } })?.spark?.result ?? []) {
+export interface SparkQuote { price: number; changePct: number | null; at: number | null }
+
+/** Spark response → price, day change and last-trade time by symbol (listing currency only). */
+export function parseSparkQuotes(json: unknown): Record<string, SparkQuote> {
+  const out: Record<string, SparkQuote> = {}
+  for (const r of (json as { spark?: { result?: { symbol?: string; response?: { meta?: { regularMarketPrice?: number; currency?: string; regularMarketChangePercent?: number; regularMarketTime?: number } }[] }[] } })?.spark?.result ?? []) {
     const m = r.response?.[0]?.meta, sym = r.symbol?.toUpperCase(), p = m?.regularMarketPrice
-    if (sym && typeof p === 'number' && Number.isFinite(p) && p > 0 && currencyOk(sym, m?.currency)) out[sym] = p
+    if (!sym || typeof p !== 'number' || !Number.isFinite(p) || p <= 0 || !currencyOk(sym, m?.currency)) continue
+    const c = m?.regularMarketChangePercent, t = m?.regularMarketTime
+    out[sym] = { price: p, changePct: typeof c === 'number' && Number.isFinite(c) ? c : null, at: typeof t === 'number' ? t * 1000 : null }
   }
   return out
 }
 
+/** Spark response → price by symbol (listing currency only). */
+export function parseSpark(json: unknown): Record<string, number> {
+  return Object.fromEntries(Object.entries(parseSparkQuotes(json)).map(([s, q]) => [s, q.price]))
+}

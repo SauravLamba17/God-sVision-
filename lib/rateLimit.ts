@@ -129,4 +129,6 @@ export const LIMITS = {
   writes:      (userId: string): Limit => ({ bucket: 'writes', id: userId, max: 120, windowSec: HOUR }),
   /** Portfolio stress tests (POST /api/scenario/portfolio) — reads the user's holdings each time. */
   scenario:    (userId: string): Limit => ({ bucket: 'scenario', id: userId, max: 60, windowSec: HOUR }),
+  /** Research Agent questions (POST /api/research). */
+  research:    (userId: string): Limit => ({ bucket: 'research', id: userId, max: 30, windowSec: HOUR }),
 }

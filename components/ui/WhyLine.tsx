@@ -47,6 +47,7 @@ export function WhyLine({ market, symbol, liveChangePct, variant = 'row' }: { ma
       {open && (
         <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 4, borderLeft: '1px solid var(--border-color)' }}>
           {ai && <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Evidence summary: {e.summary}</div>}
+          <a href={`/research?q=${encodeURIComponent(`Why is ${e.name} moving today?`)}`} style={{ fontSize: 8, color: '#38bdf8', alignSelf: 'flex-start' }}>Research this →</a>
           {e.drivers.map((d, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '84px 34px minmax(0,1fr)', gap: 6, alignItems: 'baseline' }}>
               <span style={{ fontSize: 7, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>{TYPE_LABEL[d.type] ?? d.type}</span>

@@ -146,7 +146,7 @@ const nse = (id: string, name: string, sector: string, industry: string, aliases
   ({ id, type: 'company', name, sector, industry, country: IN, exchange: 'NSE', aliases, ...extra })
 
 const INDIA_COMPANIES: Entity[] = [
-  nse('RELIANCE.NS', 'Reliance Industries', EN, 'Oil-to-chemicals, telecom & retail', ['Reliance Industries', 'RIL', 'Reliance Jio', 'Jio']),
+  nse('RELIANCE.NS', 'Reliance Industries', EN, 'Oil-to-chemicals, telecom & retail', ['Reliance Industries', 'RIL', 'Reliance Jio', 'Jio'], { notFollowedBy: ['Financial'] }), // Jio Financial Services is a separate listed company
   nse('TCS.NS', 'Tata Consultancy Services', IT, 'IT services', ['Tata Consultancy Services', 'Tata Consultancy', 'TCS']),
   nse('HDFCBANK.NS', 'HDFC Bank', FIN, 'Banking', ['HDFC Bank']),
   nse('INFY.NS', 'Infosys', IT, 'IT services', ['Infosys']),

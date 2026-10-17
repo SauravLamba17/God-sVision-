@@ -6,7 +6,7 @@
 //               typical reaction to the factor; included only when that reaction is reliable
 //   total       direct + market part (band shifted by the market part)
 //   sector bar  the sector fund/index's own total effect; where no fund exists, the median
-//               total of the sector's reliable constituents, with the count
+//               total of the sector's reliable constituents, with the count — only when ≥ 3 have one
 //   indirect    graph supplier/customer links of estimated stocks — named, never given a number
 // Sensitivities that miss the reliability rule never produce numbers ("no reliable historical link").
 import { FACTORS, MARKET_CONTROL, MARKET_FACTORS, SECTOR_FUNDS, shockLabel, type FactorId, type Market, type Unit } from './factors.ts'
@@ -64,6 +64,8 @@ export interface ScenarioResult {
 }
 
 export const Z90 = 1.645
+/** Fewest constituents with a reliable link for a constituent-median sector bar (sector funds/indices need none). */
+export const MIN_MEDIAN = 3
 /** Our own wording must never claim cause or predict. */
 export const SCENARIO_BANNED = /\b(will|predict\w*|forecast\w*|because|caus(e|ed|es|ing))\b/i
 export function assertScenarioWording(text: string): void {
@@ -112,9 +114,8 @@ function sectorBars(data: SensitivityData, market: Market, f: FactorId, shock: n
     if (fund) { bars.push(fundBar(fund.symbol, sid, fund.name)); continue }
     const members = stocks.filter(([, e]) => e.sector === sid)
     const est = members.map(([s]) => impacts.get(s)).filter((i): i is Impact => !!i)
-    bars.push(est.length
-      ? { id: sid, name, basis: 'median', total: median(est.map(i => i.total)), count: { reliable: est.length, of: members.length }, note: `median of ${est.length} of ${members.length} constituents with a reliable link` }
-      : { id: sid, name, basis: 'median', total: null, count: { reliable: 0, of: members.length }, note: `no reliable historical link (${members.length} constituents checked)` })
+    // A median of one or two stocks is not a sector: no bar below MIN_MEDIAN (the stocks still appear individually).
+    if (est.length >= MIN_MEDIAN) bars.push({ id: sid, name, basis: 'median', total: median(est.map(i => i.total)), count: { reliable: est.length, of: members.length }, note: `median of ${est.length} of ${members.length} constituents with a reliable link` })
   }
   for (const fund of SECTOR_FUNDS.filter(x => x.market === market && x.members && data.sectors[x.symbol])) bars.push(fundBar(fund.symbol, fund.symbol, fund.name))
   return bars.sort((a, b) => (b.total ?? -Infinity) - (a.total ?? -Infinity))

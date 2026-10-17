@@ -15,4 +15,6 @@ export interface AIProvider {
   narrate(items: NarrationItem[]): Promise<Record<string, string>>
   /** Optional: one call rewrites a market's Market Brain sections into a short paragraph. */
   narrateBrain?(input: { market: 'US' | 'IN'; summary: string; sections: Record<string, string> }): Promise<string>
+  /** Optional: one call rewrites a research FactSheet prompt (lib/research/prose.ts) into cited sentences. Budget is the caller's. */
+  research?(prompt: string): Promise<string>
 }

@@ -80,7 +80,7 @@ function yahooToQuote(q: any, at: number): Quote | null {
 // Same story from two feeds counts once; a headline without a publish time is
 // dropped (it can't be placed inside or outside a session window).
 const titleKey = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ')
-function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string; feed?: string }[], startId: number, seen = new Set<string>()): Headline[] {
+export function headlinesFrom(raw: { title: string; url?: string; link?: string; source?: string; publishedAt?: string; feed?: string }[], startId: number, seen = new Set<string>()): Headline[] {
   const items = raw.filter(i => {
     const key = titleKey(i.title)
     if (!Date.parse(i.publishedAt ?? '') || seen.has(key)) return false

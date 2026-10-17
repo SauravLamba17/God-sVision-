@@ -21,7 +21,13 @@ const badge = (label: string, color: string, title: string) => (
   <span title={title} style={{ fontSize: 'var(--fs-badge)', fontWeight: 700, letterSpacing: '0.06em', padding: '0 5px', border: `1px solid ${color}66`, color, borderRadius: 2 }}>{label}</span>
 )
 
-function ThemeRow({ t, moves, fmt }: { t: Theme; moves?: string; fmt: (n: number) => string }) {
+/** The Research Agent question a theme leads to (pre-filled, the user asks). */
+function researchQuestion(t: Theme, market: string): string {
+  if (t.kind === 'country' || t.kind === 'region') return `What's driving the ${market === 'in' ? 'Indian' : 'US'} market today?`
+  return `Why is ${t.kind === 'cluster' ? t.title.replace(/ & linked companies$/, '') : t.title} moving today?`
+}
+
+function ThemeRow({ t, moves, fmt, market }: { t: Theme; moves?: string; fmt: (n: number) => string; market: string }) {
   const [open, setOpen] = useState(false)
   return (
     <div style={{ borderTop: '1px solid #0d1526', padding: '4px 0' }}>
@@ -36,6 +42,7 @@ function ThemeRow({ t, moves, fmt }: { t: Theme; moves?: string; fmt: (n: number
       </button>
       {open && (
         <div style={{ margin: '4px 0 2px 16px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <a href={`/research?q=${encodeURIComponent(researchQuestion(t, market))}`} style={{ fontSize: 'var(--fs-meta)', color: '#38bdf8', alignSelf: 'flex-start' }}>Research this →</a>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
             Headline tone (keyword estimate): {t.tone.positive} positive · {t.tone.negative} negative · {t.tone.neutral} neutral
           </div>
@@ -124,7 +131,7 @@ export default function MarketBrain() {
               </button>
               {open[k] && (
                 k === 'themes' && data.brain.themes.length
-                  ? <div style={{ marginTop: 2 }}>{data.brain.themes.map(t => <ThemeRow key={t.id} t={t} moves={data.text.themeMoves?.[t.id]} fmt={fmt} />)}</div>
+                  ? <div style={{ marginTop: 2 }}>{data.brain.themes.map(t => <ThemeRow key={t.id} t={t} moves={data.text.themeMoves?.[t.id]} fmt={fmt} market={market} />)}</div>
                   : <div style={{ marginTop: 2, color: 'var(--text-secondary)', lineHeight: 1.6, overflowWrap: 'anywhere' }}>{data.text.sections[k]}</div>
               )}
             </div>
