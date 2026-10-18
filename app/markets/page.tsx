@@ -176,7 +176,7 @@ function MarketsInner() {
           <div>
             <form onSubmit={handleSearch} style={{ padding: 8 }}>
               <input value={searchInput} onChange={e => setSearchInput(e.target.value.toUpperCase())}
-                placeholder="SEARCH TICKER..." className="input-terminal w-full" />
+                placeholder="SEARCH TICKER..." aria-label="Search ticker" className="input-terminal w-full" />
             </form>
             <table className="data-table">
               <thead><tr><th style={{ textAlign:'left' }}>TICKER</th><th>PRICE</th><th>CHG%</th></tr></thead>

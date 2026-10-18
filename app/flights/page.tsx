@@ -163,6 +163,7 @@ export default function FlightsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="SEARCH CALLSIGN / ICAO24…"
+            aria-label="Search callsign or ICAO24"
             className="input-terminal"
             style={{ width: 220 }}
           />

@@ -81,14 +81,14 @@ export default function InsidersPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <AIButton panelName="Insider Transactions" panelData={txs.slice(0, 5)} context="Recent Form 4 insider transactions from SEC EDGAR. Look for clusters of insider buying/selling, big single transactions, and any notable corporate names. Provide market signal interpretation." />
-          <select value={filter} onChange={e => setFilter(e.target.value as any)}
+          <select value={filter} aria-label="Transaction type" onChange={e => setFilter(e.target.value as any)}
             style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, background: 'var(--bg-header)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '4px 8px', borderRadius: 2 }}>
             <option value="all">ALL TYPES</option>
             <option value="BUY">BUYS ONLY</option>
             <option value="SELL">SELLS ONLY</option>
             <option value="AWARD">AWARDS ONLY</option>
           </select>
-          <select value={minVal} onChange={e => setMinVal(parseInt(e.target.value))}
+          <select value={minVal} aria-label="Minimum value" onChange={e => setMinVal(parseInt(e.target.value))}
             style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, background: 'var(--bg-header)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '4px 8px', borderRadius: 2 }}>
             <option value={100000}>$100K+</option>
             <option value={500000}>$500K+</option>
@@ -132,9 +132,9 @@ export default function InsidersPage() {
                   style={{ borderBottom: '1px solid #0d1526', cursor: 'pointer', background: expanded === tx.id ? 'rgba(255,109,0,0.04)' : 'transparent' }}
                 >
                   <td style={{ padding: '6px 10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{tx.filedDate}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-primary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.company}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-primary)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.company}>{tx.company}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-accent)', fontWeight: 700 }}>{tx.ticker || '—'}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.insider}</td>
+                  <td style={{ padding: '6px 10px', color: 'var(--text-secondary)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.insider}>{tx.insider}</td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>{tx.role ?? '—'}</td>
                   <td style={{ padding: '6px 10px' }}><TypeBadge type={tx.transactionType} /></td>
                   <td style={{ padding: '6px 10px', color: 'var(--text-primary)', textAlign: 'right' }}>{tx.shares !== null ? tx.shares.toLocaleString() : '—'}</td>

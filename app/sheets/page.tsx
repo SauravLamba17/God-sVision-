@@ -107,6 +107,8 @@ export default function SheetsPage() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyCreatedAt, setKeyCreatedAt] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
+  // A key can exist without a creation date (keys made before that column): "hidden", not "Loading…" forever.
+  const [hasKey, setHasKey] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -121,6 +123,7 @@ export default function SheetsPage() {
       .then(r => r.json())
       .then(d => {
         if (d.key) setApiKey(d.key);
+        if (d.hasKey) setHasKey(true);
         if (d.createdAt) setKeyCreatedAt(d.createdAt);
         if (d.error) setKeyError(d.error);
       })
@@ -192,7 +195,7 @@ export default function SheetsPage() {
                   border: '1px solid var(--border-color)', borderRadius: '3px', padding: '8px 10px',
                   wordBreak: 'break-all', marginBottom: '6px',
                 }}>
-                  {apiKey ?? (keyError ?? (keyCreatedAt ? '•••••••• (hidden — shown only once)' : 'Loading…'))}
+                  {apiKey ?? (keyError ?? (hasKey || keyCreatedAt ? '•••••••• (hidden — shown only once)' : 'Loading…'))}
                 </div>
                 <div style={{ fontSize: '9px', color: apiKey ? 'var(--text-warning)' : 'var(--text-muted)', marginBottom: '10px', lineHeight: 1.5 }}>
                   {apiKey

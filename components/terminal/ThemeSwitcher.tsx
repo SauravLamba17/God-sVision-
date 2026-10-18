@@ -132,6 +132,8 @@ export default function ThemeSwitcher() {
       <button
         ref={btnRef}
         onClick={handleToggle}
+        aria-haspopup="menu"
+        aria-expanded={open}
         style={{
           display: 'flex', alignItems: 'center', gap: 4,
           background: open ? 'var(--bg-hover)' : 'transparent',

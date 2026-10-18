@@ -128,7 +128,7 @@ function SignInForm() {
                 <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>NAME</div>
                 <input
                   style={inputStyle}
-                  type="text" value={name} placeholder="Your name"
+                  type="text" value={name} placeholder="Your name" aria-label="Name"
                   onChange={e => setName(e.target.value)}
                   onFocus={e => (e.target.style.borderColor = '#ff6d00')}
                   onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
@@ -139,7 +139,7 @@ function SignInForm() {
               <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>EMAIL</div>
               <input
                 style={inputStyle}
-                type="email" value={email} placeholder="you@example.com" required
+                type="email" value={email} placeholder="you@example.com" required aria-label="Email"
                 onChange={e => setEmail(e.target.value)}
                 onFocus={e => (e.target.style.borderColor = '#ff6d00')}
                 onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
@@ -154,7 +154,7 @@ function SignInForm() {
               </div>
               <input
                 style={inputStyle}
-                type="password" value={password} placeholder={tab === 'register' ? 'Min 8 characters' : '••••••••'} required
+                type="password" value={password} placeholder={tab === 'register' ? 'Min 8 characters' : '••••••••'} required aria-label="Password"
                 onChange={e => setPassword(e.target.value)}
                 onFocus={e => (e.target.style.borderColor = '#ff6d00')}
                 onBlur={e => (e.target.style.borderColor = '#1b2e1b')}

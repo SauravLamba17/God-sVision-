@@ -160,6 +160,9 @@
   --glow-green:     rgba(0,102,0,0.08);
   --glow-red:       rgba(204,0,0,0.08);
 }
+/* Tailwind's text-primary is a fixed near-white (#e2e8f0), invisible on the light
+   background (65 files use it); follow the theme here. Dark themes keep their look. */
+[data-theme="light"] .text-primary { color: var(--text-primary); }
 
 /* ═══════════════════════════════════════════
    HIGH CONTRAST DARK THEME

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { pct } from '@/lib/format'
+import { getCurrencyForTicker, postJson } from '@/lib/utils'
 
 interface WatchlistItem {
   id: number
@@ -20,6 +21,8 @@ export default function WatchlistSidebar() {
   const [items, setItems] = useState<WatchlistItem[]>([])
   const [adding, setAdding] = useState(false)
   const [newTicker, setNewTicker] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [addErr, setAddErr] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
@@ -39,7 +42,8 @@ export default function WatchlistSidebar() {
   // W key toggle
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.key === 'w' || e.key === 'W') && !e.ctrlKey && !e.metaKey && !(document.activeElement instanceof HTMLInputElement) && !(document.activeElement instanceof HTMLTextAreaElement)) {
+      const a = document.activeElement
+      if ((e.key === 'w' || e.key === 'W') && !e.ctrlKey && !e.metaKey && !e.altKey && !(a instanceof HTMLInputElement) && !(a instanceof HTMLTextAreaElement) && !(a instanceof HTMLSelectElement) && !(a as HTMLElement | null)?.isContentEditable) {
         setOpen(prev => !prev)
       }
     }
@@ -49,14 +53,12 @@ export default function WatchlistSidebar() {
 
   const addTicker = async () => {
     const t = newTicker.trim().toUpperCase()
-    if (!t) return
-    try {
-      await fetch('/api/watchlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker: t, name: t }),
-      })
-    } catch { return } // keep the typed ticker so the user can retry
+    if (!t || saving) return
+    setSaving(true)
+    const err = await postJson('/api/watchlist', { ticker: t, name: t })
+    setSaving(false)
+    setAddErr(err ?? '')
+    if (err) return // keep the typed ticker so the user can fix it or retry
     setNewTicker('')
     setAdding(false)
     await load()
@@ -138,7 +140,7 @@ export default function WatchlistSidebar() {
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {item.price != null ? (
                     <>
-                      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>${item.price.toFixed(2)}</div>
+                      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>{getCurrencyForTicker(item.ticker)}{item.price.toFixed(2)}</div>
                       <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                         {pct(item.changePct ?? 0, 2)}
                       </div>
@@ -147,6 +149,7 @@ export default function WatchlistSidebar() {
                 </div>
                 <button
                   onClick={() => removeTicker(item.ticker)}
+                  aria-label={`Remove ${item.ticker} from watchlist`} title="Remove"
                   style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', padding: '0 2px' }}
                 >×</button>
               </div>
@@ -161,17 +164,19 @@ export default function WatchlistSidebar() {
 
         {/* Add ticker */}
         {adding ? (
-          <div style={{ padding: '6px 8px', borderTop: '1px solid #1b2e1b', display: 'flex', gap: 4 }}>
+          <div style={{ padding: '6px 8px', borderTop: '1px solid #1b2e1b', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             <input
               ref={inputRef}
               value={newTicker}
               onChange={e => setNewTicker(e.target.value.toUpperCase())}
-              onKeyDown={e => { if (e.key === 'Enter') addTicker(); if (e.key === 'Escape') { setAdding(false); setNewTicker('') } }}
+              onKeyDown={e => { if (e.key === 'Enter') addTicker(); if (e.key === 'Escape') { setAdding(false); setNewTicker(''); setAddErr('') } }}
               placeholder="TICKER"
+              aria-label="Ticker to add"
               autoFocus
               style={{ flex: 1, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '3px 6px', outline: 'none' }}
             />
-            <button onClick={addTicker} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', background: 'var(--border-color)', color: 'var(--text-positive)', border: 'none', padding: '3px 8px', cursor: 'pointer' }}>ADD</button>
+            <button onClick={addTicker} disabled={saving} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', background: 'var(--border-color)', color: 'var(--text-positive)', border: 'none', padding: '3px 8px', cursor: 'pointer' }}>{saving ? '…' : 'ADD'}</button>
+            {addErr && <div role="alert" style={{ flexBasis: '100%', fontSize: 'var(--fs-meta)', color: 'var(--text-negative)' }}>{addErr}</div>}
           </div>
         ) : (
           <button

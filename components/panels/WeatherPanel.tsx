@@ -149,7 +149,7 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
             <div key={city.city} style={cardStyle}>
               <div style={nameStyle}>{city.city}</div>
               <div style={tempStyle}>{toTemp(city.temp)}</div>
-              <div style={conditionStyle}>{getWeatherEmoji(city.icon)} {city.description}</div>
+              <div style={conditionStyle} title={city.description}>{getWeatherEmoji(city.icon)} {city.description}</div>
               {a?.band ? (
                 <div
                   title={`US AQI ${a.aqi} — ${AQI_LABELS[a.band]}${a.pm25 !== null ? ` · PM2.5 ${a.pm25} µg/m³` : ''}`}

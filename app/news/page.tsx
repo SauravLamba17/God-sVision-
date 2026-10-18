@@ -232,7 +232,7 @@ export default function NewsPage() {
             <div key={src} className="flex items-center justify-between py-px">
               <div className="flex items-center gap-1.5">
                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', display: 'inline-block', flexShrink: 0 }} />
-                <span className="font-mono text-[9px] text-muted truncate" style={{ maxWidth: 100 }}>{src}</span>
+                <span className="font-mono text-[9px] text-muted truncate" style={{ maxWidth: 100 }} title={src}>{src}</span>
               </div>
               <span className="font-mono text-[8px] text-muted opacity-60">{count}</span>
             </div>
@@ -260,6 +260,7 @@ export default function NewsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="SEARCH HEADLINES, SOURCES..."
+            aria-label="Search headlines and sources"
             className="input-terminal"
             style={{ width: 280 }}
           />

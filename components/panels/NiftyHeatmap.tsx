@@ -99,12 +99,15 @@ export default function NiftyHeatmap() {
                   <div key={t}
                     title={`${displayName}: ₹${s.price?.toFixed(2)} (${pct(s.changePct ?? 0, 2)})`}
                     onClick={() => window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } }))}
+                    role="button" tabIndex={0}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } })) } }}
                     style={{
                       background: bg, border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 3, padding: '4px 6px',
                       cursor: 'pointer', minWidth: 52, textAlign: 'center',
                     }}>
-                    <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: 'var(--text-primary)' }}>{displayName.slice(0, 8)}</div>
+                    {/* Tiles are always a saturated red/green, so the label is fixed light text (theme text went black on dark red in light mode). */}
+                    <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: '#f1f5f9' }}>{displayName.slice(0, 8)}</div>
                     <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? '#86efac' : '#fca5a5', marginTop: 1 }}>
                       {pct(s.changePct ?? 0, 1)}
                     </div>

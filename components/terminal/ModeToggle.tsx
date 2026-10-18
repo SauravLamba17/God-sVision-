@@ -73,7 +73,7 @@ export default function ModeToggle() {
   // Ctrl+Shift+I keyboard shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') { // Caps Lock + Shift gives 'i'
         e.preventDefault()
         handleToggle()
       }

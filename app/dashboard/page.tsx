@@ -496,8 +496,9 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
       </div>
       <div style={{ overflowY: 'auto', maxHeight: 320 }}>
         {articles.map((a, i) => (
-          <div key={i} style={{ padding: '6px 10px', borderBottom: '1px solid #0d1526', cursor: 'pointer' }}
-            onClick={() => window.open(a.url, '_blank')}
+          // A real link (keyboard-reachable); the full headline is in the title, since the line is truncated.
+          <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" title={a.title}
+            style={{ display: 'block', padding: '6px 10px', borderBottom: '1px solid #0d1526', cursor: 'pointer', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{a.title}</div>
@@ -505,7 +506,7 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: '#FF9933' }}>{a.source}</span>
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{new Date(a.publishedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} IST</span>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </div>
@@ -714,7 +715,8 @@ export default function DashboardPage() {
           )}
 
         </div>
-        <TickerTape prices={tapePrices} />
+        {/* No US/crypto tape here: India mode never refreshes it, so it only ever showed prices
+            frozen from the first (pre-hydration USA) render. The top tape shows India symbols. */}
       </div>
     )
   }

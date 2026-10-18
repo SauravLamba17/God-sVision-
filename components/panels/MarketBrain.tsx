@@ -35,7 +35,7 @@ function ThemeRow({ t, moves, fmt, market }: { t: Theme; moves?: string; fmt: (n
         style={{ all: 'unset', cursor: 'pointer', display: 'flex', gap: 8, alignItems: 'baseline', width: '100%', minWidth: 0 }}>
         <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{open ? '▾' : '▸'}</span>
         <span style={{ fontWeight: 700, color: 'var(--text-accent)', whiteSpace: 'nowrap' }}>{t.title}</span>
-        <span style={{ flex: 1, minWidth: 0, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span title={`${t.stories} headlines · ${t.sources} sources${moves ? ` · ${moves}` : ''}`} style={{ flex: 1, minWidth: 0, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {t.stories} headlines · {t.sources} sources{moves ? ` · ${moves}` : ''}
         </span>
         <span title="Theme score: coverage (stories, sources) and size of a related move in the headlines' direction" style={{ fontSize: 'var(--fs-badge)', color: 'var(--text-muted)' }}>{t.score.toFixed(2)}</span>

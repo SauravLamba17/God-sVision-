@@ -313,7 +313,7 @@ export default function GodModePage() {
       {/* Scene dots */}
       <div style={{ position:'absolute', bottom:8, left:'50%', transform:'translateX(-50%)', display:'flex', gap:6 }}>
         {SCENES.map((_, i) => (
-          <button key={i} onClick={() => { setProgress(0); goToScene(i) }}
+          <button key={i} onClick={() => { setProgress(0); goToScene(i) }} aria-label={`Scene ${i + 1} of ${SCENES.length}`} aria-current={i === scene ? 'true' : undefined}
             style={{ width: i===scene?12:6, height:6, borderRadius:3, background: i===scene?'var(--text-accent)':'var(--border-color)', border:'none', cursor:'pointer', transition:'all 0.3s' }} />
         ))}
       </div>

@@ -148,6 +148,7 @@ export default function ForexPage() {
                 <div className="font-mono text-[11px] text-muted mb-1" style={{ minHeight: '2.6em', lineHeight: 1.3 }}>BORROW (LOW RATE)</div>
                 <select
                   value={carryBase}
+                  aria-label="Carry trade: currency to borrow"
                   onChange={e => setCarryBase(e.target.value)}
                   className="input-terminal w-full"
                   style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}
@@ -161,6 +162,7 @@ export default function ForexPage() {
                 <div className="font-mono text-[11px] text-muted mb-1" style={{ minHeight: '2.6em', lineHeight: 1.3 }}>INVEST (HIGH RATE)</div>
                 <select
                   value={carryQuote}
+                  aria-label="Carry trade: currency to invest in"
                   onChange={e => setCarryQuote(e.target.value)}
                   className="input-terminal w-full"
                   style={{ padding: '5px 7px', fontSize: 'var(--fs-body)' }}

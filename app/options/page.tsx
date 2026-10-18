@@ -108,7 +108,7 @@ export default function OptionsPage() {
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: 6 }}>
           <input
             value={input} onChange={e => setInput(e.target.value.toUpperCase())}
-            placeholder="TICKER" className="input-terminal"
+            placeholder="TICKER" aria-label="Ticker" className="input-terminal"
             style={{ width: 90 }}
           />
           <button type="submit" className="btn-terminal">LOAD</button>

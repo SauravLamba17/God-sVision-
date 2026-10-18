@@ -174,7 +174,7 @@ export default function ScreenerPage() {
                       <span style={{ color: 'var(--text-muted)', fontSize: 9, marginRight: 6 }}>{i + 1}</span>
                       <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: 11 }}>{s.symbol}</span>
                     </td>
-                    <td style={{ textAlign: 'left', color: 'var(--text-secondary)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ textAlign: 'left', color: 'var(--text-secondary)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }} title={s.shortName || undefined}>
                       {(s.shortName || '').slice(0, 22)}
                     </td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(s.price)}</td>

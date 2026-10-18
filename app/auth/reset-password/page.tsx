@@ -83,7 +83,7 @@ export default function ResetPasswordPage() {
                 <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>NEW PASSWORD</div>
                 <input
                   style={inputStyle}
-                  type="password" value={password} placeholder="Min 8 characters" required
+                  type="password" value={password} placeholder="Min 8 characters" required aria-label="New password"
                   onChange={e => setPassword(e.target.value)}
                   onFocus={e => (e.target.style.borderColor = '#ff6d00')}
                   onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
                 <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>CONFIRM NEW PASSWORD</div>
                 <input
                   style={inputStyle}
-                  type="password" value={confirm} placeholder="••••••••" required
+                  type="password" value={confirm} placeholder="••••••••" required aria-label="Confirm new password"
                   onChange={e => setConfirm(e.target.value)}
                   onFocus={e => (e.target.style.borderColor = '#ff6d00')}
                   onBlur={e => (e.target.style.borderColor = '#1b2e1b')}

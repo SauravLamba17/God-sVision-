@@ -2,6 +2,14 @@
 import { useEffect, useState } from 'react'
 import { formatPercent } from '@/lib/utils'
 import { arrow } from '@/lib/format'
+import { useMode } from '@/lib/context/ModeContext'
+
+// India mode used to scroll US tickers. Same single request per minute either way.
+const TAPE = {
+  us: 'SPY,QQQ,AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA,JPM',
+  in: '^NSEI,^BSESN,^NSEBANK,RELIANCE.NS,TCS.NS,HDFCBANK.NS,INFY.NS,ICICIBANK.NS,BHARTIARTL.NS,ITC.NS',
+}
+const LABEL: Record<string, string> = { '^NSEI': 'NIFTY 50', '^BSESN': 'SENSEX', '^NSEBANK': 'BANK NIFTY' }
 
 interface TickerItem {
   symbol: string
@@ -15,11 +23,13 @@ export default function TickerTape() {
   // Empty until live quotes arrive. A hardcoded 2024 tape (SPY 543.27, BTC
   // 67,234…) used to show first and stayed whenever the fetch failed.
   const [tickers, setTickers] = useState<TickerItem[]>([])
+  const { isIndia } = useMode()
 
   useEffect(() => {
+    setTickers([])
     const fetchTickers = async () => {
       try {
-        const res = await fetch('/api/stocks?tickers=SPY,QQQ,AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA,JPM')
+        const res = await fetch(`/api/stocks?tickers=${encodeURIComponent(isIndia ? TAPE.in : TAPE.us)}`)
         const json = await res.json()
         if (json.data) {
           const items: TickerItem[] = json.data.map((q: {
@@ -42,7 +52,7 @@ export default function TickerTape() {
     fetchTickers()
     const interval = setInterval(fetchTickers, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isIndia])
 
   const doubled = [...tickers, ...tickers]
   if (!tickers.length) return <div style={{ flex: 1, margin: '0 12px' }} />
@@ -56,7 +66,7 @@ export default function TickerTape() {
             marginRight: 20, whiteSpace: 'nowrap',
             fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)',
           }}>
-            <span style={{ color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '0.06em' }}>{item.symbol}</span>
+            <span style={{ color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '0.06em' }}>{LABEL[item.symbol] ?? item.symbol.replace(/\.(NS|BO)$/, '')}</span>
             <span style={{ color: 'var(--text-primary)' }}>
               {item.price < 10 ? item.price.toFixed(4) : item.price.toFixed(2)}
             </span>

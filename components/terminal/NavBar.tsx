@@ -70,7 +70,9 @@ export default function NavBar() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      // Typing targets keep their keys (a focused <select> uses letters to jump to options: "g" → Gold).
+      const t = e.target as HTMLElement
+      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t?.isContentEditable) return
 
       // F-key navigation
       const fKeys = ['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12']
@@ -82,14 +84,14 @@ export default function NavBar() {
       }
 
       // Ctrl+Shift+S = toggle split
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') { // Caps Lock + Shift gives 's'
         e.preventDefault()
         toggleSplit()
         return
       }
 
       // G = GOD MODE
-      if (e.key === 'g' || e.key === 'G') {
+      if ((e.key === 'g' || e.key === 'G') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         router.push('/godmode')
       }
 

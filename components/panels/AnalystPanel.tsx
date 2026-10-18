@@ -308,7 +308,7 @@ export default function AnalystPanel() {
                 <div style={sectionTitleStyle}>AVOID LIST</div>
                 <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {data.avoidList.map(a => (
-                    <div key={a.ticker} style={{ padding: '5px 8px', border: '1px solid #2a1414', borderLeft: '2px solid #ef4444', background: '#1a0a0a', fontSize: 'var(--fs-meta)' }}>
+                    <div key={a.ticker} style={{ padding: '5px 8px', border: '1px solid #2a1414', borderLeft: '2px solid #ef4444', background: 'var(--bg-header)', fontSize: 'var(--fs-meta)' }}>
                       <span style={{ fontWeight: 700, color: 'var(--text-negative)' }}>{a.ticker.replace('.NS', '')}</span>
                       <span style={{ color: 'var(--text-secondary)', marginLeft: 6 }}>{a.reason}</span>
                     </div>

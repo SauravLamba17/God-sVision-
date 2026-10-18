@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { pct } from '@/lib/format';
+import { getCurrencyForTicker } from '@/lib/utils';
 
 const STRATEGIES = [
   { id: 'sma_crossover', label: 'SMA Crossover', desc: 'Buy when short MA crosses above long MA, sell when crosses below' },
@@ -22,6 +23,8 @@ export default function BacktestPage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // NSE/BSE runs are in rupees (every amount used to be shown with "$").
+  const cur = getCurrencyForTicker(result?.ticker ?? ticker);
 
   const runBacktest = async () => {
     setLoading(true);
@@ -95,10 +98,10 @@ export default function BacktestPage() {
           <div style={{ padding: '12px' }}>
             <label style={labelStyle}>TICKER</label>
             <input value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())}
-              placeholder="AAPL, SPY, NVDA..." style={inputStyle} />
+              placeholder="AAPL, SPY, NVDA..." aria-label="Ticker" style={inputStyle} />
 
             <label style={labelStyle}>STRATEGY</label>
-            <select value={strategy} onChange={e => setStrategy(e.target.value)}
+            <select value={strategy} aria-label="Strategy" onChange={e => setStrategy(e.target.value)}
               style={{ ...inputStyle, cursor: 'pointer' }}>
               {STRATEGIES.map(s => (
                 <option key={s.id} value={s.id}>{s.label}</option>
@@ -112,31 +115,31 @@ export default function BacktestPage() {
             {strategy === 'sma_crossover' && (
               <>
                 <label style={labelStyle}>SHORT PERIOD (days)</label>
-                <input type="number" value={shortPeriod} onChange={e => setShortPeriod(parseInt(e.target.value))} style={inputStyle} />
+                <input type="number" aria-label="Short period (days)" value={shortPeriod} onChange={e => setShortPeriod(parseInt(e.target.value))} style={inputStyle} />
                 <label style={labelStyle}>LONG PERIOD (days)</label>
-                <input type="number" value={longPeriod} onChange={e => setLongPeriod(parseInt(e.target.value))} style={inputStyle} />
+                <input type="number" aria-label="Long period (days)" value={longPeriod} onChange={e => setLongPeriod(parseInt(e.target.value))} style={inputStyle} />
               </>
             )}
 
             {strategy === 'rsi' && (
               <>
                 <label style={labelStyle}>RSI PERIOD</label>
-                <input type="number" value={rsiPeriod} onChange={e => setRsiPeriod(parseInt(e.target.value))} style={inputStyle} />
+                <input type="number" aria-label="RSI period" value={rsiPeriod} onChange={e => setRsiPeriod(parseInt(e.target.value))} style={inputStyle} />
                 <label style={labelStyle}>OVERSOLD THRESHOLD</label>
-                <input type="number" value={oversold} onChange={e => setOversold(parseInt(e.target.value))} style={inputStyle} />
+                <input type="number" aria-label="Oversold threshold" value={oversold} onChange={e => setOversold(parseInt(e.target.value))} style={inputStyle} />
                 <label style={labelStyle}>OVERBOUGHT THRESHOLD</label>
-                <input type="number" value={overbought} onChange={e => setOverbought(parseInt(e.target.value))} style={inputStyle} />
+                <input type="number" aria-label="Overbought threshold" value={overbought} onChange={e => setOverbought(parseInt(e.target.value))} style={inputStyle} />
               </>
             )}
 
             <label style={labelStyle}>START DATE</label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inputStyle} />
+            <input type="date" aria-label="Start date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inputStyle} />
 
             <label style={labelStyle}>END DATE</label>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inputStyle} />
+            <input type="date" aria-label="End date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inputStyle} />
 
-            <label style={labelStyle}>INITIAL CAPITAL ($)</label>
-            <input type="number" value={capital} onChange={e => setCapital(parseInt(e.target.value))} style={inputStyle} />
+            <label style={labelStyle}>INITIAL CAPITAL ({getCurrencyForTicker(ticker)})</label>
+            <input type="number" aria-label="Initial capital" value={capital} onChange={e => setCapital(parseInt(e.target.value))} style={inputStyle} />
 
             <button onClick={runBacktest} disabled={loading} style={{
               width: '100%',
@@ -189,7 +192,7 @@ export default function BacktestPage() {
                 <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   {[
                     { label: 'TOTAL RETURN', value: pct(result.totalReturnPct, 2), pos: result.totalReturnPct > 0 },
-                    { label: 'FINAL CAPITAL', value: `$${result.finalCapital.toLocaleString()}`, pos: result.finalCapital > result.initialCapital },
+                    { label: 'FINAL CAPITAL', value: `${cur}${result.finalCapital.toLocaleString()}`, pos: result.finalCapital > result.initialCapital },
                     { label: 'vs BUY & HOLD', value: pct(result.buyHoldReturn, 2), pos: result.totalReturnPct > result.buyHoldReturn },
                     { label: 'SHARPE RATIO', value: result.sharpeRatio.toFixed(2), pos: result.sharpeRatio > 1 },
                     { label: 'MAX DRAWDOWN', value: `${result.maxDrawdown}%`, pos: false },
@@ -243,7 +246,7 @@ export default function BacktestPage() {
 
               {/* Equity curve chart */}
               <div style={panel}>
-                <div style={header}>EQUITY CURVE · ${result.initialCapital.toLocaleString()} initial capital</div>
+                <div style={header}>EQUITY CURVE · {cur}{result.initialCapital.toLocaleString()} initial capital</div>
                 <div style={{ padding: '8px' }}>
                   {result.equityCurve.length > 0 && (() => {
                     const vals = result.equityCurve.map((p: any) => p.value);
@@ -275,10 +278,10 @@ export default function BacktestPage() {
                           stroke={isPositive ? '#00e676' : '#ff1744'}
                           strokeWidth="1.5" />
                         <text x="2" y="12" fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
-                          ${max.toLocaleString()}
+                          {cur}{max.toLocaleString()}
                         </text>
                         <text x="2" y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
-                          ${min.toLocaleString()}
+                          {cur}{min.toLocaleString()}
                         </text>
                         <text x={w - 50} y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
                           {result.endDate.slice(0, 7)}
@@ -308,9 +311,9 @@ export default function BacktestPage() {
                           onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}>
                           <td style={{ padding: '5px 10px', color: t.type === 'BUY' ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 700 }}>{t.type}</td>
                           <td style={{ padding: '5px 10px', color: 'var(--text-muted)' }}>{t.date}</td>
-                          <td style={{ padding: '5px 10px', textAlign: 'right', color: 'var(--text-primary)' }}>${t.price.toFixed(2)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right', color: 'var(--text-primary)' }}>{cur}{t.price.toFixed(2)}</td>
                           <td style={{ padding: '5px 10px', textAlign: 'right', color: 'var(--text-secondary)' }}>{t.shares}</td>
-                          <td style={{ padding: '5px 10px', textAlign: 'right', color: 'var(--text-primary)', fontWeight: 700 }}>${t.value.toFixed(0)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right', color: 'var(--text-primary)', fontWeight: 700 }}>{cur}{t.value.toFixed(0)}</td>
                         </tr>
                       ))}
                     </tbody>

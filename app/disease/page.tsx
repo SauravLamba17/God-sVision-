@@ -103,9 +103,9 @@ function OutbreakPanel() {
                   DON
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-primary text-[13px] leading-tight line-clamp-2">{disease}</p>
+                  <p className="text-primary text-[13px] leading-tight line-clamp-2" title={disease}>{disease}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {place && <span className="text-accent text-[11px] font-mono truncate">{place}</span>}
+                    {place && <span className="text-accent text-[11px] font-mono truncate" title={place}>{place}</span>}
                     <span className="text-muted text-[11px] font-mono flex-shrink-0">{fmtOutbreakDate(o.date)}</span>
                   </div>
                 </div>

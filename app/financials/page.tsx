@@ -153,7 +153,7 @@ export default function FinancialsPage() {
           FINANCIAL STATEMENTS
         </span>
         <form onSubmit={e => { e.preventDefault(); setTicker(input.toUpperCase()) }} style={{ display: 'flex', gap: 6 }}>
-          <input value={input} onChange={e => setInput(e.target.value.toUpperCase())} className="input-terminal" style={{ width: 100 }} placeholder="TICKER" />
+          <input value={input} onChange={e => setInput(e.target.value.toUpperCase())} className="input-terminal" style={{ width: 100 }} placeholder="TICKER" aria-label="Ticker" />
           <button type="submit" className="btn-terminal">LOAD</button>
         </form>
         <div style={{ display: 'flex', gap: 4 }}>

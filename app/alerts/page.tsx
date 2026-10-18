@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { PushSubscribe } from '@/components/terminal/PushSubscribe'
+import { postJson } from '@/lib/utils'
 
 interface PriceAlert { id: number; ticker: string; condition: string; targetPrice: number; triggered: boolean; active: boolean; createdAt: string; triggeredAt?: string }
 interface NewsAlert  { id: number; keyword: string; active: boolean; createdAt: string }
@@ -14,6 +15,9 @@ export default function AlertsPage() {
   const [notifPerm,   setNotifPerm]   = useState<NotificationPermission>('default')
   const [triggered,   setTriggered]   = useState<number[]>([])
   const [form, setForm] = useState({ ticker: '', condition: 'above', targetPrice: '', keyword: '' })
+  // Which form is saving (blocks a double submit) and its error from the server.
+  const [saving, setSaving] = useState({ price: false, news: false })
+  const [formErr, setFormErr] = useState({ price: '', news: '' })
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadAlerts = useCallback(async () => {
@@ -68,19 +72,25 @@ export default function AlertsPage() {
 
   const addPriceAlert = async (e: React.FormEvent) => {
     e.preventDefault()
-    // try/catch: a network failure used to surface as an unhandled rejection.
-    try {
-      await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'price', ticker: form.ticker, condition: form.condition, targetPrice: form.targetPrice }) })
-    } catch { return }
+    if (saving.price) return
+    // A rejected alert keeps the input and shows the server's message; it used to clear as if saved.
+    setSaving(s => ({ ...s, price: true }))
+    const msg = await postJson('/api/alerts', { type: 'price', ticker: form.ticker, condition: form.condition, targetPrice: form.targetPrice })
+    setSaving(s => ({ ...s, price: false }))
+    setFormErr(f => ({ ...f, price: msg ?? '' }))
+    if (msg) return
     setForm(f => ({ ...f, ticker: '', targetPrice: '' }))
     loadAlerts()
   }
 
   const addNewsAlert = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      await fetch('/api/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'news', keyword: form.keyword }) })
-    } catch { return }
+    if (saving.news) return
+    setSaving(s => ({ ...s, news: true }))
+    const msg = await postJson('/api/alerts', { type: 'news', keyword: form.keyword })
+    setSaving(s => ({ ...s, news: false }))
+    setFormErr(f => ({ ...f, news: msg ?? '' }))
+    if (msg) return
     setForm(f => ({ ...f, keyword: '' }))
     loadAlerts()
   }
@@ -152,17 +162,18 @@ export default function AlertsPage() {
               <div key={f.key}>
                 <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>{f.label}</label>
                 <input value={form[f.key as keyof typeof form]} onChange={e => setForm(p => ({ ...p, [f.key]: f.key==='ticker' ? e.target.value.toUpperCase() : e.target.value }))}
-                  placeholder={f.placeholder} type={f.type||'text'} step={f.type==='number' ? '0.01' : undefined} className="input-terminal" style={{ width: f.width }} required />
+                  placeholder={f.placeholder} aria-label={f.label} type={f.type||'text'} step={f.type==='number' ? '0.01' : undefined} className="input-terminal" style={{ width: f.width }} required />
               </div>
             ))}
             <div>
               <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>CONDITION</label>
-              <select value={form.condition} onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} className="input-terminal" style={{ width: 100 }}>
+              <select value={form.condition} aria-label="Condition" onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} className="input-terminal" style={{ width: 100 }}>
                 <option value="above">ABOVE ▲</option>
                 <option value="below">BELOW ▼</option>
               </select>
             </div>
-            <button type="submit" className="btn-terminal" style={{ alignSelf:'flex-end' }}>+ SET ALERT</button>
+            <button type="submit" disabled={saving.price} className="btn-terminal" style={{ alignSelf:'flex-end' }}>{saving.price ? 'SAVING…' : '+ SET ALERT'}</button>
+            {formErr.price && <div role="alert" style={{ flexBasis:'100%', fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-negative)' }}>{formErr.price}</div>}
           </form>
         </div>
         <div style={{ width: 300, flexShrink: 0, border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
@@ -170,10 +181,11 @@ export default function AlertsPage() {
           <form onSubmit={addNewsAlert} style={{ padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ flex:1 }}>
               <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>KEYWORD</label>
-              <input value={form.keyword} onChange={e => setForm(f => ({ ...f, keyword: e.target.value }))} placeholder="Federal Reserve, NVDA..." className="input-terminal w-full" required />
+              <input value={form.keyword} onChange={e => setForm(f => ({ ...f, keyword: e.target.value }))} placeholder="Federal Reserve, NVDA..." aria-label="News keyword" className="input-terminal w-full" required />
             </div>
-            <button type="submit" className="btn-terminal" style={{ alignSelf:'flex-end' }}>+ ADD</button>
+            <button type="submit" disabled={saving.news} className="btn-terminal" style={{ alignSelf:'flex-end' }}>{saving.news ? '…' : '+ ADD'}</button>
           </form>
+          {formErr.news && <div role="alert" style={{ padding:'0 12px 8px', fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-negative)' }}>{formErr.news}</div>}
         </div>
       </div>
 
@@ -206,7 +218,7 @@ export default function AlertsPage() {
                   </td>
                   <td style={{ color:'var(--text-muted)', fontSize:9 }}>{new Date(a.createdAt).toLocaleDateString()}</td>
                   <td style={{ color:'var(--text-warning)', fontSize:9 }}>{a.triggeredAt ? new Date(a.triggeredAt).toLocaleString() : '—'}</td>
-                  <td><button onClick={() => deleteAlert(a.id,'price')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
+                  <td><button onClick={() => deleteAlert(a.id,'price')} aria-label={`Delete ${a.ticker} alert`} title="Delete alert" style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
                 </tr>
               ))}
             </tbody>
@@ -225,7 +237,7 @@ export default function AlertsPage() {
                   <td style={{ textAlign:'left', color:'var(--text-primary)', fontWeight:600 }}>{a.keyword}</td>
                   <td><span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, background:'rgba(34,197,94,0.15)', color:'var(--text-positive)', border:'1px solid rgba(34,197,94,0.4)' }}>● ACTIVE</span></td>
                   <td style={{ color:'var(--text-muted)', fontSize:9 }}>{new Date(a.createdAt).toLocaleDateString()}</td>
-                  <td><button onClick={() => deleteAlert(a.id,'news')} style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
+                  <td><button onClick={() => deleteAlert(a.id,'news')} aria-label={`Delete "${a.keyword}" alert`} title="Delete alert" style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
                 </tr>
               ))}
             </tbody>

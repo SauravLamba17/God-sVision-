@@ -72,7 +72,7 @@ function IndexCard({ q }: { q: QuoteTick }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-display)', fontWeight: 700, color: '#c8e6c9', lineHeight: 1 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-display)', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
             {fmtPrice(q.price, q.unit || '')}
           </div>
           <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, marginTop: 2 }}>
@@ -92,7 +92,7 @@ function IndexCard({ q }: { q: QuoteTick }) {
 function CommodityStrip({ items }: { items: QuoteTick[] }) {
   return (
     <div style={{
-      background: '#030803', padding: '5px 12px', display: 'flex',
+      background: 'var(--bg-terminal)', padding: '5px 12px', display: 'flex',
       alignItems: 'center', gap: 0, overflowX: 'auto', borderTop: '1px solid #1b2e1b',
       flexWrap: 'nowrap', scrollbarWidth: 'none',
     }}>

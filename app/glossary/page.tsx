@@ -72,6 +72,7 @@ export default function GlossaryPage() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Search any term... (e.g. RSI, P/E, options, SEBI)"
+        aria-label="Search glossary"
         style={{
           width: '100%',
           background: 'var(--bg-input, #0d1526)',

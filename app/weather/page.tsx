@@ -207,6 +207,7 @@ export default function WeatherPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="SEARCH CITY... (try: London, Tokyo, Dubai)"
+              aria-label="Search city"
               className="input-terminal w-full"
             />
           </form>
