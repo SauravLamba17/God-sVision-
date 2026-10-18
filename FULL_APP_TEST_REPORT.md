@@ -1,213 +1,171 @@
-# GOD's Vision — Full App E2E Test Report
+# GOD's Vision — Full App E2E Test Report (October 2026)
 
-**Date:** 2026-10-04 · **Env:** local dev (`next dev -p 3001`) against the real Neon DB · **Browser:** built-in browser pane at 1280 / 1440 / 1920 px
-**Not committed / not pushed.** `C:\Users\Saurav\healthiq` not touched.
-
-**Final status:** `npx tsc --noEmit` ✅ PASS · `npm run build` ✅ PASS (baseline before changes was also clean)
-**Test account:** `gv-e2e-throwaway-20261004@example.com` — created, used, **deleted** (see §6).
-
----
-
-## 0. Headline findings
-
-1. **🔴 NEEDS APPROVAL — 20 API routes are frozen at build time in production** (static prerender + Next.js Data Cache with 1-year TTL). ISS, India crypto prices, USD/INR, Fed/BOE speeches, AI narratives, India indices, Nifty movers, news, fear radar, heatmap, correlation… all serve whatever existed at build/first-fetch. Proven locally (details §3, NA-1).
-2. **Fabricated data found and removed:** random-number FX "CHG%" (`Math.random()`), invented bid/ask/spread, AI brief inventing index levels ("S&P holding 4,500" with SPY at $769), AI narratives generated from 5 hardcoded headlines, 2024 central-bank rates / macro mocks / economic calendar labelled LIVE, July-2026 hand-curated earnings with invented EPS, hardcoded hero-card and ticker-tape prices, fake breadth counts, fabricated 68°F, 83.5 USD/INR fallback (~15% off).
-3. **Broken features fixed:** Sign Out did nothing (menu closed before click); backtest 500; Sheets API 500; `/yield-curve` white-screened every 2nd load; `/api/search` broken on cache hits; alert delete button covered by the watchlist handle; Fed/ECB/BoC speech feeds dropped; nav controls unreachable at 1280–1440 px.
-4. **Wrong numbers fixed:** "daily" change was actually a 5-day change (Dow −1.26% vs real +0.49%) on the Global Market Monitor, Commodities page and all India indices/stocks; Sharpe 6.53 → 0.69; correlation BTC↔SPY ≈0 (date misalignment) → 0.36; grain futures cents shown as dollars; NYC sunrise "04:24 PM"; R:R "1:-4071".
+**Dates:** 2026-10-17 → 2026-10-18 · **Build under test:** production build (`next build` + `next start`, port 3001) against the **production Neon database** · **Browser:** built-in browser pane, same-origin iframe sweeps + hand-driven interactions
+**AI:** local server ran with `GEMINI_API_KEY=""` and `AI_PROVIDER` unset (launch config "God's Vision (prod, no AI)") — zero real AI calls. **Email:** forgot-password sent once, to the throwaway account. **Push:** none sent.
+**Test accounts:** one throwaway (`gv-evidence-test-…@example.com`) + the isolation suite's own pair (created and deleted by the suite). Both deleted at the end — **15 users**, no orphaned rows (§12).
+**Earlier pass:** the 2026-10-04 report (35 fixes) is in git history (`a5cb2580`).
 
 ---
 
-## 1. Summary table
+## 1. Summary
 
-Legend: **WORKING** · **FIXED** · **NEEDS APPROVAL** · **BROKEN-EXTERNAL** · **UNAVAILABLE-HONEST**
-
-### Public & auth
-| Item | Status | Notes |
-|---|---|---|
-| `/` landing — loads, wheel scroll, globe canvases, reveals, button contrast, no console errors | WORKING | Marketing tape/cards are illustrative under a "Live" badge → NA-7 |
-| Sign in / Get started links | WORKING | `/auth/signin`, `?tab=register` |
-| `/dashboard` logged out → sign-in redirect | WORKING | 307 with callbackUrl |
-| `/auth/forgot-password`, `/auth/reset-password` public | WORKING | |
-| `/api/public/ticker` no auth | WORKING | static at build → NA-1 |
-| `/api/public/gv`, `/gv-history` | FIXED | were 500 (Yahoo query2 429); own-key auth works; key exposure → NA-4 |
-| Register → auto-login → /dashboard | WORKING | |
-| Sign out | FIXED | was silently broken for all users (F-1) |
-| Sign in again (+ callbackUrl honoured) | WORKING | landed on /portfolio |
-| `/` while logged in → /dashboard | WORKING | |
-| Forgot → reset → old pw rejected → new pw works → token reuse rejected | WORKING | |
-| Forgot-password rate limit (3/h) | WORKING | 4th → 429 `Retry-After`; but enumeration oracle → NA-3 |
-| Sign-in "← Back to Terminal" | FIXED | looped back to sign-in when logged out (F-30) |
-
-### Pages (USA + India where mode-aware — only the dashboard and a few panels are India-aware)
-| Page | Status | Notes |
-|---|---|---|
-| Dashboard (USA) | FIXED | brief, 5-day-as-daily change, hero defaults, breadth, DXY "$", failed rows as 0, ticker tape fallback |
-| Dashboard (India) | FIXED | NSE 0.00% (holiday bar), ₹ on index points, MPC "-123d", 83.5 FX, "MCX" label, SHIB ₹0.00, R:R, USA brief in India mode. India crypto INR prices still frozen → NA-1 |
-| Markets | WORKING | fundamentals N/A for ETFs is correct |
-| Crypto | WORKING | |
-| Forex | FIXED | random CHG%, invented bid/ask, static CB rates, carry calc |
-| Macro | FIXED | 2024 mocks labelled LIVE, CPI index-as-YoY, units, static calendar, fake 20% recession prob — now real FRED data |
-| Calendar | WORKING | feed has no "actual" values (upstream) |
-| News | WORKING | |
-| Map | WORKING / UNAVAILABLE-HONEST | weather layer honestly "(unavailable)" |
-| Cameras | WORKING | 26/26 images load |
-| Flights | WORKING | OpenSky occasionally >3 s |
-| Weather | FIXED | sunrise TZ, forecast day off-by-one, open-meteo visibility |
-| Sports | WORKING | all 4 tabs |
-| Commodities | FIXED | 5-day-as-daily, grains in cents |
-| Bonds | FIXED | credit spreads were "unavailable" (placeholder key) → keyless FRED; all 4 tabs work |
-| Backtest | FIXED | 500 → works; Sharpe fixed; SMA/RSI/Buy&Hold all run |
-| Sheets | WORKING | shows global API key to every user → NA-4 |
-| Portfolio | WORKING | add / P&L / delete; **no edit feature exists** (UI or API) |
-| Alerts | FIXED | delete ✕ was unclickable (overlap); "30 s" label was 60 s |
-| Screener | WORKING | MKT CAP/P/E "N/A"/"—" — upstream lacks fields |
-| Options | BROKEN-EXTERNAL | Yahoo crumb + 429; Greeks honestly labelled |
-| Heatmap | WORKING | |
-| Earnings | FIXED | hand-curated July list with invented EPS → Nasdaq live calendar |
-| Insiders | FIXED | company/insider columns were wrong; tx details UNAVAILABLE-HONEST (Atom feed has none) |
-| Correlation | FIXED | crypto/equity date misalignment |
-| Health (`/disease`) | WORKING / UNAVAILABLE-HONEST | daily counts greyed with explanation |
-| Banks (`/centralbanks`) | FIXED | 2023 rate cards → FRED (Fed, ECB); feed parser fixes. FED/BOE speeches still July → NA-1 |
-| Financials | BROKEN-EXTERNAL | Yahoo quoteSummary 429; envelope bug fixed |
-| Yield Curve | FIXED | white-screen crash on cached loads |
-| Glossary, Pricing, God Mode | WORKING | pricing copy inconsistent → NA-8 |
-| Nav at 1280 / 1440 / 1920 | FIXED | THEME/LEARN/SPLIT/GOD were off-screen at ≤1440 |
-| No page-level horizontal overflow at 1280/1440/1920 | WORKING | |
-
-### User-data & interactions
-| Feature | Status |
+| | |
 |---|---|
-| Watchlist add → reload persists → remove → persists | WORKING (+ mojibake "Ã—" fixed) |
-| Portfolio holding add → P&L (10×($333.69−$300)=+$336.90 ✓) → delete | WORKING (edit not implemented) |
-| Price alert create → appears → delete | FIXED (overlap) |
-| Transaction create → appears → delete | WORKING |
-| Backtest end-to-end | FIXED |
-| Theme switcher (persists `gv_theme`) | WORKING (+ mojibake icon fixed) |
-| India/USA toggle | WORKING |
-| Ctrl+K palette — type, ↑/↓, Enter navigates | WORKING (first keystrokes typed <~1 s after Ctrl+K are lost — minor) |
-| Split view / linked panels | WORKING |
+| Phases | 0 inventory · 1 static health · 2 suites · 3 API sweep · 4 security & isolation · 5 UI (both modes) · 6 data accuracy · 7 performance · 8 fix loop · 9 final verification |
+| Bugs found & fixed | **24 fix groups (F1–F24)** — 2 × P0/P1 "wrong number shown as fact" in user-facing figures (Sheets `open`, portfolio risk/P&L), support/resistance mislabelled, 5 forms that silently dropped server errors, raw DB errors returned by user routes, a password-reset race, light-theme unreadable text, India mode showing US/stale data |
+| Suites | all green before and after: isolation 56 → **62** (6 new checks), graph 31, sentiment 6, evidence 59, brain 38, scenario 50, research 96 |
+| UI | 420 signed-in loads (35 pages × 6 viewports × 2 modes) + 40 public loads (5 pages × 8 viewports incl. 768 and 390) + final regression sweep (§7) |
+| Dependencies | `next` 14.2.5 → **14.2.35**, `next-auth` 4.24.15, `axios` 1.20.0, in-range transitive fixes; prod advisories 19 → 9 (critical 2 → 1, needs a major) |
+| Needs your decision | §11 — buy/sell picks & targets in the Analyst panel (wording rule), security headers (high-risk file), Next 16 / Tailwind 4 majors |
 
----
+## 2. Inventory coverage
 
-## 2. Bugs fixed (what · root cause · fix · re-test evidence)
-
-| # | Bug | Root cause | Fix | Re-test |
-|---|---|---|---|---|
-| F-1 | **Sign Out did nothing** | UserMenu closes on `mousedown` outside the trigger button; the menu is portalled, so mousedown on SIGN OUT unmounted it before `click` | exempt the portal (`menuRef`) | session `{}` after click, landed on `/` |
-| F-2 | AI brief invented levels ("S&P 4,500", SPY $769); India mode got USA brief | prompt had no data + "be specific with levels"; component never sent `mode` | ground prompt in live quotes (`getQuotes`), no quotes → no brief; pass `mode` | both modes quoted real levels (S&P 7722.72, Nifty 22421.95) |
-| F-3 | "Daily" change was 5-day change (Dow −1.26% vs +0.49%), then 0.00% for all NSE | `chartPreviousClose` on `range=5d` is the close before the window; Oct 2 Indian holiday bar has null close | `priorSessionClose()` in `lib/apis/yahoo.ts` (date-based walk) used by overview, commodities, India | Dow +0.49%, Nifty −0.88%, INFY +4.11% |
-| F-4 | Forex CHG% was **`Math.random()`**; bid/ask/spread invented | fabricated in page | real 1-D change from Yahoo FX quotes; show mid only | EUR/USD +0.11%, USD/JPY −0.14% |
-| F-5 | AI narratives analysed 5 hardcoded headlines | server self-fetch of `/api/news` redirected by middleware → HTML → fallback headlines (+ hardcoded narratives w/o key) | read news cache / RSS directly; honest empty state | real narratives from live headlines |
-| F-6 | Central-bank rates 2023/24 (Fed 5.33% vs real 4.00%, BOJ −0.10%) on Forex, Macro, Banks + carry calc | static arrays | `getPolicyRates()` from FRED (Fed `DFEDTARU`, ECB `ECBDFR`; others omitted — OECD series ended 2023, never shown stale) | Fed 4.00%, ECB 2.50% |
-| F-7 | Macro page: 2024 mocks labelled LIVE; CPI would show ~310% with a key; units wrong ($0.0B, 1K, 0.00T, −0.18bps) | mock fallback when key is placeholder; index level used as YoY; unit math | keyless FRED CSV fallback; YoY calc; unit formatting for value and change | CPI 3.35%, Retail $737.8B, Fed BS $6.74T, spread 45bps |
-| F-8 | Macro static 2024 economic calendar; recession prob defaulted to 20% | hardcoded | live `/api/calendar` (USD high-impact); `—` when no spread | |
-| F-9 | `/yield-curve` white screen on every cached load; `/api/search` & `/api/financials` broken on cache hits | returned cache envelope `{data, stale}` as data | return `cached.data` + added `app/error.tsx` boundary | reloaded twice OK; search identical on 2nd call |
-| F-10 | Backtest 500 | yahoo-finance2 `chart()` → query2 429 | `getChartRange()` query1-first (also behind `getChartData`) | all 3 strategies 200 |
-| F-11 | Sharpe 6.53 for a 66%/6-yr run | per-trade returns annualised with √252 | daily equity returns | 0.69 / 0.47 / 0.74 |
-| F-12 | `/api/public/gv` & `gv-history` 500 | query2 429 | query1 via `getQuotes` / `getChartRange` | AAPL 333.69; history rows |
-| F-13 | Earnings: July-2026 curated dates + invented EPS/revenue | static list | Nasdaq public earnings calendar (≥$10B mkt cap, 14 days) | JPM, ASML, TSM… real dates/EPS |
-| F-14 | Correlation crypto↔equity ≈0 | returns paired by array index (7-day vs 5-day weeks) | align closes on shared dates | BTC↔SPY 0.36 |
-| F-15 | Insiders: people in COMPANY, "Issuer"/"Reporting" in INSIDER | EDGAR lists each Form 4 twice | pair by accession number | "Natera, Inc. — Chapman Steven Leonard" |
-| F-16 | CB speeches: Fed dropped, BoC missing/future holidays, ECB 404 | CDATA pubDate → Invalid Date throw; `<item rdf:about>` regex; dead URL | strip CDATA, skip undated/future, new ECB/BoC feeds | FED/ECB/BOE/BOC all present |
-| F-17 | Hero cards started at 2024 prices (SPY 543, NIFTY 24000, USD/INR 83.50) with arrows; ₹ on index points, $ on DXY | hardcoded defaults & `?? 24000` fallbacks | null → "—"/"awaiting quote"; currency only on priced instruments; separators | "NIFTY 50 22,421.95", "USD INDEX 101.92" |
-| F-18 | 83.5 USD/INR fallback (India forex/commodities/macro, StatusBar, toggle) | hardcoded | `getUsdInr()` (exchangerate-api → Yahoo `INR=X`) or null/unavailable | ₹96.30 |
-| F-19 | "GOLD MCX" etc. on COMEX × FX | mislabel (MCX includes duty) | label "GOLD ₹" | |
-| F-20 | Breadth "405 ADV 0 DEC" | 11 sector ETFs × 45 shown as stock counts | count sectors ("9 / 0 / 2 of 11 SPDR ETFs") | |
-| F-21 | Failed quotes rendered "0 +0.00% DELAYED" | failures returned as zero rows | drop failures | |
-| F-22 | Terminal ticker tape showed 2024 prices until/if fetch | `FALLBACK_TICKERS` | empty until live | |
-| F-23 | Weather NYC sunrise "04:24 PM"; forecast weekday off-by-one west of UTC; open-meteo visibility hardcoded 10 | browser TZ; `new Date('YYYY-MM-DD')` UTC; constant | city `tzOffset`; `timeZone:'UTC'`; Open-Meteo `timezone:auto` + real visibility | |
-| F-24 | Grains "$497.75/bu" | Yahoo quotes ZC/ZW/ZS in cents (`USX`) | scale 0.01 | Corn ≈ $4.98 |
-| F-25 | Analyst R:R "1:-4071" on SELL picks | signed reward/risk | magnitudes | 1:1.0 |
-| F-26 | RBI tracker "-123d away" (and my interim regression → "unavailable") | static schedule ran out | `nextMPC: null` → "Schedule not available"; guard fixed | renders |
-| F-27 | "● LIVE" above "DATA UNAVAILABLE" | PanelWrapper badge used client fetch time only | no badge on error/static/empty; "STALE" for stale | |
-| F-28 | StatusBar "REFRESH 15s" countdown refreshed nothing | cosmetic timer | show time of last real check | "CHECKED 08:14" |
-| F-29 | Alert delete ✕ unclickable | fixed ★ watchlist handle (22×56px) over right edge | `main` right offset 22px | elementFromPoint = button; alert deleted |
-| F-30 | Nav THEME/LEARN/SPLIT/GOD off-screen at 1280 (and SPLIT/GOD at 1440) | row overflowed hidden-scrollbar container | hide F-key hints <1600px, tighter padding | max right 1268 @1280 |
-| F-31 | Watchlist/portfolio/alerts: no session fell through to shared `userId:null` rows | `?? null` | 401 (same pattern as transactions) | |
-| F-32 | Fear Radar "2Y-10Y Spread +1.28%" (FRED: +0.45%) | value is ^TNX−^IRX | relabel "10Y-3M Spread" | |
-| F-33 | Mojibake "Ã—", "âˆž", "â¬›" | CP1252 leftovers | ×, ∞, ⬛ (full-repo scan now clean) | |
-| F-34 | "LINKED PANELS → AAPL" toast on every load incl. sign-in | fired on initial default | only on real changes | |
-| F-35 | Split-view weather showed 68°F when missing; SHIB ₹0.00; alerts "every 30 s" (is 60 s) | fallbacks/precision/label | "—", toPrecision, 60 s | |
-
----
-
-## 3. NEEDS APPROVAL (ranked, security first)
-
-**NA-1 — 🔴 Production serves frozen data (static API routes + 1-year Data Cache).** *Severity: critical data integrity.*
-These GET routes have no request dependency and no `dynamic`/`revalidate`, so `next build` prerenders them (○): `cache-status, centralbanks, correlation, dashboard/overview, fear-radar, heatmap, india/{commodities,crypto,fii-dii,forex,indices,macro,news,stocks,stocks/movers}, iss, narratives, news, public/ticker, ships`. Evidence: `next start` → `x-nextjs-cache: HIT`; `.next/cache/fetch-cache` holds upstream responses with `revalidate: 31536000` dated **18 Jul 2026** (ISS, astronauts, Fear&Greed, CoinGecko INR, exchangerate-api, India RSS, Fed/BoE/BoC feeds, NSE FII/DII, and a cached **Gemini** call). Visible now: India BTC ₹61.78 L (live ≈ ₹81.7 L), FED/BOE speeches stuck in July. Every build also calls Gemini while prerendering `/api/narratives`.
-*Proposed fix:* add `export const dynamic = 'force-dynamic'` to each of the 20 route files (their own `lib/cache` TTLs already govern freshness; fetches then default to no-store). After deploy, **purge the Vercel Data Cache** (Project → Settings → Data Cache) since it persists across deployments.
-
-**NA-2 — Middleware.** Unauthenticated API calls get a 307 to the HTML sign-in page instead of `401` JSON (this is what broke narratives' self-fetch); `callbackUrl` drops the query string. *Fix:* for `/api/*` return `NextResponse.json({error:'Sign in required'},{status:401})`; use `pathname + search` for callbackUrl.
-
-**NA-3 — Password-reset account enumeration.** Registered emails return 429 after 3 requests; unregistered emails always 200 (verified). Reset tokens are stored in plaintext (`PasswordResetToken.token`). *Fix:* rate-limit by email regardless of existence (count attempts in a separate table/Redis) and store `sha256(token)` (schema change).
-
-**NA-4 — Sheets API key is a global shared secret.** `/sheets` shows `GV_SHEETS_API_KEY` to every registered user (open registration ⇒ effectively public); code falls back to `'godsvision-demo-key'` if the env var is unset. *Fix:* per-user keys (schema) and remove the fallback.
-
-**NA-5 — Gemini quota.** Free tier is 20 requests/day; it was exhausted during testing (my test runs consumed some). If the local key is the production key, AI brief/narratives/analyst-AI are unavailable until reset (~21 h). *Fix:* paid tier or a different key (env var).
-
-**NA-6 — Insider transaction details.** Atom feed carries no shares/price/type. Needs per-filing Form 4 XML parsing (new feature) — currently honest "—".
-
-**NA-7 — Landing page marketing data.** "● Live · equities, crypto & FX streaming" sits above a tape where 12/15 rows and the AAPL "Healthy · real-time" card are illustrative constants. Product decision: label "illustrative", or show live-only rows.
-
-**NA-8 — Pricing inconsistency.** Landing: "$0 per seat"; `/pricing`: "free during launch, paid plans coming soon"; sign-in page: "PRO — $29/mo", "Watchlist (10)", "Basic Alerts (2)" (limits not enforced). Also `/pricing` is behind login.
-
-**NA-9 — Feature gaps (not built, by rule):** portfolio holding edit (no UI/API); the India mode only affects the dashboard and a few panels.
-
----
-
-## 4. BROKEN-EXTERNAL
-
-| Item | Cause | Needed |
+| Area | Count | Covered by |
 |---|---|---|
-| Options chain | Yahoo `v7/options` needs crumb; yahoo-finance2 path 429s | paid options data source, or retry/backoff with a warmed crumb |
-| Financial statements | Yahoo quoteSummary 429 | same |
-| AI brief / narratives / analyst AI | Gemini free tier 20/day exhausted | billing / higher quota |
-| ISS astronauts | open-notify `astros.json` is a stale upstream (+ NA-1 freeze) | different crew source |
-| Economic calendar "ACTUAL" column | ForexFactory feed has no actuals | different feed |
-| Insider tx details | not in EDGAR Atom | Form 4 XML parsing |
-| `FRED_API_KEY` | placeholder locally; now not required (keyless CSV) | optional real key for API rate limits |
+| Pages | 35 signed-in + 5 public (`/`, sign-in, register tab, forgot, reset) | UI matrix (§7), interactions (§7.3) |
+| API routes | 71 | API sweep 211 checks (§5), suites, UI network checks |
+| Engines | Evidence/Why, Market Brain, Entity Graph, Scenario, Research Agent, sentiment, alerts, backtest, portfolio analytics, Sheets key, feed health, rate limits | suites + targeted checks |
+| User actions | mode toggle (button + Ctrl+Shift+I), theme ×4, beginner mode, sound, user menu sign-out, command palette, search, F1–F12, G/Esc God mode, Ctrl+Shift+S split, W watchlist, deep dive, all forms (auth ×4, portfolio, trades, alerts ×2, watchlist, backtest, scenarios, research, Sheets key) | §7.3 — every one exercised |
+| External feeds | ~45 sources (Yahoo, RSS, USGS, CoinGecko, open-meteo, NSE, FRED, …) | API sweep "dead upstream → honest state" |
 
----
+## 3. Static health
 
-## 5. Files modified (59 + 2 new)
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | 0 errors (before and after) |
+| Lint | 16 errors, all style (10 `react/no-unescaped-entities`, 6 disable-comments naming an unloaded rule) — no bugs; not changed |
+| Build | OK; largest first-load JS `/weather` 238 kB → **233 kB** after upgrades; shared 88.5 kB |
+| npm audit (prod) | before: 2 critical, 11 high, 6 moderate · after: **1 critical, 6 high, 2 moderate** — remaining need Next 16 or Tailwind 4 (majors, §11) |
+| Secret scan | no keys/tokens/connection strings in tracked or untracked files; `.env*` git-ignored |
+| Unimported files (report only) | `components/panels/MarketPanel.tsx`, `components/terminal/AlertBanner.tsx`, `components/ui/ProGate.tsx`, `components/weather/TempToggle.tsx`, `lib/alertChecker.ts`, `lib/flights.check.ts`, `lib/planGate.ts` |
+| Server-only code in client bundles | none |
 
-New: `app/error.tsx`, `lib/hooks/usePolicyRates.ts`
-API: `app/api/{ai/brief, alerts, backtest, bonds, centralbanks, commodities, dashboard/overview, earnings, financials, forex, india/commodities, india/forex, india/macro, portfolio, public/gv, public/gv-history, search, watchlist, yield-curve}/route.ts`
-Pages: `app/{alerts, auth/signin, bonds, centralbanks, dashboard, forex, macro, portfolio, weather}/page.tsx`, `app/globals.css`
-Components: `components/charts/YieldCurve.tsx`, `components/modules/WeatherModule.tsx`, `components/panels/{AnalystPanel, MacroPanel, MarketOverviewStrip, NarrativeDetector, PanelWrapper, RBIPolicyTracker}.tsx`, `components/terminal/{ClientLayout, DailyBrief, ModeToggle, NavBar, StatusBar, ThemeSwitcher, TickerBroadcast, TickerTape, UserMenu, WatchlistSidebar}.tsx`
-Lib: `lib/apis/{centralBanks, correlation, fearRadar, forex, fred, india, insiders, narratives, openweather, yahoo}.ts`, `lib/context/ModeContext.tsx`
-Artifact: `tsconfig.tsbuildinfo`
+## 4. Suite results
 
-**Not touched:** `middleware.ts`, `lib/auth.ts`, `prisma/schema.prisma`, migrations, `next.config.js`, Stripe code, env vars, route static/dynamic classification (build still lists the same 20 static routes — left for NA-1).
+| Suite | Before (Phase 2) | After (Phase 9, upgraded deps) |
+|---|---|---|
+| isolation | 56/56 | **62/62** (+ mass-assignment ×4 routes, Sheets key hashed/not re-shown/regenerate revokes, sign-out → 401, deleted user's cookie → 401) |
+| graph | 31/31 | 31/31 |
+| sentiment | 6/6 | 6/6 |
+| evidence | 59/59 | 59/59 |
+| brain | 38/38 | 38/38 |
+| scenario | 50/50 | 50/50 |
+| research (`--live --api`) | 96/96 | 96/96 |
 
----
+## 5. API sweep (temporary script, deleted)
 
-## 6. Test accounts / data cleanup
+| Category | Checks | Result |
+|---|---|---|
+| Signed-out access to every gated route | all gated routes | 401 JSON, `private, no-store` on user routes |
+| Valid inputs | per route | 200, sane shapes |
+| Invalid inputs (XSS, SQL, emoji, 10 kB strings, bad enums, negative/huge numbers) | 49 | 400 with a clear message — after F3/F6 |
+| Dead or rate-limited upstream | per feed | honest "unavailable"/429 state, never a 500 or a fabricated value — after F2/F4/F8/F10 |
+| Warm latency > 2 s | all | none |
+| Rate limits | research | 429 at the 31st request/hour with `Retry-After` |
+| **Total** | **211** | pass after fixes |
 
-- Created: 1 user `gv-e2e-throwaway-20261004@example.com` (password stored only in a scratch file, since deleted).
-- Watchlist item, portfolio holding, transaction, price alert: created and deleted through the UI.
-- Deleted from Neon by script (scoped to that email): **1 user, 3 password-reset tokens**. Post-check: users 0, accounts 0, sessions 0, watchlist 0, holdings 0, alerts 0, transactions 0, push 0, reset tokens 0 ✅
-- 3 reset emails were attempted to the `example.com` address (non-deliverable reserved domain).
+## 6. Security results
 
----
+| Area | Result |
+|---|---|
+| Auth flows | register (invalid email/weak password → 400, duplicate → 409, race → 409 after F18); wrong password and unknown email return the **same** 401 (no account enumeration) |
+| Password reset | one email (throwaway); generic 200; links single-use; expired → 400; **3 parallel uses → exactly 1 succeeds** (F7, was a race) |
+| Isolation | 62/62 — no cross-user reads/writes, body `userId` ignored, deleted user's cookie dead |
+| Admin | `/admin/health` → 404 for non-admins, sign-in redirect when signed out |
+| Error leakage | API and 404 bodies leak no stack/DB/upstream URL — **after F18** (user routes returned raw Prisma messages with status 200) and F4/F5/F8/F10 |
+| Sheets API key | stored hashed, shown once, regenerate revokes old key |
+| Security headers | **none** (no CSP, frame-ancestors/X-Frame-Options, Referrer-Policy, nosniff, Permissions-Policy) → §11 NA-SEC-1 (next.config.js is a high-risk file) |
+| Dependencies | middleware-bypass-class advisories closed by Next 14.2.35 |
 
-## 7. Final build status
+## 7. UI matrix
 
-| Check | Baseline | Checkpoint 1 | Checkpoint 2 | Final |
-|---|---|---|---|---|
-| `npx tsc --noEmit` | ✅ | ✅ | ✅ | ✅ |
-| `npm run build` | ✅ | ✅ | ✅ | ✅ |
+**7.1 Signed-in matrix (Phase 5):** 35 pages × {1920, 1536, 1440, 1366, 1280, 1024} × {USA, INDIA} = **420 loads**. Final state: 0 horizontal overflow, 0 spill, 0 bad values (NaN/undefined/null/Infinity/Invalid Date/[object Object]/−0.00%), 0 overlaps, 0 failed requests, 0 broken images, 0 console errors (except the noted `/admin/health` P3). Clipped text without a tooltip and unlabeled inputs were found and fixed (F12/F13). Tiny 7–10 px fonts are design-wide (§11).
 
----
+**7.2 Public pages (signed out):** `/`, `/auth/signin`, `?tab=register`, `/auth/forgot-password`, `/auth/reset-password` × {1920, 1536, 1440, 1366, 1280, 1024, 768×1024, 390×844} = **40 loads, 0 issues**.
 
-## 8. Other observations (low severity, not changed)
+**7.3 Interactions (all pass after fixes):** mode toggle both ways (tape, cards, ₹/$); command palette (Ctrl+K, type, Enter, Esc); search; F2/G/Esc; split view; beginner mode; sound; theme ×4 (light contrast: F23); deep dive (tabs, Esc, support/resistance F15, news F16); Why line + "Research this"; Research typed questions (advice refused, typo "infosis" → Infosys, premise "down" corrected to "up", gibberish → help text); Scenarios (presets, custom valid / empty / out of range, beyond-historical warning, portfolio stress "not estimated"); Portfolio (invalid, valid, double-click, delete, mixed ₹+$, unpriced ticker); Trades; Alerts price+news (invalid, double-click, back-to-back, delete); Watchlist (W, invalid, TCS.NS ₹, remove); Backtest (run, verified numbers, empty field, TCS.NS in ₹); Sheets key display; 404 (real 404 + nav); back/forward; live resize 1920 → 1366 → 1024; sign-out → `/` + 401; signed-out deep link → sign-in with `callbackUrl` → returns after sign-in.
 
-- Dev showed paired identical polls per 60 s cycle (e.g. 2× `/api/stocks?type=movers`) despite single instances with cleanup — likely dev StrictMode/HMR; verify on a production build.
-- StatusBar health check downloads full payloads (incl. up to 3,000 flights) on every full page load just to colour a dot.
-- `/api/watchlist` takes 1.5–3 s locally (session + Neon round-trip from India); likely faster on Vercel.
-- One-click deletes with no confirmation (holdings, transactions, alerts).
-- India/USA toggle shortcut `Ctrl+Shift+I` collides with browser DevTools (landing advertises ⌘J).
-- Theme options are `div`s (not keyboard-focusable); some top-nav links have no accessible name.
-- Watchlist sidebar sums prices/changes of unrelated tickers ("TOTAL PRICES").
-- Open watchlist drawer overlays the right 220 px of content (drawer by design).
-- Sports panels show "● LIVE" on finished matches (badge reflects fetch time).
+**7.4 Final regression sweep (Phase 9, upgraded deps):** 33 signed-in pages × {1440, 1024} × {USA, INDIA} = **132 loads, 0 issues** (no overflow, spill, clipped text, bad values, overlaps, failed requests, console errors, unnamed controls or unlabeled inputs).
+
+**Screenshots (1440 × 900):** `docs/e2e-2026-10/dashboard-usa-1440.jpg`, `docs/e2e-2026-10/dashboard-india-1440.jpg`.
+
+## 8. Data accuracy (Phase 6; weekend, both markets closed — UI correctly showed CLOSED)
+
+| Check | App | Source | Δ |
+|---|---|---|---|
+| AAPL, MSFT, NVDA, TSLA, JPM price & % | app quotes | Yahoo chart API | 0.00 |
+| RELIANCE, TCS, HDFCBANK, INFY, ITC | app quotes | Yahoo chart API | 0.00 |
+| NIFTY 50, SENSEX, BANK NIFTY | app | Yahoo | 0.00 |
+| Scenario XOM @ WTI +10% | 3.2270 | data file | 0 |
+| Backtest SPY SMA 20/50 since 2020 | $16,471 | cash 442.55 + 21 × 763.25 (Yahoo close) | 0 |
+| Backtest buy-and-hold | +134.94% | 763.25 / 324.87 | 0 |
+| Portfolio AAPL/MSFT correlation (1y) | 0.120 | computed from raw Yahoo closes | 0 |
+| Portfolio totals | $2,274.07, day −$28.25 | hand sum | 0 |
+| Support / resistance | after F15: every resistance > price, every support < price (TCS, RELIANCE, AAPL, NVDA) | — | — |
+| Sheets `open` field | after F9: session open (was the current price) | Yahoo | — |
+
+## 9. Performance & cost
+
+| Measure | Result |
+|---|---|
+| Cold / warm (local server, Neon far from the test machine) | why/us 2447/66 ms · brain/us 3482/5 · brain/in 1483/4 · scenario 8/3 · research 3144 · user routes ~2.8 s (session + DB round trips) · no route > 2 s warm |
+| Dashboard idle, 5 min, USA | 88 requests (18/min) — stocks 22, crypto 19, earthquakes 10, alerts/check 5, overview 5, iss 5, sparkline 5, watchlist 5, news 4, … |
+| Dashboard idle, 5 min, INDIA | 77 requests (15.3/min) — india/* 5 each, stocks 8, earthquakes 8, … |
+| Polling added in this pass | none; India ticker tape replaces the US one (same 1 request/min); the frozen bottom tape in India mode was removed |
+| Caching | not loosened; user routes stay `private, no-store` |
+| Possible saving (not changed) | several panels poll `/api/crypto` and `/api/stocks` separately every 60 s (cached server-side, but each is a function invocation) — could share one fetch |
+| Page load (dashboard, local) | DOMContentLoaded 17 ms, load 78 ms after cache warm |
+
+## 10. Every fix
+
+| ID | Sev | What was wrong | Fix | Files | Verified |
+|---|---|---|---|---|---|
+| F1 | P1 | `/api/why/<anything>` built a full evidence context, returned 200 with an internal message and created an ISR entry per path | explicit US/IN check → 404 | `app/api/why/[market]/route.ts` | API sweep |
+| F2 | P1 | Yahoo-sourced sparklines empty (yahoo-finance2 query2 429) | use `getChartRange` (query1 first) | `app/api/sparkline/route.ts` | Gold/DXY 30 pts, NSEI/BSESN 14, AAPL 19 |
+| F3 | P3 | `/api/bonds` default type had no handler → 400 | default `yields` | `app/api/bonds/route.ts` | sweep |
+| F4 | P3 | raw upstream error text (Yahoo URL, axios message) to the browser | plain messages, logged | `app/api/stocks`, `app/api/crypto` | sweep |
+| F5 | P3 | AI route told users to "add GEMINI_API_KEY to .env.local" | "AI analysis is not available right now." | `app/api/ai/analyze/route.ts` | sweep |
+| F6 | P3 | bad scenario preset → zod "Invalid input" | message lists presets/factors | `lib/scenario/schema.ts` | sweep |
+| F7 | P2 | password reset: check-then-mark race → two resets from one link | atomic claim before changing the password | `app/api/auth/reset-password/route.ts` | 3 parallel → 200/400/400 |
+| F8 | P1 | Sheets `=GV()` name/exchange/prev_close → 500 with raw Yahoo error | from the query1 chart quote; upstream down → 503 + Retry-After | `app/api/public/gv/route.ts`, `lib/apis/yahoo.ts` | live check |
+| F9 | P0 | quote fallback set **open = current price** and day high/low = price — Sheets `open` was always wrong | session bar open / null | `lib/apis/yahoo.ts`, `lib/apis/india.ts` | open 346.09 vs price |
+| F10 | P1 | `/api/public/gv-history` returned the close under the requested field name when missing | null; upstream failure → 503 | `app/api/public/gv-history/route.ts` | sweep |
+| F11 | P2 | `/sheets` "Loading…" forever for older keys | `hasKey` state | `app/sheets/page.tsx` | UI |
+| F12 | P2 | 26 form controls without accessible names | `aria-label`s | auth pages, markets, forex, news, flights, weather, backtest, alerts, options, insiders, financials, glossary | sweep: 0 unlabeled |
+| F13 | P2 | truncated text with no way to read it; India news rows click-only divs | `title`s; rows are real links | dashboard, disease, insiders, news, screener, MarketBrain, WeatherPanel | sweep: 0 clipped |
+| F14 | P2 | God-mode scene dots unnamed | `aria-label`, `aria-current` | `app/godmode/page.tsx` | sweep |
+| F15 | P1 | "Resistance" levels below the price; "nearest" was the farthest | levels split around the last close, nearest first; empty side "—" | `lib/utils/technicals.ts`, `StockDeepDive.tsx` | TCS/RELIANCE/AAPL/NVDA |
+| F16 | P2 | India headlines showed "F&amp;O" | decode entities | `lib/apis/indiaNews.ts` | 0 entities in 40 |
+| F17 | P2 | 5 forms ignored the server: a 400/429/500 cleared the form as if saved; double-click saved twice | `postJson` helper, per-form saving flag, message shown, input kept | `lib/utils.ts`, portfolio, alerts, WatchlistSidebar | invalid → message; double-click → 1 row; two forms at once both save |
+| F18 | P2 sec | user routes returned raw exception text (Prisma can include DB host/query) with status 200 | logged server-side, generic 500; register race → 409 | portfolio, alerts, alerts/check, transactions, watchlist, register | — |
+| F19 | P1 | portfolio: missing quote → price = buy price (fake P&L 0); losses shown without minus; ₹ added to $; risk metrics pooled unweighted returns, MAX DD was SPY's, series paired by position not date, missing data → beta 1 | honest "—"/"n priced"; signed values; per-row currency, no mixed totals; quantity-weighted portfolio series on shared dates (`alignCloses`) | `app/portfolio/page.tsx`, `lib/portfolio-analytics.ts` | hand sums, corr = raw Yahoo |
+| F20 | P2 | watchlist "$" for NSE tickers | currency by ticker | `WatchlistSidebar.tsx` | ₹2465.00 |
+| F21 | P2 | backtest "$" for NSE tickers | currency by ticker | `app/backtest/page.tsx` | TCS.NS all ₹ |
+| F22 | P2 | "g" on a focused dropdown jumped to God mode (also Ctrl+G); W same; Ctrl+Shift+S/I failed with Caps Lock | ignore selects/contentEditable/modifiers; case-insensitive | `NavBar.tsx`, `WatchlistSidebar.tsx`, `ModeToggle.tsx` | "g" → Gold, stays |
+| F23 | P2 | light theme: ~55 dashboard texts below 2:1 contrast (Tailwind `text-primary` fixed near-white in 65 files, hardcoded panel colours) | light-theme override + theme vars; heatmap tiles keyboard-reachable | `globals.css`, MarketOverviewStrip, NiftyHeatmap, AnalystPanel, ThemeSwitcher | 55 → 5 |
+| F24 | P2 | India mode: top tape US tickers; bottom tape US/crypto prices frozen from first render | mode-aware tape; bottom tape removed in India layout | `TickerTape.tsx`, `app/dashboard/page.tsx` | NIFTY/SENSEX/… |
+| Deps | P1 sec | Next 14.2.5 (critical advisories), next-auth, axios, transitive | patch/minor upgrades, no majors | `package.json`, `package-lock.json` | all suites + build |
+
+## 11. Needs approval
+
+| ID | Item | Why it needs you |
+|---|---|---|
+| NA-PROD-1 | **Analyst panel and deep dive give buy/sell advice and targets**: BUY/SELL/WATCH picks with entry, target 1/2, stop-loss, "IF YOU BUY… you could gain ₹X/share", "BUY 83% confidence" (rule-based when AI is off), an "AVOID LIST"; screener RATING column "STRONG BUY…SELL" (Yahoo analyst consensus) | Breaks the wording rule (no buy/sell advice or targets). Remove, or rework into "moved with / historically tended to" evidence. Product decision. |
+| NA-SEC-1 | No security headers (CSP, frame-ancestors, Referrer-Policy, nosniff, Permissions-Policy, HSTS) | `next.config.js` headers are a high-risk file. Suggested start: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `frame-ancestors 'self'`, then a report-only CSP. |
+| NA-DEP-1 | Remaining advisories: Next.js Image Optimizer DoS (self-hosted; Vercel handles image optimisation) and PostCSS via Next → **Next 16**; braces/chokidar/micromatch/postcss-selector-parser → **Tailwind 4** | Major upgrades; need a planned migration. |
+| NA-DB-1 | Deleting a user does **not** remove their holdings, alerts, watchlist or transactions: the relations are `onDelete: SetNull`, so rows stay with an empty owner (0 such rows exist today — this pass removed the test account's rows first) | `prisma/schema.prisma` is high-risk; `Cascade` (as `PushSubscription` already has) would fix it, needs a migration. |
+| NA-MW-1 | Signed-out deep link drops the query string (`/portfolio?x=1` → `callbackUrl=/portfolio`) | `middleware.ts` is high-risk. |
+| NA-UX-1 | 7–10 px fonts across the terminal design; saffron (#FF9933) India headers ~1.9:1 on the light theme | Design-wide decisions. |
+
+## 12. Known limitations
+
+- Weekend run: both markets closed, so accuracy checks compare closes; intraday moves and market-open states were not observed live.
+- AI paths ran only with no provider (deterministic answers; the research suite covers its fake-provider path). Real Gemini output was not exercised by design.
+- Email: one forgot-password email to the throwaway; alert emails/push were deliberately never triggered (alerts were set at unreachable prices).
+- Stripe checkout/portal not exercised (would create real Stripe objects).
+- Local timings include India → Neon latency; production latency will differ.
+- Upstream-feed routes (commodities, forex, india/*, disease, …) still return upstream error text such as "Request failed with status code 429" — harmless but unpolished (P3, ~30 routes, not changed).
+- `/admin/health` for a non-admin logs a Next streaming notice in the console (response is a correct 404).
+- The built-in browser pane renders emulated viewports scaled; layout checks were done in code (iframes at exact sizes), not by eye.
+
+**Cleanup:** throwaway account deleted together with its own rows (2 portfolio holdings; alerts, trades and watchlist test rows had already been deleted through the UI) → **15 users**, 0 orphaned rows (userId null) in holdings, price/news alerts, watchlist, transactions and push subscriptions; no `gv-evidence`/`e2e` accounts left. Isolation suite deletes its own pair. Temporary scripts (`scripts/_apisweep.ts`, `scripts/_accuracy.ts`) deleted. Local server stopped; browser left in USA mode, dark theme.

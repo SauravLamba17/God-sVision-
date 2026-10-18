@@ -5,4 +5,5 @@ node_modules/
 prisma/godsvision.db
 .claude/
 tsconfig.tsbuildinfo
+TEST_PROGRESS.md
 data/scenario/.cache/
