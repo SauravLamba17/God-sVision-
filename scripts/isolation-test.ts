@@ -227,7 +227,40 @@ async function run() {
   record('same browser, B signs in (correct keys)', '200, owner B', `${toB.status}, ${await pushOwner()}`, toB.status === 200 && (await pushOwner()) === 'owner B')
   const back = await A.json('/api/push/subscribe', 'POST', { endpoint: ENDPOINT_A, keys: A_KEYS })
   record('same browser, A signs back in (correct keys)', '200, owner A', `${back.status}, ${await pushOwner()}`, back.status === 200 && (await pushOwner()) === 'owner A')
+
+  // Mass assignment: a userId in the body never decides ownership — rows belong to the session user.
+  const userB = await prisma.user.findUniqueOrThrow({ where: { email: EMAIL_B } })
+  await B.json('/api/portfolio', 'POST', { ticker: 'MASSA', name: 'mass-assign', quantity: 1, buyPrice: 1, buyDate: '2026-01-02', userId: userA.id })
+  await B.json('/api/transactions', 'POST', { ticker: 'MASSA', type: 'BUY', quantity: 1, price: 1, date: '2026-01-02', notes: 'mass-assign', userId: userA.id })
+  await B.json('/api/watchlist', 'POST', { ticker: 'MASSA', name: 'mass-assign', userId: userA.id })
+  await B.json('/api/alerts', 'POST', { type: 'news', keyword: `mass-${RUN}`, userId: userA.id })
+  const massOwners = [
+    (await prisma.portfolioHolding.findFirst({ where: { ticker: 'MASSA', name: 'mass-assign' } }))?.userId,
+    (await prisma.transaction.findFirst({ where: { notes: 'mass-assign' } }))?.userId,
+    (await prisma.watchlist.findFirst({ where: { ticker: 'MASSA', name: 'mass-assign' } }))?.userId,
+    (await prisma.newsAlert.findFirst({ where: { keyword: `mass-${RUN}` } }))?.userId,
+  ]
+  record('B POSTs with A’s userId in the body — rows owned by B', 'owner B ×4', massOwners.map(o => (o === userB.id ? 'B' : o === userA.id ? 'A' : 'none')).join(','), massOwners.every(o => o === userB.id))
+
+  // Sheets key: never returned again after creation; regenerating revokes the old key at once.
+  const again = await (await A.req('/api/user/gv-key')).json()
+  record('A GET /api/user/gv-key after creation — no raw key', 'hasKey, no key', `hasKey ${again.hasKey}, ${again.key ? 'KEY RETURNED' : 'no key'}`, again.hasKey === true && !again.key)
+  const hashNow2 = (await prisma.user.findUnique({ where: { id: userA.id } }))?.sheetsKeyHash ?? ''
+  record('Sheets key stored hashed', 'hash ≠ key', hashNow2 && !hashNow2.includes(keyA) ? 'hash ≠ key' : 'RAW KEY STORED', !!hashNow2 && hashNow2 !== keyA && !hashNow2.includes(keyA))
+  const keyA2: string = (await (await A.req('/api/user/gv-key', { method: 'POST' })).json()).key
+  const oldKey = await anon.req(`/api/public/gv?ticker=AAPL&field=name&key=${encodeURIComponent(keyA)}`)
+  const newKey = await anon.req(`/api/public/gv?ticker=AAPL&field=name&key=${encodeURIComponent(keyA2)}`)
+  record('A regenerates the Sheets key — old key 401, new key works', '401 / not 401', `${oldKey.status} / ${newKey.status}`, oldKey.status === 401 && newKey.status !== 401)
+
+  // Sign out clears the session: user routes answer 401 afterwards.
+  const { csrfToken } = await (await B.req('/api/auth/csrf')).json()
+  await B.req('/api/auth/signout', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ csrfToken, json: 'true' }) })
+  const afterOut = await B.req('/api/portfolio')
+  record('B signs out — /api/portfolio', '401', String(afterOut.status), afterOut.status === 401)
+  signedInA = A
 }
+// A's session, kept to prove a deleted user's cookie stops working.
+let signedInA: Client | null = null
 
 async function cleanup() {
   const users = await prisma.user.findMany({ where: { email: { in: [EMAIL_A, EMAIL_B] } }, select: { id: true } })
@@ -242,6 +275,11 @@ async function cleanup() {
     prisma.passwordResetToken.deleteMany({ where: { email: { in: [EMAIL_A, EMAIL_B], mode: 'insensitive' } } }),
     prisma.user.deleteMany({ where: { id: { in: ids } } }),
   ])
+  // A deleted user's still-valid cookie must not reach user data.
+  if (signedInA) {
+    const ghost = await signedInA.req('/api/portfolio')
+    record('deleted user A, old session cookie — /api/portfolio', '401', String(ghost.status), ghost.status === 401)
+  }
   const leftovers =
     (await prisma.user.count({ where: { email: { in: [EMAIL_A, EMAIL_B] } } })) +
     (await prisma.watchlist.count({ where: { OR: [{ userId: { in: ids } }, { note: { in: ['owned-by-A', 'written-by-B'] } }] } })) +

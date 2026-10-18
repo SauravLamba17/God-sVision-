@@ -13,6 +13,9 @@ export function generateStaticParams() {
 
 export async function GET(_req: Request, { params }: { params: { market: string } }) {
   const market = params.market.toUpperCase() as Market
+  // dynamicParams = false is not enforced for route handlers: without this, /api/why/<anything>
+  // built a whole evidence context and answered 200 with an internal error message.
+  if (market !== 'US' && market !== 'IN') return NextResponse.json({ error: 'market must be us or in' }, { status: 404 })
   try {
     const data = await explainMarket(market)
     await narrateExplanations(market, data.explanations) // optional; no-op unless AI_PROVIDER is set

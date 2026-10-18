@@ -29,6 +29,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This reset link has expired' }, { status: 400 });
     }
 
+    // Claim the token atomically before changing anything: two requests racing with the same
+    // link could both pass the checks above, so only the one that flips `used` may continue.
+    const claimed = await prisma.passwordResetToken.updateMany({
+      where: { token: tokenHash, used: false, expiresAt: { gt: new Date() } },
+      data: { used: true },
+    });
+    if (claimed.count !== 1) {
+      return NextResponse.json({ error: 'This reset link has already been used' }, { status: 400 });
+    }
+
     // Same cost factor as registration (app/api/auth/register/route.ts).
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
@@ -41,11 +51,6 @@ export async function POST(req: NextRequest) {
     if (updated.count !== 1) {
       return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
     }
-
-    await prisma.passwordResetToken.update({
-      where: { token: tokenHash },
-      data: { used: true },
-    });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

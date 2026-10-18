@@ -43,8 +43,10 @@ export async function GET() {
       orderBy: { date: 'desc' },
     })
     return NextResponse.json({ data: txs }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500, headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[transactions]', err)
+    return NextResponse.json({ error: 'Transactions are unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -73,8 +75,10 @@ export async function POST(req: NextRequest) {
       },
     })
     return NextResponse.json({ data: tx }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500, headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[transactions]', err)
+    return NextResponse.json({ error: 'Transactions are unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -99,7 +103,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Not found or not yours' }, { status: 403, headers: PRIVATE })
     }
     return NextResponse.json({ success: true }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500, headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[transactions]', err)
+    return NextResponse.json({ error: 'Transactions are unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }

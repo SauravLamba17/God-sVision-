@@ -32,8 +32,9 @@ export async function GET() {
     })
     return NextResponse.json({ data: holdings }, { headers: PRIVATE })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg }, { headers: PRIVATE })
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[portfolio]', error)
+    return NextResponse.json({ error: 'Portfolio is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -53,8 +54,9 @@ export async function POST(request: NextRequest) {
     })
     return NextResponse.json({ data: holding }, { headers: PRIVATE })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg }, { headers: PRIVATE })
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[portfolio]', error)
+    return NextResponse.json({ error: 'Portfolio is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -75,7 +77,8 @@ export async function DELETE(request: NextRequest) {
     if (count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404, headers: PRIVATE })
     return NextResponse.json({ success: true }, { headers: PRIVATE })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'DB error'
-    return NextResponse.json({ error: msg }, { headers: PRIVATE })
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[portfolio]', error)
+    return NextResponse.json({ error: 'Portfolio is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }

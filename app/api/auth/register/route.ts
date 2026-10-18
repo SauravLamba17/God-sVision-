@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ data: user });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    // Two sign-ups racing past the findUnique above: the unique index rejects the second.
+    if (err?.code === 'P2002') return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
+    console.error('[register]', err);
+    return NextResponse.json({ error: 'Sign-up is unavailable right now — try again' }, { status: 500 });
   }
 }

@@ -80,7 +80,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ triggered: triggeredIds, details: triggerDetails, checked: activeAlerts.length }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message, triggered: [] }, { status: 500, headers: PRIVATE })
+  } catch (err) {
+    console.error('[alerts/check]', err)
+    return NextResponse.json({ error: 'Alert check is unavailable right now', triggered: [] }, { status: 500, headers: PRIVATE })
   }
 }

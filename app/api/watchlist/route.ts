@@ -43,8 +43,10 @@ export async function GET() {
       changePct: quoteMap.get(item.ticker)?.regularMarketChangePercent ?? null,
     }))
     return NextResponse.json({ data: enriched }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[watchlist]', err)
+    return NextResponse.json({ error: 'Watchlist is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -66,8 +68,10 @@ export async function POST(req: NextRequest) {
       create: { ticker, name: name || ticker, assetType: assetType || 'STOCK', note: note || '', userId },
     })
     return NextResponse.json({ data: item }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[watchlist]', err)
+    return NextResponse.json({ error: 'Watchlist is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
 
@@ -87,7 +91,9 @@ export async function DELETE(req: NextRequest) {
       where: { ticker, userId },
     })
     return NextResponse.json({ success: true }, { headers: PRIVATE })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { headers: PRIVATE })
+  } catch (err) {
+    // Logged, not returned: Prisma messages can name the database host and query.
+    console.error('[watchlist]', err)
+    return NextResponse.json({ error: 'Watchlist is unavailable right now — try again' }, { status: 500, headers: PRIVATE })
   }
 }
