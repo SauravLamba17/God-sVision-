@@ -125,3 +125,16 @@ export function simpleSentiment(text: string): 'positive' | 'negative' | 'neutra
   return 'neutral'
 }
 
+/** POSTs JSON from a form. Resolves to null when saved, else the message to show
+ *  (the server's own, e.g. "quantity must be positive", or a generic one). */
+export async function postJson(url: string, body: unknown): Promise<string | null> {
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (res.ok) return null
+    const j = await res.json().catch(() => null)
+    return typeof j?.error === 'string' ? j.error : `Not saved (error ${res.status})`
+  } catch {
+    return 'Network error — not saved'
+  }
+}
+

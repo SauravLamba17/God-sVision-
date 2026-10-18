@@ -6,6 +6,16 @@ export function dailyReturns(prices: number[]): number[] {
   return returns
 }
 
+/** Closes of several daily series on the calendar dates they ALL have, oldest first, so
+ *  returns line up day by day (US and Indian sessions have different holidays and lengths;
+ *  pairing arrays by position compared different days). */
+export function alignCloses(series: Record<string, { time: number; close: number }[]>): Record<string, number[]> {
+  const keys = Object.keys(series)
+  const byDay = keys.map(k => new Map(series[k].filter(c => Number.isFinite(c.close)).map(c => [new Date(c.time * 1000).toISOString().slice(0, 10), c.close])))
+  const days = keys.length ? [...byDay[0].keys()].filter(d => byDay.every(m => m.has(d))).sort() : []
+  return Object.fromEntries(keys.map((k, i) => [k, days.map(d => byDay[i].get(d)!)]))
+}
+
 export function mean(arr: number[]): number {
   return arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length
 }

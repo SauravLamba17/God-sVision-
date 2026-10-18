@@ -205,9 +205,15 @@ export function findSupportResistance(candles: Candle[], lookback = 60): { suppo
       .map(g => g.reduce((a, b) => a + b, 0) / g.length)
       .sort((a, b) => b - a)
   }
+  // Levels are split around the latest close, nearest first: resistance above the price, support below.
+  // (They were simply the 3 highest swing highs / 3 lowest swing lows, so after a big move "resistance"
+  // could sit below the price, and the first entry — shown as "nearest" — was the farthest one.)
+  const price = slice[slice.length - 1]?.close
+  const levels = cluster([...swingHighs, ...swingLows])
+  if (!Number.isFinite(price)) return { resistance: [], support: [] }
   return {
-    resistance: cluster(swingHighs).slice(0, 3),
-    support: cluster(swingLows).reverse().slice(0, 3),
+    resistance: levels.filter(l => l > price).sort((a, b) => a - b).slice(0, 3),
+    support: levels.filter(l => l < price).sort((a, b) => b - a).slice(0, 3),
   }
 }
 

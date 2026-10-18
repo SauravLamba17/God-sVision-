@@ -4,7 +4,8 @@ import { getQuotes } from '@/lib/apis/yahoo';
 import { z } from 'zod';
 import { parseQuery } from '@/lib/validation';
 
-const Query = z.object({ type: z.enum(['overview', 'yields', 'etfs', 'spread']).default('overview') });
+// No 'overview' handler exists (it used to be the default and always answered 400 "Unknown type").
+const Query = z.object({ type: z.enum(['yields', 'etfs', 'spread']).default('yields') });
 
 // Values are null when the upstream did not return them. They were previously
 // `?? 0` with a `catch { yield: 0 }` per ticker, so a rate-limited Yahoo call

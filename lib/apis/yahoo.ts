@@ -81,21 +81,29 @@ async function fetchOneQuoteByChart(ticker: string): Promise<any | null> {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=1d&interval=1d&includePrePost=false`
   try {
     const res = await axios.get(url, { headers: YF_HEADERS, timeout: 8000 })
-    const meta = (res.data as any).chart?.result?.[0]?.meta
+    const result = (res.data as any).chart?.result?.[0]
+    const meta = result?.meta
     if (!meta) return null
     const prev = meta.chartPreviousClose || meta.previousClose || meta.regularMarketPreviousClose || meta.regularMarketPrice
     const price = meta.regularMarketPrice
     const change = price - prev
+    // The chart meta has no open: it is the session bar's open. Missing values stay null —
+    // they used to fall back to the current price, so every "open" was the price itself.
+    const opens: (number | null)[] = result.indicators?.quote?.[0]?.open ?? []
+    const open = opens.at(-1)
     return {
       symbol: meta.symbol || ticker,
       shortName: meta.shortName || ticker,
+      longName: meta.longName ?? null,
+      fullExchangeName: meta.fullExchangeName ?? null,
+      regularMarketPreviousClose: prev ?? null,
       regularMarketPrice: price,
       regularMarketChange: change,
       regularMarketChangePercent: prev ? (change / prev) * 100 : 0,
       regularMarketVolume: meta.regularMarketVolume || 0,
-      regularMarketOpen: meta.regularMarketOpen || price,
-      regularMarketDayHigh: meta.regularMarketDayHigh || price,
-      regularMarketDayLow: meta.regularMarketDayLow || price,
+      regularMarketOpen: typeof open === 'number' && Number.isFinite(open) ? open : null,
+      regularMarketDayHigh: meta.regularMarketDayHigh ?? null,
+      regularMarketDayLow: meta.regularMarketDayLow ?? null,
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
       regularMarketTime: meta.regularMarketTime, // unix seconds of the last trade (session windows need it)

@@ -171,9 +171,10 @@ async function fetchChart(ticker: string, range = '5d', interval = '1d'): Promis
       // Mean volume of the earlier sessions in this same 5-day response (no
       // extra request). null when there aren't at least 2 earlier sessions.
       avgVolume: priorAvgVolume(result),
-      high:      meta.regularMarketDayHigh   || price,
-      low:       meta.regularMarketDayLow    || price,
-      open:      meta.regularMarketOpen      || price,
+      // Missing values stay null (they used to fall back to the price); the open is the last bar's.
+      high:      meta.regularMarketDayHigh ?? null,
+      low:       meta.regularMarketDayLow ?? null,
+      open:      result.indicators?.quote?.[0]?.open?.at(-1) ?? null,
       high52:    meta.fiftyTwoWeekHigh,
       low52:     meta.fiftyTwoWeekLow,
       currency:  meta.currency,

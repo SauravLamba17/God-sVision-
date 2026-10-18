@@ -44,9 +44,10 @@ export async function GET(request: NextRequest) {
       const data = await getChartData(ticker, period)
       await setCache(cacheKey, data, 300)
       return json({ data, source: 'live' })
-    } catch (err: any) {
+    } catch {
       if (cached) return json({ data: cached.data, source: 'stale' })
-      return json({ error: err.message, data: [], source: 'unavailable' })
+      // Not the raw upstream error: it carried Yahoo's internal URL to the browser.
+      return json({ error: 'Chart data unavailable for this symbol', data: [], source: 'unavailable' })
     }
   }
 

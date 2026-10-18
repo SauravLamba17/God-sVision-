@@ -76,7 +76,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg, data: [], source: 'unavailable' })
+    // Logged, not returned: upstream messages ("Request failed with status code 404") mean nothing to users.
+    console.error('[crypto]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: 'Crypto data unavailable right now', data: [], source: 'unavailable' })
   }
 }

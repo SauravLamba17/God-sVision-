@@ -28,19 +28,25 @@ async function fetchFeed(feed: { name: string; url: string }): Promise<IndiaNews
     const itemRe = /<item>([\s\S]*?)<\/item>/g
     let m: RegExpExecArray | null
     const unwrap = (s: string) => s.replace(/<!\[CDATA\[|\]\]>/g, '').trim()
+    // Feeds escape entities even inside CDATA ("F&amp;O Talk"): decode them, &amp; last so nothing decodes twice.
+    const decode = (s: string) => s
+      .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+      .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
     while ((m = itemRe.exec(text)) !== null && items.length < 50) {
       const block = m[1]
       const rawTitle = (/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(block)?.[1] ||
                        /<title>([\s\S]*?)<\/title>/.exec(block)?.[1] || '').trim()
-      const title = rawTitle.replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, '').replace(/<[^>]+>/g, '').trim()
-      const link  = unwrap(/<link>(.*?)<\/link>/.exec(block)?.[1] ||
-                     /<guid>(.*?)<\/guid>/.exec(block)?.[1] || '')
+      const title = decode(rawTitle.replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, '').replace(/<[^>]+>/g, '').trim())
+      const link  = decode(unwrap(/<link>(.*?)<\/link>/.exec(block)?.[1] ||
+                     /<guid>(.*?)<\/guid>/.exec(block)?.[1] || ''))
       // Livemint, NDTV Profit and The Hindu wrap pubDate in CDATA; unparsed, it
       // threw in toISOString() and the whole feed was dropped.
       const published = new Date(unwrap(/<pubDate>(.*?)<\/pubDate>/.exec(block)?.[1] || ''))
       const cdataDesc = /<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(block)?.[1] || ''
       const plainDesc = /<description>([\s\S]*?)<\/description>/.exec(block)?.[1] || ''
-      const desc  = (cdataDesc || plainDesc).replace(/<[^>]+>/g, '').trim()
+      const desc  = decode((cdataDesc || plainDesc).replace(/<[^>]+>/g, '').trim())
       // No valid publish time → skip (stamping "now" would invent one).
       if (title && link && !isNaN(published.getTime())) {
         items.push({

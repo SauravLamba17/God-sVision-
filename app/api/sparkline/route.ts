@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { getChartRange } from '@/lib/apis/yahoo';
 import { z } from 'zod';
 import { parseQuery, ticker } from '@/lib/validation';
 import { trackedFetch as fetch, track } from '@/lib/feedHealth' // records feed health; same fetch semantics;
@@ -100,7 +100,9 @@ async function fetchIntradaySeriesYahoo(symbol: string): Promise<number[]> {
 
   for (const attempt of attempts) {
     try {
-      const result = await track('Yahoo Finance (yahoo-finance2)', () => yahooFinance.chart(symbol, attempt));
+      // query1 v8 chart first (getChartRange); yahoo-finance2's chart() alone goes to query2,
+      // which answers 429 / non-JSON under load and left every Yahoo sparkline empty.
+      const result = await track('Yahoo Finance (chart)', () => getChartRange(symbol, attempt.period1, attempt.period2, attempt.interval));
       const closes = (result.quotes ?? [])
         .map((q: any) => q.close)
         .filter((c: any) => typeof c === 'number' && !isNaN(c) && c > 0);

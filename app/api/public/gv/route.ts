@@ -13,8 +13,8 @@ const Query = z.object({
 });
 
 // Fields the crumb-free query1 chart quote carries. Everything else (P/E, EPS,
-// market cap…) still needs yahoo-finance2's query2 quote, which 429s under load.
-const CHART_FIELDS = new Set(['price', 'change', 'change_pct', 'volume', 'day_high', 'day_low', 'open', 'fifty_two_week_high', 'fifty_two_week_low', 'currency']);
+// market cap) still needs yahoo-finance2's query2 quote, which 429s under load.
+const CHART_FIELDS = new Set(['price', 'change', 'change_pct', 'volume', 'day_high', 'day_low', 'open', 'fifty_two_week_high', 'fifty_two_week_low', 'currency', 'name', 'exchange', 'prev_close']);
 
 const cache = new Map<string, { data: any; ts: number }>();
 const TTL = 30 * 1000;
@@ -44,7 +44,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached.data);
     }
 
-    const quote: any = (CHART_FIELDS.has(field) && (await getQuotes([ticker]))[0]) || await track('Yahoo Finance (yahoo-finance2)', () => yahooFinance.quote(ticker));
+    const quote: any = (CHART_FIELDS.has(field) && (await getQuotes([ticker]))[0])
+      || await track('Yahoo Finance (yahoo-finance2)', () => yahooFinance.quote(ticker)).catch(() => null);
+    // Upstream down (query2 rate limit): an honest 503, not a 500 carrying Yahoo's raw error.
+    if (!quote) return NextResponse.json({ error: 'Market data is unavailable right now — try again shortly' }, { status: 503, headers: { 'Retry-After': '60' } });
 
     const fieldMap: Record<string, any> = {
       price: quote.regularMarketPrice,
@@ -78,6 +81,7 @@ export async function GET(req: NextRequest) {
       headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[Sheets gv]', e?.message);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

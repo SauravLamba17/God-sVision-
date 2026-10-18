@@ -44,9 +44,11 @@ export async function GET(req: NextRequest) {
 
     const chart = await getChartRange(ticker, new Date(startDate), new Date(endDate), '1d');
 
+    // A missing value is null — it used to be the close, so a missing volume or
+    // adjclose came back as a price under the wrong field name.
     const rows = (chart.quotes ?? []).map((q: any) => ({
       date: new Date(q.date).toISOString().split('T')[0],
-      value: q[field] ?? q.close,
+      value: q[field] ?? null,
     }));
 
     const result = { ticker, field, rows };
@@ -56,6 +58,8 @@ export async function GET(req: NextRequest) {
       headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    // Upstream (Yahoo) failure: honest 503, not a 500 carrying the raw upstream error.
+    console.error('[Sheets gv-history]', e?.message);
+    return NextResponse.json({ error: 'Market data is unavailable right now — try again shortly' }, { status: 503, headers: { 'Retry-After': '60' } });
   }
 }

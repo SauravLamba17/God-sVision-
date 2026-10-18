@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!geminiFlash) {
       return NextResponse.json(
-        { error: 'AI not configured. Add GEMINI_API_KEY to .env.local' },
+        { error: 'AI analysis is not available right now.' },
         { status: 503 }
       );
     }

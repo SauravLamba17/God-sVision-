@@ -182,13 +182,15 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                       <div style={{ fontSize: 7, color: 'var(--text-muted)', marginBottom: 4 }}>
                         <GlossaryTooltip term="SUPPORT">SUPPORT</GlossaryTooltip>
                       </div>
-                      {data.snapshot.support.map((s, i) => <div key={i} style={{ fontSize: 10, color: 'var(--text-positive)' }}>{currency}{s.toFixed(2)}</div>)}
+                      {data.snapshot.support.length ? data.snapshot.support.map((s, i) => <div key={i} style={{ fontSize: 10, color: 'var(--text-positive)' }}>{currency}{s.toFixed(2)}</div>)
+                        : <div title="No swing low below the price in the last 60 sessions" style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</div>}
                     </div>
                     <div style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
                       <div style={{ fontSize: 7, color: 'var(--text-muted)', marginBottom: 4 }}>
                         <GlossaryTooltip term="RESISTANCE">RESISTANCE</GlossaryTooltip>
                       </div>
-                      {data.snapshot.resistance.map((s, i) => <div key={i} style={{ fontSize: 10, color: 'var(--text-negative)' }}>{currency}{s.toFixed(2)}</div>)}
+                      {data.snapshot.resistance.length ? data.snapshot.resistance.map((s, i) => <div key={i} style={{ fontSize: 10, color: 'var(--text-negative)' }}>{currency}{s.toFixed(2)}</div>)
+                        : <div title="No swing high above the price in the last 60 sessions" style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</div>}
                     </div>
                   </div>
                   {data.snapshot.patterns.length > 0 && (
