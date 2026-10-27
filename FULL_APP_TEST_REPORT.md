@@ -148,6 +148,8 @@
 
 ## 11. Needs approval
 
+Decisions taken 2026-10-18 and done — see §13: NA-SEC-1 (headers), NA-DB-1 (cascade), NA-MW-1 (redirect), saffron part of NA-UX-1, and the Image-Optimizer part of NA-DEP-1 (optimizer switched off). NA-PROD-1: keep the Analyst panel and deep dive unchanged (owner's decision).
+
 | ID | Item | Why it needs you |
 |---|---|---|
 | NA-PROD-1 | **Analyst panel and deep dive give buy/sell advice and targets**: BUY/SELL/WATCH picks with entry, target 1/2, stop-loss, "IF YOU BUY… you could gain ₹X/share", "BUY 83% confidence" (rule-based when AI is off), an "AVOID LIST"; screener RATING column "STRONG BUY…SELL" (Yahoo analyst consensus) | Breaks the wording rule (no buy/sell advice or targets). Remove, or rework into "moved with / historically tended to" evidence. Product decision. |
@@ -169,3 +171,53 @@
 - The built-in browser pane renders emulated viewports scaled; layout checks were done in code (iframes at exact sizes), not by eye.
 
 **Cleanup:** throwaway account deleted together with its own rows (2 portfolio holdings; alerts, trades and watchlist test rows had already been deleted through the UI) → **15 users**, 0 orphaned rows (userId null) in holdings, price/news alerts, watchlist, transactions and push subscriptions; no `gv-evidence`/`e2e` accounts left. Isolation suite deletes its own pair. Temporary scripts (`scripts/_apisweep.ts`, `scripts/_accuracy.ts`) deleted. Local server stopped; browser left in USA mode, dark theme.
+
+## 13. Approval round (decisions of 2026-10-18; migration applied 2026-10-27)
+
+**Headers** (`next.config.js`, every route; cache headers unchanged): `X-Content-Type-Options: nosniff` · `X-Frame-Options: DENY` + enforced `Content-Security-Policy: frame-ancestors 'none'` · `Referrer-Policy: strict-origin-when-cross-origin` · `Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), geolocation=()` (no feature uses geolocation). Exception: `/map` gets `SAMEORIGIN` / `frame-ancestors 'self'` because `/godmode` embeds it in an iframe (DENY blanked God mode's map). HSTS not added: Vercel already sends `max-age=63072000; includeSubDomains; preload`.
+
+**CSP, report-only**, built from what the browser loads: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://i.ytimg.com https://disease.sh https://*.windy.com https://s3-eu-west-1.amazonaws.com; connect-src 'self' https://api.exchangerate-api.com wss://stream.binance.com:9443; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'`.
+**Violations reported: none.** 132 page loads (33 signed-in pages × 1440/1024 × USA/INDIA), collected per page with a buffered `ReportingObserver`, plus the live-cam YouTube player and God mode's map iframe. Before enforcing: `'unsafe-inline'` scripts are needed today (Next.js bootstrap + the theme-init script); enforcing needs nonces or hashes.
+
+**Images**: no `next/image` anywhere, so `images.unoptimized: true` (the optimizer behind the Image-Optimizer DoS advisory is off; the remote host lists were only for it).
+
+**Delete cascade** (`prisma/schema.prisma`), applied in one transaction:
+
+```sql
+ALTER TABLE "NewsAlert"        DROP CONSTRAINT "NewsAlert_userId_fkey";
+ALTER TABLE "PortfolioHolding" DROP CONSTRAINT "PortfolioHolding_userId_fkey";
+ALTER TABLE "PriceAlert"       DROP CONSTRAINT "PriceAlert_userId_fkey";
+ALTER TABLE "Transaction"      DROP CONSTRAINT "Transaction_userId_fkey";
+ALTER TABLE "Watchlist"        DROP CONSTRAINT "Watchlist_userId_fkey";
+-- each re-added on the same column: FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+```
+
+Foreign keys only (no column or row changes); the live DB had no other drift; afterwards `prisma migrate diff` is empty and all 8 User relations are CASCADE. Password-reset tokens deliberately get no FK: they are keyed by email and also stored for unregistered emails (rate-limit rows), so an FK would make those requests fail with a 500 and reveal which emails have accounts.
+
+| Table | Before (total / real users / test / orphans) | After |
+|---|---|---|
+| User | 16 (15 real + 1 test) | **15** (0 test) |
+| PortfolioHolding, PriceAlert, NewsAlert, Transaction, PushSubscription | 0 / 0 / 0 / 0 each | 0 / 0 / 0 / 0 each |
+| Watchlist | 1 / 1 / 0 / 0 | 1 / 1 / 0 / 0 |
+| Account, Session, PasswordResetToken | 0, 0, 0 | 0, 0, 0 |
+
+Cascade proof on the throwaway only: it was given 1 row in each of the 6 owned tables, then the user was deleted: 6 rows to 0, 0 orphans. Real users' rows: SHA-256 fingerprints of all 15 users and every row they own are identical before and after.
+
+**Login redirect** (`middleware.ts`, `lib/safeRedirect.ts`, sign-in page): signed-out deep links keep path + query (`/markets?ticker=TCS.NS` to sign-in and back to `/markets?ticker=TCS.NS`, checked in the browser); Next's internal `_rsc` marker is dropped. The sign-in page follows `callbackUrl` only if it resolves to the same origin; the old `startsWith('/')` check let `/\evil.com` through (browsers read `\` as `/`). `npm run test:redirect`: 23/23 (17 unit cases incl. `//evil.com`, `/\evil.com`, tab/newline tricks, `javascript:`, `data:`, absolute URLs; 6 live middleware checks incl. APIs still 401). Next hands middleware an already-normalised query (`%20` arrives as `+`), which decodes the same.
+
+**Duplicate requests** (`lib/sharedFetch.ts`, no new dependency): callers asking for the same URL within 30 s (the routes' CDN s-maxage) share one request; polling intervals and server caching unchanged; user routes and the Analyst panel untouched. Used by CryptoPanel, EarthquakePanel, StatusBar and the dashboard's US fetchers. Idle dashboard, same tab, 300 s; before = pushed code, after = this change:
+
+| Mode | API requests the app makes | Real network requests |
+|---|---|---|
+| USA | 86 → **77** | 52 → **41** (`/api/crypto?type=top100` 10 → 5) |
+| INDIA | 80 → **77** | 49 → 61 (see note) |
+
+Note: the INDIA network difference is in `india/*` routes this change does not touch. They send `s-maxage` + `stale-while-revalidate` without `max-age`, so whether the browser serves them from its own cache varies run to run.
+
+**Light-theme saffron**: `--saffron` is `#FF9933` in dark themes and `#A35200` in light (same hue, at least 4.70:1 on #fff, #f0f4f0 and #e8ede8); all India section headers measured at least 4.7:1. The Analyst panel and stock deep dive are byte-identical to before (they keep the old saffron).
+
+**Extra fix found while checking CSP**: TopBar and ModeToggle imported `getIndianMarketStatus` from `lib/apis/india.ts`, which pulled yahoo-finance2 (a 376 kB chunk plus a console warning) into every signed-in page; the function moved to `lib/utils.ts`. Follow-up not done: `lib/apis/forex.ts` and `openweather.ts` still bring axios into a few client bundles.
+
+**Verification**: tsc and production build clean; suites on the production build (2026-10-18): graph 31, sentiment 6, evidence 59, brain 38, scenario 50, isolation 62, redirect 23, research 96, all pass; 132-load sweep with 0 issues, 0 CSP violations, 0 console errors. Not re-run after the 2026-10-27 migration because another `next dev` for this repo was running on port 3001 (not started by this work); the code is unchanged since that run and the cascade was verified directly in the database.
+
+**Files**: `next.config.js`, `middleware.ts`, `prisma/schema.prisma`, `lib/safeRedirect.ts` (new), `lib/sharedFetch.ts` (new), `scripts/redirect-test.ts` (new), `package.json` (test:redirect), `app/auth/signin/page.tsx`, `app/dashboard/page.tsx`, `app/globals.css`, `components/panels/{CryptoPanel,EarthquakePanel,FIIDIIFlow,NiftyHeatmap,RBIPolicyTracker}.tsx`, `components/terminal/{ModeToggle,NavBar,StatusBar,TopBar}.tsx`, `lib/utils.ts`, `lib/apis/india.ts`.
