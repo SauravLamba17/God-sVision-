@@ -1,6 +1,36 @@
 /** @type {import('next').NextConfig} */
 const webpack = require('webpack')
 
+// Report-only for now: built from what the browser actually loads (see
+// FULL_APP_TEST_REPORT.md). 'unsafe-inline' scripts: Next's bootstrap and the
+// theme-init script are inline; enforcing later would need nonces or hashes.
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https://server.arcgisonline.com https://i.ytimg.com https://disease.sh https://*.windy.com https://s3-eu-west-1.amazonaws.com",
+  "connect-src 'self' https://api.exchangerate-api.com wss://stream.binance.com:9443",
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+  "media-src 'self'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
+
+const SECURITY_HEADERS = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  // Enforced, but ONLY frame-ancestors (report-only CSP ignores that directive).
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+  { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  // No feature uses geolocation either, so it is off too.
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), payment=(), usb=(), geolocation=()' },
+]
+
 const nextConfig = {
   poweredByHeader: false,
   compress: true,
@@ -14,21 +44,21 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['yahoo-finance2', 'prisma', '@prisma/client', 'rss-parser', 'bcryptjs'],
   },
-  images: {
-    domains: [
-      'images.coingecko.com',
-      'logos.covalenthq.com',
-      'static.coingecko.com',
-      'assets.coingecko.com',
-      'coin-images.coingecko.com',
-    ],
-    remotePatterns: [
-      { protocol: 'https', hostname: '**.coingecko.com' },
-      { protocol: 'https', hostname: '**.githubusercontent.com' },
-    ],
-  },
+  // No page uses next/image (all images are plain <img>), so the optimizer
+  // (/_next/image) has nothing to do: turning it off removes that surface
+  // (Next.js image-optimizer DoS advisory) and the remote host allow-lists.
+  images: { unoptimized: true },
   async headers() {
     return [
+      // Security headers on every route. HSTS is not set here: Vercel already sends
+      // max-age=63072000; includeSubDomains; preload on every response.
+      { source: '/:path*', headers: SECURITY_HEADERS },
+      // /godmode embeds /map in a same-origin iframe, so /map alone may be framed by
+      // this site (still never by another one). Later rules override earlier ones.
+      { source: '/map', headers: [
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+      ] },
       // Ensure UTF-8 charset for all HTML pages
       {
         source: '/((?!api|_next|favicon|sw\\.js|manifest\\.json).*)',
