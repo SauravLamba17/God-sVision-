@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from './PanelWrapper'
+import { sharedFetch } from '@/lib/sharedFetch'
 import { magnitudeColor, timeAgo } from '@/lib/utils'
 
 interface Earthquake {
@@ -20,7 +21,7 @@ export default function EarthquakePanel({ limit = 5 }: { limit?: number }) {
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/earthquakes?minMag=4.0')
+      const res = await sharedFetch('/api/earthquakes?minMag=4.0')
       const json = await res.json()
       if (json.data) {
         setQuakes(json.data.slice(0, limit))

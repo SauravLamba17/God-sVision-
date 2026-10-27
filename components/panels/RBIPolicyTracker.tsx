@@ -37,11 +37,11 @@ export default function RBIPolicyTracker() {
     return () => clearInterval(id)
   }, [load])
 
-  if (loading) return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="Loading RBI data…" />
+  if (loading) return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="var(--saffron)" message="Loading RBI data…" />
   // rateHistory is read unguarded below, so a payload without it is unusable.
   // nextMPC may be null (schedule exhausted) — that's rendered explicitly.
   if (!data?.rateHistory?.length) {
-    return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="#FF9933" message="RBI policy data temporarily unavailable" onRetry={load} />
+    return <PanelEmpty title="🏦 RBI POLICY TRACKER" accent="var(--saffron)" message="RBI policy data temporarily unavailable" onRetry={load} />
   }
 
   const stanceColor = data.rbiStance === 'HAWKISH' ? 'var(--text-negative)' : data.rbiStance === 'DOVISH' ? 'var(--text-positive)' : 'var(--text-warning)'
@@ -53,7 +53,7 @@ export default function RBIPolicyTracker() {
     <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       {/* Header */}
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-header)' }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
         <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC ? `${data.nextMPC.daysAway}d to next` : 'schedule not updated'}</span>
       </div>
 
@@ -84,7 +84,7 @@ export default function RBIPolicyTracker() {
           ].map(item => (
             <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{item.label}</span>
-              <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: '#FF9933' }}>{item.value.toFixed(2)}{item.unit}</span>
+              <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: 'var(--saffron)' }}>{item.value.toFixed(2)}{item.unit}</span>
             </div>
           ))}
         </div>
@@ -97,7 +97,7 @@ export default function RBIPolicyTracker() {
           {data.nextMPC ? <>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-primary)' }}>{new Date(data.nextMPC.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
           <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginTop: 2 }}>Resolution: {new Date(data.nextMPC.resolution).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
-          <div style={{ fontSize: 'var(--fs-meta)', color: '#FF9933', marginTop: 4 }}>{data.nextMPC.daysAway}d away</div>
+          <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--saffron)', marginTop: 4 }}>{data.nextMPC.daysAway}d away</div>
           </> : <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>Schedule not available</div>}
         </div>
       </div>

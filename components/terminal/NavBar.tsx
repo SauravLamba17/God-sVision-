@@ -101,7 +101,7 @@ export default function NavBar() {
     return () => window.removeEventListener('keydown', handler)
   }, [router, splitMode])
 
-  const activeAccent = isIndia ? '#FF9933' : 'var(--text-accent)'
+  const activeAccent = isIndia ? 'var(--saffron)' : 'var(--text-accent)'
   const activeAccentBg = isIndia ? 'rgba(255,153,51,0.08)' : 'rgba(255,109,0,0.08)'
 
   const navItemStyle = (isActive: boolean) => ({

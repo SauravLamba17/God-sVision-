@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import PanelWrapper from './PanelWrapper'
+import { sharedFetch } from '@/lib/sharedFetch'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
 
 interface Coin {
@@ -24,7 +25,7 @@ export default function CryptoPanel() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/crypto?type=top100')
+      const res = await sharedFetch('/api/crypto?type=top100')
       const json = await res.json()
       if (json.data) {
         setCoins(json.data.slice(0, 10))

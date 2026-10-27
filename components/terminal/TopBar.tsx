@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { getMarketStatus } from '@/lib/utils'
-import { getIndianMarketStatus } from '@/lib/apis/india'
+import { getIndianMarketStatus } from '@/lib/utils'
 import { useMode } from '@/lib/context/ModeContext'
 import TickerTape from './TickerTape'
 import dynamic from 'next/dynamic'

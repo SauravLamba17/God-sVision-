@@ -10,6 +10,8 @@
    CSS VARIABLES — Dark Space Theme
 ═══════════════════════════════════════════ */
 :root {
+  /* India saffron for text; the light theme darkens it (below) for contrast. */
+  --saffron:        #FF9933;
   /* === TERMINAL BACKGROUNDS === */
   --bg-terminal:    #000000;
   --bg-panel:       #050a05;
@@ -163,6 +165,8 @@
 /* Tailwind's text-primary is a fixed near-white (#e2e8f0), invisible on the light
    background (65 files use it); follow the theme here. Dark themes keep their look. */
 [data-theme="light"] .text-primary { color: var(--text-primary); }
+/* #FF9933 is ~1.9:1 on the light backgrounds; same hue, ≥4.7:1 on #fff / #f0f4f0 / #e8ede8. */
+[data-theme="light"] { --saffron: #A35200; }
 
 /* ═══════════════════════════════════════════
    HIGH CONTRAST DARK THEME

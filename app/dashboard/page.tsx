@@ -10,6 +10,7 @@ import { PanelEmpty } from '@/components/ui/Panel'
 import TickerLink from '@/components/ui/TickerLink'
 import { WhyLine } from '@/components/ui/WhyLine'
 import { arrow, pct, signed } from '@/lib/format'
+import { sharedFetch } from '@/lib/sharedFetch'
 
 const MarketOverviewStrip = dynamic(() => import('@/components/panels/MarketOverviewStrip'), { ssr: false })
 const CryptoPanel         = dynamic(() => import('@/components/panels/CryptoPanel'),         { ssr: false })
@@ -176,7 +177,7 @@ function IndiaMarketMovers() {
   const tabStyle = (t: MoverTab) => ({
     fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '3px 10px', cursor: 'pointer',
     background:  tab === t ? 'rgba(255,153,51,0.12)' : 'transparent',
-    color:       tab === t ? '#FF9933' : 'var(--text-muted)',
+    color:       tab === t ? 'var(--saffron)' : 'var(--text-muted)',
     border: '1px solid',
     borderColor: tab === t ? '#FF993340' : 'var(--border-color)',
     borderRadius: 2,
@@ -188,13 +189,13 @@ function IndiaMarketMovers() {
     <div style={{ border: '1px solid var(--border-color)', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
       <div style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)', padding: '5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: '#FF9933', letterSpacing: '0.08em' }}>NIFTY MOVERS</span>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '1px 5px', background: 'rgba(255,153,51,0.12)', color: '#FF9933', borderRadius: 2 }}>NSE</span>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>NIFTY MOVERS</span>
+          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '1px 5px', background: 'rgba(255,153,51,0.12)', color: 'var(--saffron)', borderRadius: 2 }}>NSE</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {lastAt && <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{lastAt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} IST</span>}
           <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#FF9933')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--saffron)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 4, padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
@@ -203,7 +204,7 @@ function IndiaMarketMovers() {
         <button style={tabStyle('active')}  onClick={() => setTab('active')}>⚡ MOST ACTIVE</button>
       </div>
       {loading ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING<span className="blink-cursor" /></div>
+        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--saffron)' }}>LOADING<span className="blink-cursor" /></div>
       ) : rows.length === 0 ? (
         <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>No data — NSE market may be closed</div>
       ) : (
@@ -226,7 +227,7 @@ function IndiaMarketMovers() {
                     onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: '#FF9933' }}>{displaySymbol(q.symbol)}</TickerLink></td>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: 'var(--saffron)' }}>{displaySymbol(q.symbol)}</TickerLink></td>
                     <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
                     <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
                     <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
@@ -256,7 +257,7 @@ function MarketMovers() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res  = await fetch('/api/stocks?type=movers')
+      const res  = await sharedFetch('/api/stocks?type=movers')
       const json = await res.json()
       if (json.data) {
         setGainers(json.data.gainers || [])
@@ -414,11 +415,11 @@ function IndiaCryptoMini() {
   return (
     <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: '#FF9933', letterSpacing: '0.08em' }}>₿ CRYPTO / INR</span>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>₿ CRYPTO / INR</span>
         <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>CoinGecko · INR</span>
       </div>
       {loading ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: '#FF9933' }}>LOADING<span className="blink-cursor" /></div>
+        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--saffron)' }}>LOADING<span className="blink-cursor" /></div>
       ) : coins.length === 0 ? (
         <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
           <span>INR crypto prices temporarily unavailable</span>
@@ -443,9 +444,9 @@ function IndiaCryptoMini() {
                 const cc  = pos ? 'var(--text-positive)' : 'var(--text-negative)'
                 return (
                   <tr key={c.id} style={{ borderBottom: '1px solid #0d1a0d' }}>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', padding: '3px 6px' }}>
+                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', padding: '3px 6px' }}>
                       {c.symbol}
-                      {c.isIndianProject && <span style={{ fontSize: 'var(--fs-meta)', marginLeft: 4, color: '#FF9933', background: '#FF993320', padding: '0 3px', borderRadius: 2 }}>🇮🇳</span>}
+                      {c.isIndianProject && <span style={{ fontSize: 'var(--fs-meta)', marginLeft: 4, color: 'var(--saffron)', background: '#FF993320', padding: '0 3px', borderRadius: 2 }}>🇮🇳</span>}
                     </td>
                     <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{fmtINR(c.priceINR)}</td>
                     <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{formatPercent(c.change24h)}</td>
@@ -485,14 +486,14 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
     return () => clearInterval(id)
   }, [load])
 
-  if (loading) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="#FF9933" message="Loading India news…" />
+  if (loading) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="var(--saffron)" message="Loading India news…" />
   // Previously rendered the header above an empty 320px scroll area.
-  if (articles.length === 0) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="#FF9933" message="India market headlines temporarily unavailable" onRetry={load} />
+  if (articles.length === 0) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="var(--saffron)" message="India market headlines temporarily unavailable" onRetry={load} />
 
   return (
     <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-header)' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: '#FF9933', letterSpacing: '0.08em' }}>📡 INDIA MARKETS NEWS</span>
+        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>📡 INDIA MARKETS NEWS</span>
       </div>
       <div style={{ overflowY: 'auto', maxHeight: 320 }}>
         {articles.map((a, i) => (
@@ -503,7 +504,7 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{a.title}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: '#FF9933' }}>{a.source}</span>
+              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--saffron)' }}>{a.source}</span>
               <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{new Date(a.publishedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} IST</span>
             </div>
           </a>
@@ -559,8 +560,8 @@ export default function DashboardPage() {
     const fetchAll = async () => {
       try {
         const [stockRes, cryptoRes] = await Promise.allSettled([
-          fetch(`/api/stocks?tickers=${['SPY','QQQ','GLD','DX-Y.NYB'].join(',')}`),
-          fetch('/api/crypto?type=top100'),
+          sharedFetch(`/api/stocks?tickers=${['SPY','QQQ','GLD','DX-Y.NYB'].join(',')}`),
+          sharedFetch('/api/crypto?type=top100'),
         ])
         const updated = [...DEFAULT_METRICS]
         const newTape: Record<string, { price: number; changePct: number }> = {}

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useMode } from '@/lib/context/ModeContext'
-import { getIndianMarketStatus } from '@/lib/apis/india'
+import { getIndianMarketStatus } from '@/lib/utils'
 import { getMarketStatus } from '@/lib/utils'
 
 function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: number | null; onDone: () => void }) {
@@ -114,13 +114,13 @@ export default function ModeToggle() {
       >
         {isIndia ? (
           <>
-            <span style={{ color: textActive }}>🇮🇳 INDIA MODE</span>
+            <span style={{ color: isIndia ? 'var(--saffron)' : textActive }}>🇮🇳 INDIA MODE</span>
             <span style={{ color: textSecond, fontSize: 'var(--fs-meta)' }}>→ 🇺🇸 USA</span>
           </>
         ) : (
           <>
             <span style={{ color: 'var(--text-primary)' }}>🇺🇸 USA MODE</span>
-            <span style={{ color: textActive, fontSize: 'var(--fs-meta)' }}>→ 🇮🇳 INDIA</span>
+            <span style={{ color: isIndia ? 'var(--saffron)' : textActive, fontSize: 'var(--fs-meta)' }}>→ 🇮🇳 INDIA</span>
           </>
         )}
       </button>

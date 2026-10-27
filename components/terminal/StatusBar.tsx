@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useMode } from '@/lib/context/ModeContext'
+import { sharedFetch } from '@/lib/sharedFetch'
 const SoundControl = dynamic(() => import('./SoundControl'), { ssr: false })
 
 interface ApiStatus { name: string; status: 'live' | 'delayed' | 'down' }
@@ -40,7 +41,11 @@ export default function StatusBar() {
     ]
     const checkApis = async () => {
       const results = await Promise.allSettled(
-        checks.map(c => fetch(c.url, { signal: AbortSignal.timeout(5000) }))
+        // Shared with the panels polling the same URLs; still "down" after 5 s.
+        checks.map(c => Promise.race([
+          sharedFetch(c.url),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+        ]))
       )
       setStatuses(checks.map((c, i) => ({
         name: c.name,
@@ -109,7 +114,7 @@ export default function StatusBar() {
         <span style={{ color: 'var(--border-bright)' }}>│</span>
         {isIndia ? (
           <>
-            <span style={{ color: '#FF9933' }}>🇮🇳 IN MARKETS</span>
+            <span style={{ color: 'var(--saffron)' }}>🇮🇳 IN MARKETS</span>
             <span style={{ color: 'var(--border-bright)' }}>│</span>
             <span suppressHydrationWarning style={{ color: 'var(--text-muted)' }}>
               1 USD = ₹{exchangeRate?.toFixed(2) ?? '—'}

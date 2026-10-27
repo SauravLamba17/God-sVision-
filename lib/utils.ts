@@ -69,6 +69,25 @@ export function isPreMarket(): boolean {
   return timeInMinutes >= 4 * 60 && timeInMinutes < 9 * 60 + 30
 }
 
+/** NSE session by IST wall clock (holidays not modelled). */
+export function getIndianMarketStatus(): 'OPEN' | 'CLOSED' | 'PRE-OPEN' | 'AFTER-HOURS' {
+  const parts = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(new Date())
+
+  const weekday = parts.find(p => p.type === 'weekday')?.value ?? ''
+  const hour    = parseInt(parts.find(p => p.type === 'hour')?.value   ?? '0', 10)
+  const minute  = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10)
+  const t = hour * 100 + minute
+
+  if (['Saturday', 'Sunday'].includes(weekday)) return 'CLOSED'
+  if (t >= 900  && t < 915)  return 'PRE-OPEN'
+  if (t >= 915  && t < 1530) return 'OPEN'
+  if (t >= 1530 && t < 1600) return 'AFTER-HOURS'
+  return 'CLOSED'
+}
+
 export function getMarketStatus(): 'OPEN' | 'CLOSED' | 'PRE-MARKET' | 'AFTER-HOURS' {
   if (isMarketOpen()) return 'OPEN'
   if (isPreMarket()) return 'PRE-MARKET'

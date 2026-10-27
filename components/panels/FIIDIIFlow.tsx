@@ -71,12 +71,12 @@ export default function FIIDIIFlow() {
     return () => clearInterval(id)
   }, [load])
 
-  if (loading) return <PanelEmpty title="📊 FII / DII FLOWS" accent="#FF9933" message="Loading FII/DII data…" />
+  if (loading) return <PanelEmpty title="📊 FII / DII FLOWS" accent="var(--saffron)" message="Loading FII/DII data…" />
   if (!data) {
     return (
       <PanelEmpty
         title="📊 FII / DII FLOWS"
-        accent="#FF9933"
+        accent="var(--saffron)"
         message="Live FII/DII data unavailable — NSE did not respond"
         onRetry={load}
       />
@@ -89,7 +89,7 @@ export default function FIIDIIFlow() {
   return (
     <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
         {/* The date now comes from NSE's own payload, so this label is accurate. */}
         <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>NSE cash mkt · {data.lastUpdated}</span>
       </div>

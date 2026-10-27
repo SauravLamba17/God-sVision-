@@ -62,9 +62,9 @@ export default function NiftyHeatmap() {
   // Both of these previously rendered bare unbordered text (or nine sector
   // labels with no tiles under them), which read as a blank panel in the
   // 380px-wide, 520px-tall grid cell this sits in.
-  if (loading) return <PanelEmpty title="NIFTY 50 HEATMAP" accent="#FF9933" message="Loading Nifty heatmap…" />
+  if (loading) return <PanelEmpty title="NIFTY 50 HEATMAP" accent="var(--saffron)" message="Loading Nifty heatmap…" />
   if (Object.keys(stocks).length === 0) {
-    return <PanelEmpty title="NIFTY 50 HEATMAP" accent="#FF9933" message="Nifty constituent prices temporarily unavailable" onRetry={load} />
+    return <PanelEmpty title="NIFTY 50 HEATMAP" accent="var(--saffron)" message="Nifty constituent prices temporarily unavailable" onRetry={load} />
   }
 
   return (
@@ -73,7 +73,7 @@ export default function NiftyHeatmap() {
     // — a black rectangle under the heatmap.
     <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'linear-gradient(180deg,#0a0f1e,#060d1a)', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: '#0d1526', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: '#FF9933', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
+        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
         <div style={{ display: 'flex', gap: 6, fontSize: 'var(--fs-meta)' }}>
           {[['STRONG UP', '#14532d'], ['UP', '#166534'], ['DOWN', '#991b1b'], ['STRONG DN', '#450a0a']].map(([l, c]) => (
             <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)' }}>

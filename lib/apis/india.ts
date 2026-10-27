@@ -118,24 +118,9 @@ export const RBI_MPC_MEETINGS = [
 // endpoint and returns null (an honest "unavailable" panel) when NSE declines.
 
 // ── Indian market hours ──────────────────────────────────────────────────────
-export function getIndianMarketStatus(): 'OPEN' | 'CLOSED' | 'PRE-OPEN' | 'AFTER-HOURS' {
-  const now = new Date()
-  const parts = new Intl.DateTimeFormat('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: false,
-  }).formatToParts(now)
-
-  const weekday = parts.find(p => p.type === 'weekday')?.value ?? ''
-  const hour    = parseInt(parts.find(p => p.type === 'hour')?.value   ?? '0', 10)
-  const minute  = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10)
-  const t = hour * 100 + minute
-
-  if (['Saturday', 'Sunday'].includes(weekday)) return 'CLOSED'
-  if (t >= 900  && t < 915)  return 'PRE-OPEN'
-  if (t >= 915  && t < 1530) return 'OPEN'
-  if (t >= 1530 && t < 1600) return 'AFTER-HOURS'
-  return 'CLOSED'
-}
+// Lives in lib/utils (client-safe): importing it from here pulled yahoo-finance2
+// (~376 kB) into every signed-in page via TopBar/ModeToggle.
+export { getIndianMarketStatus } from '@/lib/utils'
 
 // ── Yahoo Finance chart (query1 v8) — no crumb, returns close[] ─────────────
 const YF_HEADERS = {
