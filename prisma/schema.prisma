@@ -77,7 +77,7 @@ model PortfolioHolding {
   buyDate   DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PriceAlert {
@@ -91,7 +91,7 @@ model PriceAlert {
   notified    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   triggeredAt DateTime?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model NewsAlert {
@@ -101,7 +101,7 @@ model NewsAlert {
   lastTriggered DateTime?
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model EarthquakeAlert {
@@ -137,7 +137,7 @@ model Watchlist {
   assetType String   @default("STOCK")
   addedAt   DateTime @default(now())
   note      String   @default("")
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ticker])
 }
@@ -155,9 +155,9 @@ model Transaction {
   id        Int      @id @default(autoincrement())
   // Added to close a broken-access-control hole: the table previously had no
   // owner column at all, so /api/transactions returned every user's rows to any
-  // caller and deleted by id alone. Nullable + SetNull to match the other
-  // user-owned models here; the table held 0 rows when this was added, so no
-  // existing data is orphaned.
+  // caller and deleted by id alone. Nullable (the table held 0 rows when this
+  // was added). Like every user-owned model, rows are deleted with their user
+  // (onDelete Cascade; was SetNull, which left ownerless rows behind).
   userId    String?
   ticker    String
   type      String
@@ -167,7 +167,7 @@ model Transaction {
   fee       Float    @default(0)
   notes     String   @default("")
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
