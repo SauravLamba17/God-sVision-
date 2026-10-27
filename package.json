@@ -18,7 +18,8 @@
     "compare:news": "node --no-warnings scripts/news-compare.ts",
     "build:sensitivities": "node --no-warnings scripts/build-sensitivities.ts",
     "test:scenario": "node --no-warnings scripts/scenario-test.ts",
-    "test:research": "node --no-warnings scripts/research-test.ts"
+    "test:research": "node --no-warnings scripts/research-test.ts",
+    "test:redirect": "node --no-warnings scripts/redirect-test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

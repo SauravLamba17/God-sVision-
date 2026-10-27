@@ -44,7 +44,12 @@ function deny(req: NextRequest, path: string) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const signInUrl = new URL('/auth/signin', req.url);
-  signInUrl.searchParams.set('callbackUrl', path);
+  // Path + query, so a deep link like /markets?ticker=TCS.NS survives sign-in
+  // (the sign-in page only follows it if it is same-origin). _rsc is Next's
+  // internal RSC fetch marker, not part of the user's URL. (Next hands middleware an
+  // already-normalised query — a%20b arrives as a+b — which decodes the same.)
+  const query = req.nextUrl.search.slice(1).split('&').filter(p => p && !p.startsWith('_rsc=')).join('&');
+  signInUrl.searchParams.set('callbackUrl', path + (query ? `?${query}` : ''));
   return NextResponse.redirect(signInUrl);
 }
 

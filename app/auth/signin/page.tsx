@@ -2,6 +2,7 @@
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { safeCallbackUrl } from '@/lib/safeRedirect';
 
 const mono = 'IBM Plex Mono, monospace';
 
@@ -42,10 +43,8 @@ function SignInForm() {
   // path — the page is already navigating away.
   const gotoCallback = () => {
     const params = new URLSearchParams(window.location.search);
-    const callbackUrl = params.get('callbackUrl') || '/dashboard';
-    // Only allow same-origin relative paths — never an attacker-supplied absolute URL.
-    const safe = callbackUrl.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/dashboard';
-    window.location.href = safe;
+    // Same-origin only (the old startsWith('/') check let "/\evil.com" through).
+    window.location.href = safeCallbackUrl(params.get('callbackUrl'), window.location.origin);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
