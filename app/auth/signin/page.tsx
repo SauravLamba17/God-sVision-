@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { safeCallbackUrl } from '@/lib/safeRedirect';
 
-const mono = 'IBM Plex Mono, monospace';
+const font = 'var(--font-sans), system-ui, sans-serif'; // UI font (tokens: app/globals.css)
 
 // useSearchParams() opts the subtree into client-side rendering, so it needs a
 // Suspense boundary to keep `next build` from bailing on static generation.
@@ -88,29 +88,29 @@ function SignInForm() {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: '#0a140a', border: '1px solid #1b2e1b',
-    color: '#c8e6c9', fontFamily: mono, fontSize: 12, padding: '8px 12px',
+    width: '100%', background: 'var(--surface)', border: 'var(--bw) solid var(--border)',
+    color: 'var(--text)', fontFamily: font, fontSize: 12, padding: '8px 12px',
     borderRadius: 2, outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   };
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '8px 0', background: active ? '#ff6d00' : '#0a140a',
-    color: active ? '#000' : '#607d8b', border: '1px solid #1b2e1b',
-    fontFamily: mono, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+    flex: 1, padding: '8px 0', background: active ? 'var(--accent)' : 'var(--surface)',
+    color: active ? 'var(--on-accent)' : 'var(--muted)', border: 'var(--bw) solid var(--border)',
+    fontFamily: font, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
     cursor: 'pointer', transition: 'all 0.15s',
   });
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#000', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', fontFamily: mono,
+      minHeight: '100vh', background: 'var(--bg)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', fontFamily: font,
     }}>
-      <div style={{ width: 380, background: '#050a05', border: '1px solid #1b2e1b', borderTop: '2px solid #ff6d00', padding: 28 }}>
+      <div style={{ width: 380, background: 'var(--surface)', border: 'var(--bw) solid var(--border)', borderTop: 'var(--stripe) solid var(--stripe-color)', borderRadius: 'var(--radius)', padding: 28 }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 20, color: '#ff6d00', fontWeight: 700, letterSpacing: '0.12em' }}>⚡ GOD'S VISION</div>
-          <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.2em', marginTop: 4 }}>FINANCIAL INTELLIGENCE TERMINAL</div>
+          <div style={{ fontSize: 22, color: 'var(--text)', fontWeight: 700 }}>GOD&apos;s <span style={{ color: 'var(--accent-text)' }}>Vision</span></div>
+          <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.2em', marginTop: 4 }}>FINANCIAL INTELLIGENCE TERMINAL</div>
         </div>
 
         {/* Tabs */}
@@ -124,49 +124,49 @@ function SignInForm() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {tab === 'register' && (
               <div>
-                <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>NAME</div>
+                <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 4, letterSpacing: '0.08em' }}>NAME</div>
                 <input
                   style={inputStyle}
                   type="text" value={name} placeholder="Your name" aria-label="Name"
                   onChange={e => setName(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = '#ff6d00')}
-                  onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
+                  onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--border)')}
                 />
               </div>
             )}
             <div>
-              <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>EMAIL</div>
+              <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 4, letterSpacing: '0.08em' }}>EMAIL</div>
               <input
                 style={inputStyle}
                 type="email" value={email} placeholder="you@example.com" required aria-label="Email"
                 onChange={e => setEmail(e.target.value)}
-                onFocus={e => (e.target.style.borderColor = '#ff6d00')}
-                onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.08em' }}>PASSWORD</div>
+                <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.08em' }}>PASSWORD</div>
                 {tab === 'signin' && (
-                  <a href="/auth/forgot-password" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>Forgot password?</a>
+                  <a href="/auth/forgot-password" style={{ fontSize: 9, color: 'var(--muted)', textDecoration: 'none' }}>Forgot password?</a>
                 )}
               </div>
               <input
                 style={inputStyle}
                 type="password" value={password} placeholder={tab === 'register' ? 'Min 8 characters' : '••••••••'} required aria-label="Password"
                 onChange={e => setPassword(e.target.value)}
-                onFocus={e => (e.target.style.borderColor = '#ff6d00')}
-                onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
               />
             </div>
 
             {error && (
-              <div style={{ padding: '6px 10px', background: 'rgba(255,23,68,0.1)', border: '1px solid rgba(255,23,68,0.3)', color: '#ff1744', fontSize: 10, borderRadius: 2 }}>
+              <div style={{ padding: '6px 10px', background: 'var(--down-soft)', border: 'var(--bw) solid var(--down)', color: 'var(--down)', fontSize: 10, borderRadius: 'var(--radius-inner)' }}>
                 {error}
               </div>
             )}
             {success && (
-              <div style={{ padding: '6px 10px', background: 'rgba(0,230,118,0.1)', border: '1px solid rgba(0,230,118,0.3)', color: '#00e676', fontSize: 10, borderRadius: 2 }}>
+              <div style={{ padding: '6px 10px', background: 'var(--up-soft)', border: 'var(--bw) solid var(--up)', color: 'var(--up)', fontSize: 10, borderRadius: 'var(--radius-inner)' }}>
                 {success}
               </div>
             )}
@@ -175,8 +175,8 @@ function SignInForm() {
               type="submit" disabled={loading} aria-busy={loading}
               style={{
                 width: '100%', padding: '10px 0',
-                background: loading ? '#1b2e1b' : '#ff6d00', color: loading ? '#607d8b' : '#000',
-                border: 'none', fontFamily: mono, fontSize: 11, fontWeight: 700,
+                background: loading ? 'var(--border)' : 'var(--accent)', color: loading ? 'var(--muted)' : 'var(--on-accent)',
+                border: 'none', fontFamily: font, fontSize: 11, fontWeight: 700,
                 letterSpacing: '0.1em', cursor: loading ? 'not-allowed' : 'pointer',
                 borderRadius: 2, transition: 'all 0.15s',
               }}
@@ -192,26 +192,26 @@ function SignInForm() {
         </form>
 
         {/* Plan comparison */}
-        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #1b2e1b' }}>
-          <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.1em', marginBottom: 10, textAlign: 'center' }}>PLAN COMPARISON</div>
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: 'var(--bw) solid var(--border)' }}>
+          <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em', marginBottom: 10, textAlign: 'center' }}>PLAN COMPARISON</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div style={{ padding: '10px', border: '1px solid #1b2e1b', borderRadius: 2 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#88aa88', marginBottom: 6 }}>FREE</div>
+            <div style={{ padding: '10px', border: 'var(--bw) solid var(--border)', borderRadius: 2 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6 }}>FREE</div>
               {['Markets & News', 'Crypto & Forex', 'Watchlist (10)', 'Basic Alerts (2)'].map(f => (
-                <div key={f} style={{ fontSize: 9, color: '#607d8b', marginBottom: 3 }}>✓ {f}</div>
+                <div key={f} style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 3 }}>✓ {f}</div>
               ))}
             </div>
-            <div style={{ padding: '10px', border: '1px solid rgba(255,109,0,0.4)', borderRadius: 2, background: 'rgba(255,109,0,0.04)' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#ff6d00', marginBottom: 6 }}>★ PRO — $29/mo</div>
+            <div style={{ padding: '10px', border: 'var(--bw) solid var(--accent)', borderRadius: 'var(--radius-inner)', background: 'var(--accent-soft)' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-text)', marginBottom: 6 }}>★ PRO — $29/mo</div>
               {['AI Analyst Engine', 'India Mode (NSE/BSE)', 'Unlimited Alerts', 'Correlation + Insiders'].map(f => (
-                <div key={f} style={{ fontSize: 9, color: '#88aa88', marginBottom: 3 }}>✓ {f}</div>
+                <div key={f} style={{ fontSize: 9, color: 'var(--text-2)', marginBottom: 3 }}>✓ {f}</div>
               ))}
             </div>
           </div>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <a href="/" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to home</a>
+          <a href="/" style={{ fontSize: 9, color: 'var(--muted)', textDecoration: 'none' }}>← Back to home</a>
         </div>
       </div>
     </div>

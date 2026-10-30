@@ -1,4 +1,4 @@
-import { INK } from '@/lib/canvas/globe'
+import { INK, inkText } from '@/lib/canvas/globe'
 
 /* No interactivity in this section — it stays a server component. */
 const LEDGER: Array<{ item: string; gv: string; bb: string }> = [
@@ -14,7 +14,7 @@ const LEDGER: Array<{ item: string; gv: string; bb: string }> = [
 ]
 
 const headCell: React.CSSProperties = {
-  padding: '12px 20px', font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.45)`,
+  padding: '12px 20px', font: "500 10px/1 'Geist Mono', monospace", color: inkText(.45),
 }
 
 export default function LandingLedger() {
@@ -32,7 +32,7 @@ export default function LandingLedger() {
             letterSpacing: '-.02em', textWrap: 'balance',
           }}>Feature for feature. One invoice is blank.</h2>
           <p style={{
-            margin: 0, maxWidth: '36ch', font: '400 14px/1.6 Geist, sans-serif', color: `rgba(${INK},.55)`,
+            margin: 0, maxWidth: '36ch', font: '400 14px/1.6 Geist, sans-serif', color: inkText(.55),
           }}>
             Annual, one seat. The cost line is illustrative &#8212; we compare what is included,
             not a quoted invoice.
@@ -47,7 +47,7 @@ export default function LandingLedger() {
             <caption style={{
               textAlign: 'left', padding: '13px 20px', background: '#08090b',
               borderBottom: `1px solid rgba(${INK},.16)`,
-              font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.45)`,
+              font: "500 10px/1 'Geist Mono', monospace", color: inkText(.45),
             }}>What&#8217;s included, feature by feature</caption>
             <thead>
               <tr style={{ background: '#08090b', borderBottom: `1px solid rgba(${INK},.16)` }}>
@@ -66,7 +66,7 @@ export default function LandingLedger() {
                     textAlign: 'left', padding: '14px 20px', fontWeight: 500, color: `rgba(${INK},.78)`,
                   }}>{row.item}</th>
                   <td style={{ textAlign: 'right', padding: '14px 20px', color: '#e8e6e1' }}>{row.gv}</td>
-                  <td style={{ textAlign: 'right', padding: '14px 20px', color: `rgba(${INK},.6)` }}>{row.bb}</td>
+                  <td style={{ textAlign: 'right', padding: '14px 20px', color: inkText(.6) }}>{row.bb}</td>
                 </tr>
               ))}
             </tbody>
@@ -74,7 +74,7 @@ export default function LandingLedger() {
               <tr style={{ background: '#08090b' }}>
                 <th scope="row" style={{
                   textAlign: 'left', padding: 20,
-                  font: "500 11px/1 'Geist Mono', monospace", color: `rgba(${INK},.45)`,
+                  font: "500 11px/1 'Geist Mono', monospace", color: inkText(.45),
                 }}>Total / year / seat</th>
                 <td style={{
                   textAlign: 'right', padding: 20,
@@ -83,7 +83,7 @@ export default function LandingLedger() {
                 <td style={{
                   textAlign: 'right', padding: 20,
                   font: "600 clamp(21px, 2.6vw, 32px)/1 'Geist Mono', monospace",
-                  color: `rgba(${INK},.62)`, textDecoration: 'line-through',
+                  color: inkText(.62), textDecoration: 'line-through',
                   textDecorationThickness: 2, textDecorationColor: '#b8664a',
                 }}>~$32,000</td>
               </tr>
@@ -92,7 +92,7 @@ export default function LandingLedger() {
         </div>
 
         <p data-reveal data-delay="140" style={{
-          margin: '18px 0 0', font: "400 12px/1.6 'Geist Mono', monospace", color: `rgba(${INK},.62)`,
+          margin: '18px 0 0', font: "400 12px/1.6 'Geist Mono', monospace", color: inkText(.62),
         }}>
           The ~$32,000 figure is illustrative, based on commonly cited single&#8209;seat
           professional terminal pricing &#8212; not a quote or published rate. Ours is $0: no trial

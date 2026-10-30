@@ -4,7 +4,9 @@
    the reference expressed as its own style-hover/style-focus pseudo-attributes,
    and the overrides that undo globals.css's terminal-shell body styling. */
 
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+/* Fonts: no runtime Google Fonts request — the landing uses the app's self-hosted
+   next/font faces (--font-sans / --font-mono). The ported markup still names Geist /
+   Geist Mono inline; those map to the self-hosted faces below. */
 
 /* ── Undo the terminal shell ──────────────────────────────────────────────
    globals.css pins html/body to a non-scrolling 100%-height terminal frame
@@ -64,8 +66,10 @@ body:has(.gv-landing)::after {
 }
 
 .gv-landing {
-  font-family: Geist, "Helvetica Neue", system-ui, sans-serif;
+  font-family: var(--font-sans), "Helvetica Neue", system-ui, sans-serif;
 }
+.gv-landing [style*="Geist"] { font-family: var(--font-sans), system-ui, sans-serif !important; }
+.gv-landing [style*="Geist Mono"] { font-family: var(--font-mono), ui-monospace, monospace !important; }
 
 .gv-landing button,
 .gv-landing a,
@@ -85,6 +89,23 @@ body:has(.gv-landing)::after {
 .gv-landing :focus-visible {
   outline: 2px solid #d99a5c;
   outline-offset: 3px;
+}
+
+/* Text-colour floor for the faint ink tints (lib/canvas/globe.ts inkText):
+   .54 keeps 10px labels at AA; high contrast lifts all text to 7:1. */
+.gv-landing {
+  --lp-ink-min: .54;
+  --lp-accent: #c98a4b;
+  --lp-down: #c07a5e;
+}
+[data-contrast="high"] .gv-landing {
+  --lp-ink-min: .8;
+  --lp-accent: #e0a870;
+  --lp-down: #e0a08a;
+}
+[data-contrast="high"] .gv-landing .gv-btn-primary,
+[data-contrast="high"] .gv-landing .gv-skip {
+  background: var(--lp-accent);
 }
 
 .gv-landing ::selection {
@@ -142,7 +163,7 @@ body:has(.gv-landing)::after {
    Scoping brings these to (0,2,0), which outranks (0,1,1). Do not un-scope
    them. */
 .gv-landing .gv-nav-link {
-  color: rgba(232, 230, 225, .62);
+  color: rgba(232, 230, 225, max(var(--lp-ink-min), .62));
   transition: color .15s ease;
 }
 .gv-landing .gv-nav-link:hover {
@@ -184,7 +205,7 @@ body:has(.gv-landing)::after {
   z-index: 60;
   background: #c98a4b;
   color: #0a0b0d;
-  font: 600 13px/1 'Geist Mono', monospace;
+  font: 600 13px/1 var(--font-mono), monospace;
   padding: 14px 18px;
 }
 .gv-landing .gv-skip:focus {

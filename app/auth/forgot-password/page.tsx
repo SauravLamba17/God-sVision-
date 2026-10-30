@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const mono = 'IBM Plex Mono, monospace';
+const font = 'var(--font-sans), system-ui, sans-serif'; // UI font (tokens: app/globals.css)
 
 // "2400" -> "40 minutes". Rounds up so we never tell someone to retry early.
 function formatRetry(seconds: number): string {
@@ -43,46 +43,46 @@ export default function ForgotPasswordPage() {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: '#0a140a', border: '1px solid #1b2e1b',
-    color: '#c8e6c9', fontFamily: mono, fontSize: 12, padding: '8px 12px',
+    width: '100%', background: 'var(--surface)', border: 'var(--bw) solid var(--border)',
+    color: 'var(--text)', fontFamily: font, fontSize: 12, padding: '8px 12px',
     borderRadius: 2, outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   };
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#000', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', fontFamily: mono,
+      minHeight: '100vh', background: 'var(--bg)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', fontFamily: font,
     }}>
-      <div style={{ width: 380, background: '#050a05', border: '1px solid #1b2e1b', borderTop: '2px solid #ff6d00', padding: 28 }}>
+      <div style={{ width: 380, background: 'var(--surface)', border: 'var(--bw) solid var(--border)', borderTop: 'var(--stripe) solid var(--stripe-color)', borderRadius: 'var(--radius)', padding: 28 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 20, color: '#ff6d00', fontWeight: 700, letterSpacing: '0.12em' }}>⚡ GOD'S VISION</div>
-          <div style={{ fontSize: 9, color: '#607d8b', letterSpacing: '0.2em', marginTop: 4 }}>PASSWORD RESET</div>
+          <div style={{ fontSize: 22, color: 'var(--text)', fontWeight: 700 }}>GOD&apos;s <span style={{ color: 'var(--accent-text)' }}>Vision</span></div>
+          <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.2em', marginTop: 4 }}>PASSWORD RESET</div>
         </div>
 
         {sent ? (
-          <div style={{ padding: '10px 12px', background: 'rgba(0,230,118,0.1)', border: '1px solid rgba(0,230,118,0.3)', color: '#00e676', fontSize: 11, borderRadius: 2, lineHeight: 1.6 }}>
+          <div style={{ padding: '10px 12px', background: 'var(--up-soft)', border: 'var(--bw) solid var(--up)', color: 'var(--up)', fontSize: 11, borderRadius: 2, lineHeight: 1.6 }}>
             If an account exists with that email, a reset link has been sent. Check your inbox.
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 10, color: '#607d8b', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
                 Enter the email on your account and we&apos;ll send a link to set a new password. The link expires in 1 hour.
               </div>
               <div>
-                <div style={{ fontSize: 9, color: '#607d8b', marginBottom: 4, letterSpacing: '0.08em' }}>EMAIL</div>
+                <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 4, letterSpacing: '0.08em' }}>EMAIL</div>
                 <input
                   style={inputStyle}
                   type="email" value={email} placeholder="you@example.com" required aria-label="Email"
                   onChange={e => setEmail(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = '#ff6d00')}
-                  onBlur={e => (e.target.style.borderColor = '#1b2e1b')}
+                  onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--border)')}
                 />
               </div>
 
               {error && (
-                <div style={{ padding: '6px 10px', background: 'rgba(255,23,68,0.1)', border: '1px solid rgba(255,23,68,0.3)', color: '#ff1744', fontSize: 10, borderRadius: 2 }}>
+                <div style={{ padding: '6px 10px', background: 'var(--down-soft)', border: 'var(--bw) solid var(--down)', color: 'var(--down)', fontSize: 10, borderRadius: 2 }}>
                   {error}
                 </div>
               )}
@@ -91,8 +91,8 @@ export default function ForgotPasswordPage() {
                 type="submit" disabled={loading} aria-busy={loading}
                 style={{
                   width: '100%', padding: '10px 0',
-                  background: loading ? '#1b2e1b' : '#ff6d00', color: loading ? '#607d8b' : '#000',
-                  border: 'none', fontFamily: mono, fontSize: 11, fontWeight: 700,
+                  background: loading ? 'var(--border)' : 'var(--accent)', color: loading ? 'var(--muted)' : 'var(--on-accent)',
+                  border: 'none', fontFamily: font, fontSize: 11, fontWeight: 700,
                   letterSpacing: '0.1em', cursor: loading ? 'not-allowed' : 'pointer',
                   borderRadius: 2, transition: 'all 0.15s',
                 }}
@@ -108,8 +108,8 @@ export default function ForgotPasswordPage() {
           </form>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: 20, paddingTop: 16, borderTop: '1px solid #1b2e1b' }}>
-          <a href="/auth/signin" style={{ fontSize: 9, color: '#607d8b', textDecoration: 'none' }}>← Back to Sign In</a>
+        <div style={{ textAlign: 'center', marginTop: 20, paddingTop: 16, borderTop: 'var(--bw) solid var(--border)' }}>
+          <a href="/auth/signin" style={{ fontSize: 9, color: 'var(--muted)', textDecoration: 'none' }}>← Back to Sign In</a>
         </div>
       </div>
     </div>

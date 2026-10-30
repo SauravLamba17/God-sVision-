@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useRef } from 'react'
-import { INK, type SizedCanvas } from '@/lib/canvas/globe'
+import { INK, inkText, type SizedCanvas } from '@/lib/canvas/globe'
 import { useGlobeAnimation } from '@/lib/hooks/useGlobeAnimation'
 import { REGISTER_HREF } from './links'
 
@@ -12,7 +12,7 @@ const STATS: Array<[string, string, number]> = [
 ]
 
 const statLabel: React.CSSProperties = {
-  font: "500 10px/1.4 'Geist Mono', monospace", color: `rgba(${INK},.44)`, marginTop: 8,
+  font: "500 10px/1.4 'Geist Mono', monospace", color: inkText(.44), marginTop: 8,
 }
 
 export default function LandingHero() {
@@ -92,7 +92,7 @@ export default function LandingHero() {
           <p data-reveal data-delay="120" style={{
             margin: '22px 0 0', maxWidth: '50ch',
             font: '400 clamp(15px, 1.2vw, 17px)/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.64)`, textWrap: 'pretty',
+            color: inkText(.64), textWrap: 'pretty',
           }}>
             Equities, crypto &amp; FX on one tick engine. An analysis desk that reads the wires and
             writes your morning brief before the open. Flight, seismic &amp; orbital feeds on the
@@ -140,7 +140,7 @@ export default function LandingHero() {
       <div style={{
         position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between',
         gap: '8px 20px', borderTop: `1px solid rgba(${INK},.1)`, maxWidth: 1440, margin: '0 auto',
-        padding: '11px 24px', font: "500 10px/1.4 'Geist Mono', monospace", color: `rgba(${INK},.36)`,
+        padding: '11px 24px', font: "500 10px/1.4 'Geist Mono', monospace", color: inkText(.36),
       }}>
         <span>Scroll &#8595; camera tracks the globe</span>
         <span ref={readoutRef} id="gv-scroll-readout" style={{ fontVariantNumeric: 'tabular-nums' }}>

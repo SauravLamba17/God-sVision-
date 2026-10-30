@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { DOWN, INK, UP, sizeCanvas, type SizedCanvas } from '@/lib/canvas/globe'
+import { DOWN_TEXT, INK, UP, inkText, sizeCanvas, type SizedCanvas } from '@/lib/canvas/globe'
 import { ChartSeries, drawChart, type ChartQuote } from '@/lib/canvas/chart'
 
 const COVERAGE: Array<[string, string]> = [
@@ -14,7 +14,7 @@ const statBox: React.CSSProperties = {
   background: '#101114', padding: '12px 16px',
 }
 const statLabel: React.CSSProperties = {
-  font: "500 9px/1 'Geist Mono', monospace", color: `rgba(${INK},.4)`,
+  font: "500 9px/1 'Geist Mono', monospace", color: inkText(.4),
 }
 const statValue: React.CSSProperties = {
   font: "500 12px/1 'Geist Mono', monospace", fontVariantNumeric: 'tabular-nums', marginTop: 7,
@@ -73,7 +73,7 @@ export default function LandingMarkets() {
           }}>One tick engine for equities, crypto &amp; FX</h2>
           <p style={{
             margin: '18px 0 0', font: '400 16px/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.64)`, textWrap: 'pretty',
+            color: inkText(.64), textWrap: 'pretty',
           }}>
             Candles, depth &amp; spread arrive on the same socket, so a rotation out of NIFTY into
             BTC is one screen, not three tabs. Quotes across major global venues, no
@@ -89,7 +89,7 @@ export default function LandingMarkets() {
                 background: '#101114', padding: '15px 18px',
                 display: 'flex', justifyContent: 'space-between', gap: 16,
               }}>
-                <dt style={{ font: "500 12px/1.4 'Geist Mono', monospace", color: `rgba(${INK},.55)` }}>{k}</dt>
+                <dt style={{ font: "500 12px/1.4 'Geist Mono', monospace", color: inkText(.55) }}>{k}</dt>
                 <dd style={{ margin: 0, font: "500 12px/1.4 'Geist Mono', monospace" }}>{v}</dd>
               </div>
             ))}
@@ -107,7 +107,7 @@ export default function LandingMarkets() {
               <span style={{ font: "600 11px/1 'Geist Mono', monospace", color: '#d99a5c' }}>
                 Google Sheets add&#8209;on
               </span>
-              <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)` }}>
+              <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42) }}>
                 live cells, no copy&#8209;paste
               </span>
             </div>
@@ -116,7 +116,7 @@ export default function LandingMarkets() {
               borderBottom: `1px solid rgba(${INK},.1)`, padding: '10px 14px',
             }}>
               <span aria-hidden="true" style={{
-                font: "500 11px/1 'Geist Mono', monospace", color: `rgba(${INK},.36)`,
+                font: "500 11px/1 'Geist Mono', monospace", color: inkText(.36),
                 borderRight: `1px solid rgba(${INK},.14)`, paddingRight: 10,
               }}>fx</span>
               <code translate="no" style={{ font: "500 12px/1.4 'Geist Mono', monospace", color: '#e8e6e1' }}>
@@ -127,19 +127,19 @@ export default function LandingMarkets() {
               display: 'grid', gridTemplateColumns: '34px 1.5fr 1fr', gap: 1, background: `rgba(${INK},.1)`,
               font: "500 11px/1 'Geist Mono', monospace", fontVariantNumeric: 'tabular-nums',
             }}>
-              <div style={{ background: '#0d0e11', padding: '9px 8px', color: `rgba(${INK},.3)` }} />
-              <div style={{ background: '#0d0e11', padding: '9px 10px', color: `rgba(${INK},.34)` }}>A</div>
-              <div style={{ background: '#0d0e11', padding: '9px 10px', color: `rgba(${INK},.34)` }}>B</div>
-              <div style={{ background: '#0d0e11', padding: '10px 8px', color: `rgba(${INK},.3)` }}>1</div>
+              <div style={{ background: '#0d0e11', padding: '9px 8px', color: inkText(.3) }} />
+              <div style={{ background: '#0d0e11', padding: '9px 10px', color: inkText(.34) }}>A</div>
+              <div style={{ background: '#0d0e11', padding: '9px 10px', color: inkText(.34) }}>B</div>
+              <div style={{ background: '#0d0e11', padding: '10px 8px', color: inkText(.3) }}>1</div>
               <div translate="no" style={{ background: '#101114', padding: 10, color: `rgba(${INK},.72)` }}>AAPL</div>
               <div style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>241.86</div>
-              <div style={{ background: '#0d0e11', padding: '10px 8px', color: `rgba(${INK},.3)` }}>2</div>
+              <div style={{ background: '#0d0e11', padding: '10px 8px', color: inkText(.3) }}>2</div>
               <div translate="no" style={{ background: '#101114', padding: 10, color: `rgba(${INK},.72)` }}>BTC-USD</div>
               <div style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>67,412</div>
             </div>
             <p style={{
               margin: 0, borderTop: `1px solid rgba(${INK},.12)`, padding: '12px 14px',
-              font: '400 12.5px/1.55 Geist, sans-serif', color: `rgba(${INK},.56)`,
+              font: '400 12.5px/1.55 Geist, sans-serif', color: inkText(.56),
             }}>
               The same formula habit as the incumbent&#8217;s Excel plugin &#8212; price, change,
               volume or history pulled straight into your model, refreshed in place.
@@ -158,7 +158,7 @@ export default function LandingMarkets() {
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
               <span translate="no" style={{ font: "600 14px/1 'Geist Mono', monospace" }}>AAPL</span>
-              <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)` }}>
+              <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42) }}>
                 NASDAQ &#183; 5 m
               </span>
             </div>
@@ -167,7 +167,7 @@ export default function LandingMarkets() {
               font: "500 12px/1 'Geist Mono', monospace", fontVariantNumeric: 'tabular-nums',
             }}>
               <span id="gv-chart-last">{quote ? quote.last : '—'}</span>
-              <span id="gv-chart-chg" style={{ color: quote ? (quote.changeUp ? UP : DOWN) : `rgba(${INK},.5)` }}>
+              <span id="gv-chart-chg" style={{ color: quote ? (quote.changeUp ? UP : DOWN_TEXT) : inkText(.5) }}>
                 {quote ? quote.change : 'awaiting first tick…'}
               </span>
               <span data-pulse aria-hidden="true" style={{
@@ -189,7 +189,7 @@ export default function LandingMarkets() {
               <div id="gv-chart-skeleton" style={{
                 position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
                 justifyContent: 'center', gap: 10, background: '#101114',
-                font: "500 11px/1 'Geist Mono', monospace", color: `rgba(${INK},.4)`,
+                font: "500 11px/1 'Geist Mono', monospace", color: inkText(.4),
                 transition: 'opacity .25s ease',
               }}>
                 <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: '#c98a4b' }} />

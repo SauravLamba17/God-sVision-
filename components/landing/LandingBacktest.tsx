@@ -1,4 +1,4 @@
-import { INK, UP } from '@/lib/canvas/globe'
+import { ACCENT_TEXT, DOWN_TEXT, INK, UP, inkText } from '@/lib/canvas/globe'
 
 const BULLETS = [
   'Three strategy templates out of the box, each with editable parameters.',
@@ -9,7 +9,7 @@ const BULLETS = [
 const STATS: Array<[string, string, string | undefined, string]> = [
   ['win rate', '57.4%', undefined, '1 1 118px'],
   ['Sharpe', '1.18', '#d99a5c', '1 1 118px'],
-  ['max drawdown', '−14.6%', '#c07a5e', '1 1 128px'],
+  ['max drawdown', '−14.6%', DOWN_TEXT, '1 1 128px'],
   ['vs buy & hold', '+9.2 pts', UP, '1 1 118px'],
 ]
 
@@ -28,7 +28,7 @@ export default function LandingBacktest() {
           }}>Test the strategy before you trust it</h2>
           <p style={{
             margin: '18px 0 0', font: '400 16px/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.64)`, textWrap: 'pretty',
+            color: inkText(.64), textWrap: 'pretty',
           }}>
             Run an SMA crossover, an RSI signal or plain buy&#8209;and&#8209;hold against real
             historical prices &#8212; the same series the chart draws from. You get the equity
@@ -42,7 +42,7 @@ export default function LandingBacktest() {
             {BULLETS.map(b => (
               <li key={b} style={{ display: 'grid', gridTemplateColumns: '14px 1fr', gap: 12 }}>
                 <span aria-hidden="true" style={{
-                  color: '#c98a4b', font: "500 12px/1.6 'Geist Mono', monospace",
+                  color: ACCENT_TEXT, font: "500 12px/1.6 'Geist Mono', monospace",
                 }}>&#8250;</span>
                 <span>{b}</span>
               </li>
@@ -63,7 +63,7 @@ export default function LandingBacktest() {
                 SMA 20/50 crossover
               </span>
               <span translate="no" style={{
-                font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)`,
+                font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42),
               }}>AAPL &#183; 5 y daily</span>
             </div>
             <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: UP }}>run complete</span>
@@ -94,7 +94,7 @@ export default function LandingBacktest() {
 
             <div style={{
               display: 'flex', flexWrap: 'wrap', gap: '8px 20px', padding: '6px 0 4px',
-              font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)`,
+              font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42),
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                 <span aria-hidden="true" style={{ width: 14, height: 2, background: '#c98a4b' }} />
@@ -115,7 +115,7 @@ export default function LandingBacktest() {
           }}>
             {STATS.map(([label, value, color, flex]) => (
               <div key={label} style={{ flex, background: '#101114', padding: '14px 16px' }}>
-                <dt style={{ font: "500 9px/1 'Geist Mono', monospace", color: `rgba(${INK},.4)` }}>
+                <dt style={{ font: "500 9px/1 'Geist Mono', monospace", color: inkText(.4) }}>
                   {label}
                 </dt>
                 <dd style={{
@@ -128,7 +128,7 @@ export default function LandingBacktest() {
 
           <p style={{
             margin: 0, borderTop: `1px solid rgba(${INK},.12)`, padding: '12px 16px',
-            font: "400 11px/1.5 'Geist Mono', monospace", color: `rgba(${INK},.62)`,
+            font: "400 11px/1.5 'Geist Mono', monospace", color: inkText(.62),
           }}>
             Example run. Past performance of a backtest is not a forecast.
           </p>

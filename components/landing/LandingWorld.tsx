@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useRef } from 'react'
-import { INK, type SizedCanvas } from '@/lib/canvas/globe'
+import { INK, inkText, type SizedCanvas } from '@/lib/canvas/globe'
 import { useGlobeAnimation } from '@/lib/hooks/useGlobeAnimation'
 
 const STATS: Array<[string, string, string, string, boolean]> = [
@@ -57,7 +57,7 @@ export default function LandingWorld() {
           }}>The world moves markets. Put it on the same screen.</h2>
           <p style={{
             margin: '18px 0 0', font: '400 16px/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.66)`, maxWidth: '46ch', textWrap: 'pretty',
+            color: inkText(.66), maxWidth: '46ch', textWrap: 'pretty',
           }}>
             Live commercial air traffic, USGS seismic alerts &amp; ISS orbit, plotted against the
             tape. A magnitude 6.1 off Honshu shows up beside JPY before the desk note does.
@@ -80,7 +80,7 @@ export default function LandingWorld() {
                 }}
               >{value}</div>
               <div style={{
-                font: '400 13px/1.5 Geist, sans-serif', color: `rgba(${INK},.56)`,
+                font: '400 13px/1.5 Geist, sans-serif', color: inkText(.56),
               }}>{body}</div>
             </div>
           ))}

@@ -1,5 +1,5 @@
 'use client'
-import { INK } from '@/lib/canvas/globe'
+import { INK, inkText } from '@/lib/canvas/globe'
 import { useLandingReveal } from '@/lib/hooks/useLandingReveal'
 import LandingTickerTape from './LandingTickerTape'
 import { REGISTER_HREF, SIGNIN_HREF } from './links'
@@ -39,7 +39,7 @@ export default function LandingHeader() {
             GOD&#8217;s Vision
           </span>
           <span style={{
-            font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)`,
+            font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42),
             borderLeft: `1px solid rgba(${INK},.16)`, paddingLeft: 12,
           }}>Terminal v3.1</span>
         </div>

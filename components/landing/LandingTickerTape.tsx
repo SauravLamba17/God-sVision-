@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { DOWN, INK, UP } from '@/lib/canvas/globe'
+import { DOWN_TEXT, INK, UP, inkText } from '@/lib/canvas/globe'
 import { arrow, pct } from '@/lib/format'
 
 /** [symbol, price, change, direction] — the design's illustrative tape. */
@@ -83,8 +83,8 @@ export default function LandingTickerTape() {
         padding: '0 22px', borderRight: `1px solid rgba(${INK},.09)`,
       }}>
         <b translate="no" style={{ color: '#e8e6e1', fontWeight: 600 }}>{q[0]}</b>
-        <span style={{ color: `rgba(${INK},.6)` }}>{q[1]}</span>
-        <span style={{ color: up ? UP : DOWN }}>{(q[3] === 0 ? '' : up ? '▲ ' : '▼ ') + q[2]}</span>
+        <span style={{ color: inkText(.6) }}>{q[1]}</span>
+        <span style={{ color: up ? UP : DOWN_TEXT }}>{(q[3] === 0 ? '' : up ? '▲ ' : '▼ ') + q[2]}</span>
       </span>
     )
   }

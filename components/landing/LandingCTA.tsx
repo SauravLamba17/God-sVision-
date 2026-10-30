@@ -1,4 +1,4 @@
-import { INK } from '@/lib/canvas/globe'
+import { inkText } from '@/lib/canvas/globe'
 import { REGISTER_HREF, SIGNIN_HREF } from './links'
 
 export default function LandingCTA() {
@@ -16,7 +16,7 @@ export default function LandingCTA() {
           }}>Open it. It&#8217;s already running.</h2>
           <p style={{
             margin: '20px 0 0', maxWidth: '42ch', font: '400 16px/1.6 Geist, sans-serif',
-            color: `rgba(${INK},.6)`,
+            color: inkText(.6),
           }}>
             No card, no sales call, no onboarding sequence. Sign in &amp; the tape is live.
           </p>

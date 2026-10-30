@@ -1,6 +1,6 @@
 'use client'
 import { useRef } from 'react'
-import { ACCENT, INK, UP } from '@/lib/canvas/globe'
+import { ACCENT_TEXT, INK, UP, inkText } from '@/lib/canvas/globe'
 import { AI_LINE_COLORS, useTypewriter } from '@/lib/hooks/useTypewriter'
 
 const BULLETS = [
@@ -14,10 +14,10 @@ export default function LandingAI() {
   const { lines, done, idle, blink } = useTypewriter(outRef)
 
   const status = idle
-    ? { text: 'Idle', color: ACCENT }
+    ? { text: 'Idle', color: ACCENT_TEXT }
     : done
       ? { text: 'Brief ready · confidence 0.72', color: UP }
-      : { text: 'Reading wires…', color: ACCENT }
+      : { text: 'Reading wires…', color: ACCENT_TEXT }
 
   return (
     <section id="ai" data-screen-label="AI Analysis" style={{
@@ -35,7 +35,7 @@ export default function LandingAI() {
           <div style={{
             display: 'flex', flexWrap: 'wrap', gap: '8px 16px', alignItems: 'center',
             justifyContent: 'space-between', borderBottom: `1px solid rgba(${INK},.12)`,
-            padding: '11px 16px', font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.44)`,
+            padding: '11px 16px', font: "500 10px/1 'Geist Mono', monospace", color: inkText(.44),
           }}>
             <span translate="no">gv://desk/analysis &#8212; session 0413</span>
             <span id="gv-ai-status" role="status" aria-live="polite" style={{
@@ -53,7 +53,7 @@ export default function LandingAI() {
             {idle ? (
               // Server-rendered placeholder — identical on the first client
               // paint, so nothing can mismatch before the observer fires.
-              <span style={{ color: `rgba(${INK},.3)` }}>
+              <span style={{ color: inkText(.3) }}>
                 {'  awaiting desk session…\n'}
                 {'  ────────────────────────────\n'}
                 {'  wire ingest        ░░░░░░░░░\n'}
@@ -69,7 +69,7 @@ export default function LandingAI() {
                   }}>{text + '\n'}</span>
                 ))}
                 <span aria-hidden="true" style={{
-                  color: ACCENT,
+                  color: ACCENT_TEXT,
                   animation: blink ? 'gv-blink 1s step-end infinite' : undefined,
                 }}>▌</span>
               </>
@@ -84,7 +84,7 @@ export default function LandingAI() {
           }}>Watch it read the wires</h2>
           <p style={{
             margin: '18px 0 0', font: '400 16px/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.64)`, textWrap: 'pretty',
+            color: inkText(.64), textWrap: 'pretty',
           }}>
             The desk reads the wires as they land, scores each headline against your watchlist,
             then writes a brief covering the positions it actually moves. You get the reasoning
@@ -97,7 +97,7 @@ export default function LandingAI() {
             {BULLETS.map(b => (
               <li key={b} style={{ display: 'grid', gridTemplateColumns: '14px 1fr', gap: 12 }}>
                 <span aria-hidden="true" style={{
-                  color: '#c98a4b', font: "500 12px/1.6 'Geist Mono', monospace",
+                  color: ACCENT_TEXT, font: "500 12px/1.6 'Geist Mono', monospace",
                 }}>&#8250;</span>
                 <span>{b}</span>
               </li>

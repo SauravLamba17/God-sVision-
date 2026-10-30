@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { ACCENT, DOWN, INK, UP } from '@/lib/canvas/globe'
+import { ACCENT_TEXT, DOWN_TEXT, INK, UP, inkText } from '@/lib/canvas/globe'
 import { useMode } from '@/lib/context/ModeContext'
 
 /* The reference prototype kept its own local `mode` state and mirrored it into
@@ -18,7 +18,7 @@ const US_PANEL = {
 }
 
 const IN_PANEL = {
-  index: 'NIFTY 50', indexChg: '▼ −0.42%  24,918.05', chgColor: DOWN,
+  index: 'NIFTY 50', indexChg: '▼ −0.42%  24,918.05', chgColor: DOWN_TEXT,
   value: '₹1,06,88,489.90', fx: 'USDINR · 83.19',
   tz: 'Asia/Kolkata · IST',
   state: 'Closed', stateGlyph: '○', stateColor: `rgba(${INK},.7)`, stateNote: 'opens in 11 h 38 m',
@@ -28,10 +28,10 @@ const IN_PANEL = {
 const CLOCK_PLACEHOLDER = '——:——:——'
 
 const dtLabel: React.CSSProperties = {
-  font: "500 9px/1 'Geist Mono', monospace", color: `rgba(${INK},.4)`,
+  font: "500 9px/1 'Geist Mono', monospace", color: inkText(.4),
 }
 const ddSub: React.CSSProperties = {
-  margin: 0, font: "500 12px/1 'Geist Mono', monospace", color: `rgba(${INK},.5)`,
+  margin: 0, font: "500 12px/1 'Geist Mono', monospace", color: inkText(.5),
 }
 
 export default function LandingDualMode() {
@@ -71,8 +71,8 @@ export default function LandingDualMode() {
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     minHeight: 44, padding: '0 16px', border: 0, cursor: 'pointer',
-    background: active ? ACCENT : '#101114',
-    color: active ? '#0a0b0d' : `rgba(${INK},.62)`,
+    background: active ? ACCENT_TEXT : '#101114',
+    color: active ? '#0a0b0d' : inkText(.62),
     font: "600 11px/1 'Geist Mono', monospace",
     transition: 'background .28s ease, color .28s ease',
   })
@@ -91,7 +91,7 @@ export default function LandingDualMode() {
           }}>Two markets, one keystroke</h2>
           <p style={{
             margin: '18px 0 0', font: '400 16px/1.62 Geist, sans-serif',
-            color: `rgba(${INK},.64)`, textWrap: 'pretty',
+            color: inkText(.64), textWrap: 'pretty',
           }}>
             Press &#8984;J and the terminal re&#8209;bases: currency, session clock, exchange
             calendar, tax lots, the brief. Not a display toggle &#8212; the FX conversion &amp;
@@ -99,7 +99,7 @@ export default function LandingDualMode() {
           </p>
           <p style={{
             display: 'inline-flex', alignItems: 'center', gap: 12, margin: '26px 0 0',
-            font: "500 11px/1 'Geist Mono', monospace", color: `rgba(${INK},.45)`,
+            font: "500 11px/1 'Geist Mono', monospace", color: inkText(.45),
           }}>
             <kbd style={{
               border: `1px solid rgba(${INK},.22)`, padding: '8px 10px', color: `rgba(${INK},.82)`,
@@ -117,7 +117,7 @@ export default function LandingDualMode() {
             display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
             gap: '10px 16px', padding: '12px 14px', borderBottom: `1px solid rgba(${INK},.12)`,
           }}>
-            <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: `rgba(${INK},.42)` }}>
+            <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42) }}>
               Workspace / base locale
             </span>
             <div role="radiogroup" aria-label="Base locale" style={{
@@ -177,7 +177,7 @@ export default function LandingDualMode() {
           <div style={{
             borderTop: `1px solid rgba(${INK},.12)`, padding: '14px 16px', display: 'flex',
             flexWrap: 'wrap', gap: '8px 20px',
-            font: "500 11px/1.6 'Geist Mono', monospace", color: `rgba(${INK},.55)`,
+            font: "500 11px/1.6 'Geist Mono', monospace", color: inkText(.55),
           }}>
             <span>watchlist &#8250; {dm.watch}</span>
             <span>brief &#8250; {dm.brief}</span>

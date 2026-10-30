@@ -23,6 +23,12 @@ export const DOWN = '#c07a5e'
 export const ACCENT = '#c98a4b'
 export const INK = '232,230,225'
 
+/* Landing TEXT colours (DOM only — the canvas keeps the raw values above).
+   app/landing.css sets the vars so faint text meets AA, and 7:1 in high contrast. */
+export const inkText = (a: number) => `rgba(${INK}, max(var(--lp-ink-min), ${a}))`
+export const ACCENT_TEXT = 'var(--lp-accent)'
+export const DOWN_TEXT = 'var(--lp-down)'
+
 /** Default point count — the design's `globeDensity` prop default. */
 export const GLOBE_DENSITY = 620
 

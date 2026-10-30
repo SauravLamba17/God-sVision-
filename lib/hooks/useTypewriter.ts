@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { ACCENT, INK, UP } from '@/lib/canvas/globe'
+import { ACCENT_TEXT, INK, UP, inkText } from '@/lib/canvas/globe'
 
 /** One line of the analysis-desk transcript: [kind, text]. */
 export type AIScriptLine = [AILineKind, string]
@@ -29,8 +29,8 @@ export const AI_SCRIPT: AIScriptLine[] = [
 ]
 
 export const AI_LINE_COLORS: Record<AILineKind, string> = {
-  cmd: ACCENT,
-  dim: 'rgba(' + INK + ',.45)',
+  cmd: ACCENT_TEXT,
+  dim: inkText(.45),
   hl: '#e8e6e1',
   txt: 'rgba(' + INK + ',.8)',
   acc: UP,
