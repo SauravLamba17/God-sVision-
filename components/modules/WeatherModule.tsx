@@ -28,13 +28,13 @@ export default function WeatherModule({ compact }: Props) {
   const fs = compact ? '10px' : '11px';
 
   return (
-    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: compact ? '3px 8px' : '5px 10px', borderBottom: '1px solid var(--border-dim)', background: 'var(--bg-header)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>WEATHER</span>
         <div style={{ display: 'flex', gap: 2 }}>
           {(['C', 'F'] as const).map(u => (
             <button key={u} onClick={() => { setTempUnit(u); localStorage.setItem('gv_temp_unit', u); }}
-              style={{ background: tempUnit === u ? 'var(--text-accent)' : 'transparent', color: tempUnit === u ? '#000' : 'var(--text-muted)', border: '1px solid var(--border-dim)', borderRadius: 2, padding: '1px 5px', fontSize: 8, cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>
+              style={{ background: tempUnit === u ? 'var(--accent)' : 'transparent', color: tempUnit === u ? 'var(--on-accent)' : 'var(--text-muted)', border: '1px solid var(--border-dim)', borderRadius: 2, padding: '1px 5px', fontSize: 8, cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>
               °{u}
             </button>
           ))}

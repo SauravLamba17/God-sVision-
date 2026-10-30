@@ -28,7 +28,7 @@ export default function DashboardModule({ compact }: Props) {
   const items = quotes.slice(0, compact ? 4 : 6);
 
   return (
-    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: compact ? '3px 8px' : '5px 10px', borderBottom: '1px solid var(--border-dim)', background: 'var(--bg-header)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>DASHBOARD</span>
         {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Yahoo Finance" />}

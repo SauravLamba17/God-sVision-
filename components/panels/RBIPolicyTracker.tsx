@@ -50,20 +50,20 @@ export default function RBIPolicyTracker() {
   const rateRange = maxRate - minRate || 1
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
+    <div className="gv-card" style={{ width: '100%', boxSizing: 'border-box' }}>
       {/* Header */}
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-header)' }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>🏦 RBI POLICY TRACKER</span>
-        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC ? `${data.nextMPC.daysAway}d to next` : 'schedule not updated'}</span>
+      <div className="gv-card-head" style={{ flexWrap: 'wrap' }}>
+        <span>🏦 RBI policy tracker</span>
+        <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-normal)', color: 'var(--text-muted)' }}>MPC · {data.nextMPC ? `${data.nextMPC.daysAway}d to next` : 'schedule not updated'}</span>
       </div>
 
       {/* These rates are hand-maintained constants, so the panel says so rather
           than letting them read as a live RBI feed. */}
       {data.isStaticReference && (
         <div style={{
-          padding: '3px 10px',
-          borderBottom: '1px solid #1e293b',
-          background: 'rgba(255,153,51,0.06)',
+          padding: '6px 16px',
+          borderBottom: 'var(--bw) solid var(--divider)',
+          background: 'var(--warning-soft)',
           fontSize: 'var(--fs-badge)',
           color: 'var(--text-warning)',
           letterSpacing: '0.04em',
@@ -103,7 +103,7 @@ export default function RBIPolicyTracker() {
       </div>
 
       {/* Rate History mini bar chart */}
-      <div style={{ padding: '0 10px 10px', borderTop: '1px solid #1b2e1b' }}>
+      <div style={{ padding: '0 16px 12px', borderTop: 'var(--bw) solid var(--divider)' }}>
         <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', margin: '6px 0 4px', letterSpacing: '0.08em' }}>RATE HISTORY (last 6)</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 28 }}>
           {data.rateHistory.slice().reverse().map((r, i) => {

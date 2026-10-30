@@ -62,7 +62,7 @@ export default function CryptoPanel() {
           {coins.map(coin => (
             <tr key={coin.id}>
               <td style={{ textAlign: 'left' }} className="text-muted">{coin.market_cap_rank}</td>
-              <td style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <td title={`${coin.symbol.toUpperCase()} ${coin.name}`} style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <span className="text-accent font-bold">{coin.symbol.toUpperCase()}</span>
                 <span className="text-muted ml-1 text-[11px]">{coin.name.slice(0, 10)}</span>
               </td>

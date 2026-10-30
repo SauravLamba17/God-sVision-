@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { PanelEmpty } from '@/components/ui/Panel'
+import { tint } from '@/lib/context/ThemeContext'
 
 // Shape mirrors what NSE actually publishes. The previous version also showed
 // "FII Net Debt" and a "YTD ACCUMULATION" block; NSE's cash-market endpoint
@@ -87,18 +88,18 @@ export default function FIIDIIFlow() {
   const fiiColor = data.fiiNetEquity > 0 ? 'var(--text-positive)' : 'var(--text-negative)'
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', width: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>📊 FII / DII FLOWS</span>
+    <div className="gv-card" style={{ width: '100%', boxSizing: 'border-box' }}>
+      <div className="gv-card-head" style={{ flexWrap: 'wrap' }}>
+        <span>📊 FII / DII flows</span>
         {/* The date now comes from NSE's own payload, so this label is accurate. */}
-        <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>NSE cash mkt · {data.lastUpdated}</span>
+        <span className="gv-num" style={{ fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-normal)', color: 'var(--text-muted)' }}>NSE cash mkt · {data.lastUpdated}</span>
       </div>
 
       <div style={{ padding: '10px 12px' }}>
         <FlowBar value={data.fiiNetEquity} label="FII/FPI Net Equity" buy={data.fiiBuy} sell={data.fiiSell} />
         <FlowBar value={data.diiNetEquity} label="DII Net Equity" buy={data.diiBuy} sell={data.diiSell} />
 
-        <div style={{ marginTop: 8, padding: '4px 6px', background: `${fiiColor}10`, border: `1px solid ${fiiColor}30`, borderRadius: 3 }}>
+        <div style={{ marginTop: 8, padding: '4px 6px', background: tint(fiiColor, 6), border: `var(--bw) solid ${fiiColor}`, borderRadius: 'var(--radius-inner)' }}>
           <span style={{ fontSize: 'var(--fs-meta)', color: fiiColor }}>
             FII {fiiSentiment} — {data.fiiNetEquity > 0 ? 'bullish for Nifty' : 'bearish pressure on Nifty'}
           </span>

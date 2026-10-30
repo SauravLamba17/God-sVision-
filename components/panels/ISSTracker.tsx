@@ -37,7 +37,7 @@ export default function ISSTracker() {
   const loaded = !!data || failed
 
   return (
-    <div style={{ padding:'8px 10px', fontFamily:'IBM Plex Mono' }}>
+    <div style={{ padding:'12px 16px' }}>
       {/* Position */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
         {[
@@ -62,17 +62,17 @@ export default function ISSTracker() {
       )}
 
       {/* ISS position dot visualization */}
-      <div style={{ position:'relative', height:60, background:'var(--bg-panel)', border:'1px solid #1b2e1b', borderRadius:2, overflow:'hidden', marginBottom:8 }}>
+      <div style={{ position:'relative', height:60, background:'var(--surface-2)', border:'var(--bw) solid var(--border)', borderRadius:'var(--radius-inner)', overflow:'hidden', marginBottom:8 }}>
         <svg width="100%" height="60" viewBox="0 0 300 60">
           {/* Globe outline */}
-          <rect x="0" y="0" width="300" height="60" fill="#0a0f1e" />
+          <rect x="0" y="0" width="300" height="60" fill="var(--surface-2)" />
           {/* Latitude lines */}
           {[-30,0,30].map(lat => (
-            <line key={lat} x1="0" x2="300" y1={30 - lat * 0.5} y2={30 - lat * 0.5} stroke="#1b2e1b" strokeWidth="0.5" />
+            <line key={lat} x1="0" x2="300" y1={30 - lat * 0.5} y2={30 - lat * 0.5} stroke="var(--border)" strokeWidth="0.5" />
           ))}
           {/* Longitude lines */}
           {[-120,-60,0,60,120].map(lng => (
-            <line key={lng} x1={(lng + 180) * 300 / 360} y1="0" x2={(lng + 180) * 300 / 360} y2="60" stroke="#1b2e1b" strokeWidth="0.5" />
+            <line key={lng} x1={(lng + 180) * 300 / 360} y1="0" x2={(lng + 180) * 300 / 360} y2="60" stroke="var(--border)" strokeWidth="0.5" />
           ))}
           {/* ISS position */}
           {pos && (
@@ -81,7 +81,7 @@ export default function ISSTracker() {
                 cx={(pos.lng + 180) * 300 / 360}
                 cy={30 - pos.lat * 0.5}
                 r="4"
-                fill="#ff6d00"
+                fill="var(--accent)"
                 opacity="0.9"
               />
               <circle
@@ -89,7 +89,7 @@ export default function ISSTracker() {
                 cy={30 - pos.lat * 0.5}
                 r="8"
                 fill="none"
-                stroke="#ff6d00"
+                stroke="var(--accent)"
                 strokeWidth="1"
                 opacity="0.4"
               />

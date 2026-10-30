@@ -30,14 +30,14 @@ export default function MarketsModule({ compact }: Props) {
   const positive = chg >= 0;
 
   return (
-    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: compact ? '3px 8px' : '5px 10px', borderBottom: '1px solid var(--border-dim)', background: 'var(--bg-header)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ color: 'var(--text-accent)', fontSize: 9, fontWeight: 700, letterSpacing: '1px' }}>MARKETS</span>
         <form onSubmit={e => { e.preventDefault(); setTicker(input.toUpperCase()); }} style={{ display: 'flex', gap: 4 }}>
           <input value={input} onChange={e => setInput(e.target.value.toUpperCase())}
-            style={{ background: 'var(--bg-input)', border: '1px solid var(--border-dim)', color: 'var(--text-primary)', padding: '1px 5px', fontSize: 9, fontFamily: 'IBM Plex Mono, monospace', width: 70, borderRadius: 2, outline: 'none' }}
+            style={{ background: 'var(--bg-input)', border: '1px solid var(--border-dim)', color: 'var(--text-primary)', padding: '1px 5px', fontSize: 9, fontFamily: 'inherit', width: 70, borderRadius: 2, outline: 'none' }}
             placeholder="TICKER" />
-          <button type="submit" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-dim)', color: 'var(--text-accent)', padding: '1px 6px', fontSize: 8, fontFamily: 'IBM Plex Mono, monospace', cursor: 'pointer', borderRadius: 2 }}>GO</button>
+          <button type="submit" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-dim)', color: 'var(--text-accent)', padding: '1px 6px', fontSize: 8, fontFamily: 'inherit', cursor: 'pointer', borderRadius: 2 }}>GO</button>
         </form>
       </div>
       <div style={{ flex: 1, overflow: 'auto', padding: compact ? '6px 8px' : '10px 12px' }}>
@@ -46,7 +46,7 @@ export default function MarketsModule({ compact }: Props) {
         ) : quote ? (
           <>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>{quote.shortName ?? ticker}</div>
-            <div style={{ fontSize: fsLg, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace' }}>
+            <div style={{ fontSize: fsLg, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'inherit' }}>
               ${(quote.regularMarketPrice ?? 0).toFixed(2)}
             </div>
             <div style={{ fontSize: fs, color: positive ? 'var(--text-positive)' : 'var(--text-negative)', marginTop: 3, fontWeight: 700 }}>

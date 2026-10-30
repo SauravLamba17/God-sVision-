@@ -6,6 +6,7 @@ import { sma, bollingerBands, rsi, macd, Candle } from '@/lib/utils/technicals'
 import { GlossaryTooltip } from '@/components/ui/GlossaryTooltip'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 import { WhyLine } from '@/components/ui/WhyLine'
+import { tint } from '@/lib/context/ThemeContext'
 import { arrow } from '@/lib/format'
 
 interface StockSnapshot {
@@ -56,7 +57,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('technical')
-  const accent = market === 'IN' ? '#FF9933' : 'var(--text-accent)'
+  const accent = market === 'IN' ? 'var(--accent-text)' : 'var(--text-accent)'
   const currency = market === 'IN' ? '₹' : '$'
 
   useEffect(() => {
@@ -101,13 +102,13 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
   return (
     <div
       onClick={close}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: 'min(960px, 100%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-terminal)', border: `1px solid ${accent}40`, fontFamily: 'IBM Plex Mono', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+        style={{ width: 'min(960px, 100%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-terminal)', border: `1px solid ${accent}`, fontFamily: 'IBM Plex Mono', boxShadow: 'var(--shadow)' }}>
 
         {/* Header */}
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid #1e293b', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: accent }}>{ticker.replace('.NS', '')}</span>
             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{data?.snapshot.name}</span>
@@ -123,20 +124,20 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
           <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}>✕</button>
         </div>
         {data && (
-          <div style={{ padding: '6px 16px', borderBottom: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+          <div style={{ padding: '6px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)' }}>
             <WhyLine market={market} symbol={ticker} liveChangePct={data.snapshot.changePct} variant="header" />
           </div>
         )}
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 2, padding: '6px 10px', borderBottom: '1px solid #1b2e1b', background: 'var(--bg-panel)' }}>
+        <div style={{ display: 'flex', gap: 2, padding: '6px 10px', borderBottom: '1px solid var(--divider)', background: 'var(--bg-panel)' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               style={{
                 fontSize: 9, padding: '4px 10px', cursor: 'pointer', borderRadius: 2,
-                background: tab === t.id ? `${accent}18` : 'transparent',
+                background: tab === t.id ? tint(accent, 9) : 'transparent',
                 color: tab === t.id ? accent : 'var(--text-muted)',
-                border: '1px solid', borderColor: tab === t.id ? `${accent}40` : 'transparent',
+                border: '1px solid', borderColor: tab === t.id ? accent : 'transparent',
               }}>
               {t.label}
             </button>
@@ -169,7 +170,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                       ['VWAP', 'VWAP', data.snapshot.vwap?.toFixed(2) ?? '—'],
                       ['VOLUME', 'Vol Ratio', `${data.snapshot.volumeRatio.toFixed(2)}x`],
                     ] as [string, string, string][]).map(([glossaryKey, label, val]) => (
-                      <div key={label} style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
+                      <div key={label} style={{ border: '1px solid var(--border)', padding: '6px 8px' }}>
                         <div style={{ fontSize: 7, color: 'var(--text-muted)' }}>
                           <GlossaryTooltip term={glossaryKey}>{label}</GlossaryTooltip>
                         </div>
@@ -178,14 +179,14 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     ))}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                    <div style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
+                    <div style={{ border: '1px solid var(--border)', padding: '6px 8px' }}>
                       <div style={{ fontSize: 7, color: 'var(--text-muted)', marginBottom: 4 }}>
                         <GlossaryTooltip term="SUPPORT">SUPPORT</GlossaryTooltip>
                       </div>
                       {data.snapshot.support.length ? data.snapshot.support.map((s, i) => <div key={i} style={{ fontSize: 10, color: 'var(--text-positive)' }}>{currency}{s.toFixed(2)}</div>)
                         : <div title="No swing low below the price in the last 60 sessions" style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</div>}
                     </div>
-                    <div style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
+                    <div style={{ border: '1px solid var(--border)', padding: '6px 8px' }}>
                       <div style={{ fontSize: 7, color: 'var(--text-muted)', marginBottom: 4 }}>
                         <GlossaryTooltip term="RESISTANCE">RESISTANCE</GlossaryTooltip>
                       </div>
@@ -196,7 +197,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                   {data.snapshot.patterns.length > 0 && (
                     <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {data.snapshot.patterns.map(p => (
-                        <span key={p} style={{ fontSize: 8, padding: '2px 6px', background: `${accent}15`, color: accent, borderRadius: 2 }}>{p.replace(/_/g, ' ')}</span>
+                        <span key={p} style={{ fontSize: 8, padding: '2px 6px', background: tint(accent, 8), color: accent, borderRadius: 2 }}>{p.replace(/_/g, ' ')}</span>
                       ))}
                     </div>
                   )}
@@ -216,7 +217,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                       ...(data.fundamentals?.financialData?.returnOnEquity ? [['ROE', (data.fundamentals.financialData.returnOnEquity * 100).toFixed(1) + '%']] : []),
                       ...(data.fundamentals?.financialData?.profitMargins ? [['Profit Margin', (data.fundamentals.financialData.profitMargins * 100).toFixed(1) + '%']] : []),
                     ].map(([label, val]) => (
-                      <div key={label} style={{ border: '1px solid #1e293b', padding: '6px 8px' }}>
+                      <div key={label} style={{ border: '1px solid var(--border)', padding: '6px 8px' }}>
                         <div style={{ fontSize: 7, color: 'var(--text-muted)' }}>{label}</div>
                         <div style={{ fontSize: 11, color: 'var(--text-primary)', marginTop: 2 }}>{val}</div>
                       </div>
@@ -231,7 +232,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {Object.entries(data.snapshot.fibonacci).map(([level, val]) => (
-                        <span key={level} style={{ fontSize: 9, padding: '3px 6px', border: '1px solid #1e293b', color: 'var(--text-secondary)' }}>{level}%: {currency}{val.toFixed(2)}</span>
+                        <span key={level} style={{ fontSize: 9, padding: '3px 6px', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>{level}%: {currency}{val.toFixed(2)}</span>
                       ))}
                     </div>
                   </div>
@@ -243,7 +244,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                   <div style={{ fontSize: 9, color: 'var(--text-warning)', letterSpacing: '0.03em', marginBottom: 8 }}>⚠ {data.optionsChain.note}</div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 9 }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #1b2e1b' }}>
+                      <tr style={{ borderBottom: '1px solid var(--divider)' }}>
                         {([
                           ['IV', 'CALL IV (EST)'],
                           ['PREMIUM', 'CALL PREM (EST)'],
@@ -259,7 +260,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     </thead>
                     <tbody>
                       {data.optionsChain.strikes.map(s => (
-                        <tr key={s.strike} style={{ borderBottom: '1px solid #0d1a0d', background: s.strike === data.optionsChain.atmStrike ? `${accent}10` : 'transparent' }}>
+                        <tr key={s.strike} style={{ borderBottom: '1px solid var(--divider)', background: s.strike === data.optionsChain.atmStrike ? tint(accent, 6) : 'transparent' }}>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-secondary)' }}>{s.call.iv}%</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-primary)' }}>{currency}{s.call.ltp}</td>
                           <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 700, color: s.strike === data.optionsChain.atmStrike ? accent : 'var(--text-primary)' }}>{s.strike}</td>
@@ -278,7 +279,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>No recent company-specific headlines found.</div>
                   ) : data.news.map((n, i) => (
                     <div key={i} onClick={() => window.open(n.url, '_blank')}
-                      style={{ padding: '8px 10px', border: '1px solid #1e293b', cursor: 'pointer' }}
+                      style={{ padding: '8px 10px', border: '1px solid var(--border)', cursor: 'pointer' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-header)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <div style={{ fontSize: 10, color: 'var(--text-primary)', marginBottom: 3 }}>{n.title}</div>
@@ -307,7 +308,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                       <div style={{ fontSize: 8, color: accent, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 4 }}>{g.title.toUpperCase()}</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {g.items.map(it => (
-                          <div key={`${g.title}-${it.id}-${it.description}`} style={{ padding: '6px 10px', border: '1px solid #1e293b', minWidth: 0 }}>
+                          <div key={`${g.title}-${it.id}-${it.description}`} style={{ padding: '6px 10px', border: '1px solid var(--border)', minWidth: 0 }}>
                             <div style={{ fontSize: 10, color: 'var(--text-primary)', marginBottom: 2, overflowWrap: 'anywhere' }}>{it.description}</div>
                             {/* Skip reasons that just repeat the row title ("headquartered in India"). */}
                             {it.reason.toLowerCase() !== it.description.toLowerCase() && (
@@ -327,7 +328,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 2,
                       color: data.ai.verdict === 'BUY' ? 'var(--text-positive)' : data.ai.verdict === 'SELL' ? 'var(--text-negative)' : 'var(--text-muted)',
-                      background: data.ai.verdict === 'BUY' ? '#22c55e15' : data.ai.verdict === 'SELL' ? '#ef444415' : '#64748b15',
+                      background: tint(data.ai.verdict === 'BUY' ? 'var(--up)' : data.ai.verdict === 'SELL' ? 'var(--down)' : 'var(--muted)', 8),
                     }}>{data.ai.verdict}</span>
                     <div style={{ flex: 1, height: 5, background: 'var(--border-color)', borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{ width: `${data.ai.confidence}%`, height: '100%', background: accent }} />
@@ -341,7 +342,7 @@ export default function StockDeepDive({ ticker, market, onClose }: { ticker: str
           )}
         </div>
 
-        <div style={{ padding: '6px 16px', borderTop: '1px solid #1e293b', background: '#000', fontSize: 7, color: 'var(--text-muted)' }}>
+        <div style={{ padding: '6px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 7, color: 'var(--text-muted)' }}>
           ⚠ AI-generated analysis for informational purposes only. Not investment advice.
         </div>
       </div>

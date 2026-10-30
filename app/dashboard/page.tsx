@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, Fragment } from 'react'
 import dynamic from 'next/dynamic'
-import { formatCurrency, formatPercent } from '@/lib/utils'
+import { formatCurrency, formatPercent, getIndianMarketStatus } from '@/lib/utils'
 import { Sparkline } from '@/components/ui/Sparkline'
 import { useSparklineData } from '@/lib/hooks/useSparklineData'
 import { useMode } from '@/lib/context/ModeContext'
@@ -30,7 +30,7 @@ const AnalystPanel        = dynamic(() => import('@/components/panels/AnalystPan
 interface Metric {
   // null until a live quote arrives — never a placeholder number
   label: string; symbol: string; price: number | null; change: number | null; changePct: number | null
-  sparkline: number[]; accent: string; unit?: string
+  sparkline: number[]; unit?: string
 }
 interface MoverRow {
   symbol: string; shortName?: string; regularMarketPrice: number
@@ -47,19 +47,19 @@ interface MoverRow {
 // arrows, which stayed on screen whenever a fetch failed.
 const NO_QUOTE = { price: null, change: null, changePct: null }
 const DEFAULT_METRICS: Metric[] = [
-  { label: 'S&P 500 · SPY', symbol: 'SPY',      ...NO_QUOTE, sparkline: [], accent: 'var(--text-accent)' },
-  { label: 'NASDAQ · QQQ',  symbol: 'QQQ',      ...NO_QUOTE, sparkline: [], accent: '#a78bfa' },
-  { label: 'BITCOIN',       symbol: 'BTC',      ...NO_QUOTE, sparkline: [], accent: 'var(--text-warning)' },
-  { label: 'GOLD · GLD',    symbol: 'GLD',      ...NO_QUOTE, sparkline: [], accent: '#fde68a' },
-  { label: 'USD INDEX',     symbol: 'DX-Y.NYB', ...NO_QUOTE, sparkline: [], accent: '#34d399' },
+  { label: 'S&P 500 · SPY', symbol: 'SPY',      ...NO_QUOTE, sparkline: [] },
+  { label: 'NASDAQ · QQQ',  symbol: 'QQQ',      ...NO_QUOTE, sparkline: [] },
+  { label: 'BITCOIN',       symbol: 'BTC',      ...NO_QUOTE, sparkline: [] },
+  { label: 'GOLD · GLD',    symbol: 'GLD',      ...NO_QUOTE, sparkline: [] },
+  { label: 'USD INDEX',     symbol: 'DX-Y.NYB', ...NO_QUOTE, sparkline: [] },
 ]
 
 const DEFAULT_INDIA_METRICS: Metric[] = [
-  { label: 'NIFTY 50',   symbol: '^NSEI',    ...NO_QUOTE, sparkline: [], accent: '#FF9933' },
-  { label: 'SENSEX',     symbol: '^BSESN',   ...NO_QUOTE, sparkline: [], accent: '#138808' },
-  { label: 'BANK NIFTY', symbol: '^NSEBANK', ...NO_QUOTE, sparkline: [], accent: 'var(--text-warning)' },
-  { label: 'INDIA VIX',  symbol: '^INDIAVIX',...NO_QUOTE, sparkline: [], accent: 'var(--text-negative)' },
-  { label: 'USD/INR',    symbol: 'USDINR=X', ...NO_QUOTE, sparkline: [], accent: '#34d399' },
+  { label: 'NIFTY 50',   symbol: '^NSEI',    ...NO_QUOTE, sparkline: [] },
+  { label: 'SENSEX',     symbol: '^BSESN',   ...NO_QUOTE, sparkline: [] },
+  { label: 'BANK NIFTY', symbol: '^NSEBANK', ...NO_QUOTE, sparkline: [] },
+  { label: 'INDIA VIX',  symbol: '^INDIAVIX',...NO_QUOTE, sparkline: [] },
+  { label: 'USD/INR',    symbol: 'USDINR=X', ...NO_QUOTE, sparkline: [] },
 ]
 
 const TICKER_TAPE_SYMBOLS = [
@@ -91,7 +91,7 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
   const hasQuote = m.price !== null && m.change !== null && m.changePct !== null
   const isPos = (m.changePct ?? 0) >= 0
   const { data: sparkData, loading: sparkLoading } = useSparklineData(SPARKLINE_SYMBOL_MAP[m.label] ?? m.symbol)
-  const cc = !hasQuote ? 'var(--text-muted)' : isPos ? 'var(--text-positive)' : 'var(--text-negative)'
+  const cc = !hasQuote ? 'var(--muted)' : isPos ? 'var(--up)' : 'var(--down)'
   // Only priced instruments get a currency sign: SPY/QQQ/GLD/BTC in $ and
   // USD/INR in ₹. Index levels (NIFTY, SENSEX, India VIX, the dollar index)
   // are points — they were rendered as "₹22421.95" and "$101.92".
@@ -99,15 +99,16 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
   const fmt = (n: number) => n.toLocaleString(isIndia ? 'en-IN' : 'en-US', { minimumFractionDigits: n >= 1 ? 2 : 4, maximumFractionDigits: n >= 1 ? 2 : 4 })
   const displayPrice = m.price === null ? '—' : sym + fmt(m.price)
   return (
-    <div style={{ border: '1px solid var(--border-color)', borderTop: `2px solid ${m.accent}`, background: 'var(--bg-panel)', padding: '10px 14px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(ellipse at top right, ${m.accent}0a 0%, transparent 70%)`, pointerEvents: 'none' }} />
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: m.accent, letterSpacing: '0.1em', marginBottom: 6 }}>{m.label}</div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
+    <div className="gv-card" style={{ padding: 16 }}>
+      <div className="gv-label" style={{ marginBottom: 8 }}>{m.label}</div>
+      {/* Wraps the sparkline under the numbers when the card is too narrow (high contrast, 1024px). */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-display)', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+          <div className="gv-num" style={{ fontSize: 'var(--fs-display)', fontWeight: 'var(--fw-bold)', color: 'var(--text)', lineHeight: 1.1, whiteSpace: 'nowrap' }}>
             {displayPrice}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: cc, marginTop: 3 }}>
+          {/* May wrap (change, then %) rather than run past the card edge at large text sizes. */}
+          <div className="gv-num" style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: cc, marginTop: 4 }}>
             {hasQuote ? <>{arrow(m.changePct!)} {signed(m.change!, m.price! >= 1 ? 2 : 4)} ({pct(m.changePct!, 2)})</> : 'awaiting quote'}
           </div>
         </div>
@@ -116,7 +117,7 @@ function MetricCard({ m, isIndia }: { m: Metric; isIndia?: boolean }) {
         </div>
       </div>
       {WHY_INDEX[m.symbol] && hasQuote && (
-        <div style={{ marginTop: 6 }}>
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: 'var(--bw) solid var(--divider)' }}>
           <WhyLine market={isIndia ? 'IN' : 'US'} symbol={WHY_INDEX[m.symbol]} liveChangePct={m.changePct} variant="card" />
         </div>
       )}
@@ -174,45 +175,31 @@ function IndiaMarketMovers() {
 
   const rows = tab === 'gainers' ? gainers : tab === 'losers' ? losers : active
 
-  const tabStyle = (t: MoverTab) => ({
-    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '3px 10px', cursor: 'pointer',
-    background:  tab === t ? 'rgba(255,153,51,0.12)' : 'transparent',
-    color:       tab === t ? 'var(--saffron)' : 'var(--text-muted)',
-    border: '1px solid',
-    borderColor: tab === t ? '#FF993340' : 'var(--border-color)',
-    borderRadius: 2,
-  } as React.CSSProperties)
-
   const displaySymbol = (sym: string) => sym.replace('.NS', '').replace('.BO', '')
 
   return (
-    <div style={{ border: '1px solid var(--border-color)', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
-      <div style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)', padding: '5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="gv-card">
+      <div className="gv-card-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>NIFTY MOVERS</span>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '1px 5px', background: 'rgba(255,153,51,0.12)', color: 'var(--saffron)', borderRadius: 2 }}>NSE</span>
+          <span>Nifty movers</span>
+          <span className="gv-label" style={{ color: 'var(--accent-text)' }}>NSE · ₹</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {lastAt && <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{lastAt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} IST</span>}
-          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--saffron)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
+          {lastAt && <span suppressHydrationWarning className="gv-num gv-label">{lastAt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} IST</span>}
+          <RefreshButton onClick={fetchData} />
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 4, padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
-        <button style={tabStyle('gainers')} onClick={() => setTab('gainers')}>▲ TOP GAINERS</button>
-        <button style={tabStyle('losers')}  onClick={() => setTab('losers')}>▼ TOP LOSERS</button>
-        <button style={tabStyle('active')}  onClick={() => setTab('active')}>⚡ MOST ACTIVE</button>
-      </div>
+      <MoverTabs tab={tab} setTab={setTab} />
       {loading ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--saffron)' }}>LOADING<span className="blink-cursor" /></div>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)' }}>Loading<span className="blink-cursor" /></div>
       ) : rows.length === 0 ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>No data — NSE market may be closed</div>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)' }}>No data — NSE market may be closed</div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="gv-movers">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <tr>
               {['NSE', 'COMPANY', '₹ PRICE', 'CHG%', 'VOL'].map(h => (
-                <th key={h} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: h === 'NSE' || h === 'COMPANY' ? 'left' : 'right', fontWeight: 400, letterSpacing: '0.06em' }}>{h}</th>
+                <th key={h} className={h === 'COMPANY' ? 'gv-col-company' : undefined} style={{ textAlign: h === 'NSE' || h === 'COMPANY' ? 'left' : 'right' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -220,22 +207,20 @@ function IndiaMarketMovers() {
             {rows.slice(0, 10).map((q, i) => {
               const hasPct = hasNum(q.regularMarketChangePercent)
               const pos = hasPct && q.regularMarketChangePercent >= 0
-              const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
+              const cc  = !hasPct ? 'var(--muted)' : pos ? 'var(--up)' : 'var(--down)'
               return (
                 <Fragment key={q.symbol + i}>
-                  <tr style={{ cursor: 'pointer' }}
-                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', padding: '3px 6px', width: 70 }}><TickerLink ticker={q.symbol} style={{ color: 'var(--saffron)' }}>{displaySymbol(q.symbol)}</TickerLink></td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume, true)}</td>
+                  <tr className="gv-row" style={{ cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}>
+                    <td title={q.shortName} style={{ fontWeight: 'var(--fw-bold)', width: 90 }}><TickerLink ticker={q.symbol} style={{ color: 'var(--accent-text)' }}>{displaySymbol(q.symbol)}</TickerLink></td>
+                    <td title={q.shortName} className="gv-col-company" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                    <td className="gv-num" style={{ color: 'var(--text)', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? `₹${q.regularMarketPrice.toFixed(2)}` : DASH}</td>
+                    <td className="gv-num" style={{ fontWeight: 'var(--fw-bold)', color: cc, textAlign: 'right', whiteSpace: 'nowrap' }}>{hasPct ? `${arrow(q.regularMarketChangePercent)} ${formatPercent(q.regularMarketChangePercent)}` : DASH}</td>
+                    <td className="gv-num" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)', textAlign: 'right' }}>{formatVol(q.regularMarketVolume, true)}</td>
                   </tr>
                   {/* Evidence for this move (compact; click to expand) */}
-                  <tr style={{ borderBottom: '1px solid #0d1a0d' }}>
-                    <td colSpan={5} style={{ padding: '0 6px 3px', maxWidth: 0 }}><WhyLine market="IN" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
+                  <tr className="gv-why-row">
+                    <td colSpan={5} style={{ maxWidth: 0 }}><WhyLine market="IN" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
                   </tr>
                 </Fragment>
               )
@@ -243,6 +228,20 @@ function IndiaMarketMovers() {
           </tbody>
         </table>
       )}
+    </div>
+  )
+}
+
+function RefreshButton({ onClick }: { onClick: () => void }) {
+  return <button type="button" onClick={onClick} aria-label="Refresh" title="Refresh" className="gv-icon-btn">↻</button>
+}
+
+function MoverTabs({ tab, setTab }: { tab: MoverTab; setTab: (t: MoverTab) => void }) {
+  return (
+    <div role="group" aria-label="Movers" style={{ display: 'flex', gap: 6, padding: '10px 16px', borderBottom: 'var(--bw) solid var(--divider)' }}>
+      <button type="button" className="gv-tab" aria-pressed={tab === 'gainers'} onClick={() => setTab('gainers')}>▲ Top gainers</button>
+      <button type="button" className="gv-tab" aria-pressed={tab === 'losers'}  onClick={() => setTab('losers')}>▼ Top losers</button>
+      <button type="button" className="gv-tab" aria-pressed={tab === 'active'}  onClick={() => setTab('active')}>⚡ Most active</button>
     </div>
   )
 }
@@ -284,48 +283,33 @@ function MarketMovers() {
     return t >= 570 && t < 960
   })()
 
-  const tabStyle = (t: MoverTab) => ({
-    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '3px 10px', cursor: 'pointer',
-    background:   tab === t ? 'rgba(255,109,0,0.12)' : 'transparent',
-    color:        tab === t ? 'var(--text-accent)' : 'var(--text-muted)',
-    border:       '1px solid',
-    borderColor:  tab === t ? 'rgba(255,109,0,0.25)' : 'var(--border-color)',
-    borderRadius: 2,
-  } as React.CSSProperties)
-
   return (
-    <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #22c55e', background: 'var(--bg-panel)', overflow: 'hidden' }}>
+    <div className="gv-card">
       {/* Header */}
-      <div style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-color)', padding: '5px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="gv-card-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--text-positive)', letterSpacing: '0.08em' }}>MARKET MOVERS</span>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '1px 5px', background: isOpen ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', color: isOpen ? 'var(--text-positive)' : 'var(--text-negative)', borderRadius: 2 }}>
+          <span>Market movers</span>
+          <span className="gv-label" style={{ color: isOpen ? 'var(--up)' : 'var(--down)' }}>
             {isOpen ? '● OPEN' : '● CLOSED'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {lastAt && <span suppressHydrationWarning style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{lastAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>}
-          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-positive)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>↻</button>
+          {lastAt && <span suppressHydrationWarning className="gv-num gv-label">{lastAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>}
+          <RefreshButton onClick={fetchData} />
         </div>
       </div>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
-        <button style={tabStyle('gainers')} onClick={() => setTab('gainers')}>▲ TOP GAINERS</button>
-        <button style={tabStyle('losers')}  onClick={() => setTab('losers')}>▼ TOP LOSERS</button>
-        <button style={tabStyle('active')}  onClick={() => setTab('active')}>⚡ MOST ACTIVE</button>
-      </div>
+      <MoverTabs tab={tab} setTab={setTab} />
       {/* Table */}
       {loading ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-positive)' }}>LOADING<span className="blink-cursor" /></div>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)' }}>Loading<span className="blink-cursor" /></div>
       ) : rows.length === 0 ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>No data — market may be closed</div>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)' }}>No data — market may be closed</div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className="gv-movers">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <tr>
               {['TICKER', 'COMPANY', 'PRICE', 'CHG%', 'VOL'].map(h => (
-                <th key={h} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: h === 'TICKER' || h === 'COMPANY' ? 'left' : 'right', fontWeight: 400, letterSpacing: '0.06em' }}>{h}</th>
+                <th key={h} className={h === 'COMPANY' ? 'gv-col-company' : undefined} style={{ textAlign: h === 'TICKER' || h === 'COMPANY' ? 'left' : 'right' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -333,22 +317,20 @@ function MarketMovers() {
             {rows.slice(0, 10).map((q, i) => {
               const hasPct = hasNum(q.regularMarketChangePercent)
               const pos = hasPct && q.regularMarketChangePercent >= 0
-              const cc  = !hasPct ? 'var(--text-muted)' : pos ? 'var(--text-positive)' : 'var(--text-negative)'
+              const cc  = !hasPct ? 'var(--muted)' : pos ? 'var(--up)' : 'var(--down)'
               return (
                 <Fragment key={q.symbol + i}>
-                  <tr style={{ cursor: 'pointer' }}
-                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-accent)', padding: '3px 6px', width: 60 }}>{q.symbol}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? formatCurrency(q.regularMarketPrice) : DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{hasPct ? formatPercent(q.regularMarketChangePercent) : DASH}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: 'right' }}>{formatVol(q.regularMarketVolume)}</td>
+                  <tr className="gv-row" style={{ cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/markets?ticker=${q.symbol}`}>
+                    <td title={q.shortName} style={{ fontWeight: 'var(--fw-bold)', color: 'var(--accent-text)', width: 76 }}>{q.symbol}</td>
+                    <td title={q.shortName} className="gv-col-company" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)', maxWidth: 132, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.shortName?.slice(0, 16) || DASH}</td>
+                    <td className="gv-num" style={{ color: 'var(--text)', textAlign: 'right' }}>{hasNum(q.regularMarketPrice) ? formatCurrency(q.regularMarketPrice) : DASH}</td>
+                    <td className="gv-num" style={{ fontWeight: 'var(--fw-bold)', color: cc, textAlign: 'right', whiteSpace: 'nowrap' }}>{hasPct ? `${arrow(q.regularMarketChangePercent)} ${formatPercent(q.regularMarketChangePercent)}` : DASH}</td>
+                    <td className="gv-num" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)', textAlign: 'right' }}>{formatVol(q.regularMarketVolume)}</td>
                   </tr>
                   {/* Evidence for this move (compact; click to expand) */}
-                  <tr style={{ borderBottom: '1px solid #0d1a0d' }}>
-                    <td colSpan={5} style={{ padding: '0 6px 3px', maxWidth: 0 }}><WhyLine market="US" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
+                  <tr className="gv-why-row">
+                    <td colSpan={5} style={{ maxWidth: 0 }}><WhyLine market="US" symbol={q.symbol} liveChangePct={hasPct ? q.regularMarketChangePercent : null} /></td>
                   </tr>
                 </Fragment>
               )
@@ -366,16 +348,16 @@ function TickerTape({ prices }: { prices: Record<string, { price: number; change
   if (items.length === 0) return null
   const doubled = [...items, ...items]
   return (
-    <div style={{ overflow: 'hidden', borderTop: '1px solid var(--border-color)', background: 'var(--bg-terminal)', height: 24 }}>
+    <div style={{ overflow: 'hidden', borderTop: 'var(--bw) solid var(--border)', background: 'var(--surface)', height: 26 }}>
       <div style={{ display: 'flex', animation: 'tickerScroll 60s linear infinite', whiteSpace: 'nowrap' }}>
         {doubled.map((sym, i) => {
           const p = prices[sym]
           const isPos = (p?.changePct ?? 0) >= 0
           return (
-            <span key={i} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 14px', height: 24, lineHeight: '24px', borderRight: '1px solid var(--border-color)' }}>
-              <span style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{sym.replace('-USD', '').replace('=X', '')}</span>
-              <span style={{ color: 'var(--text-primary)' }}>${p?.price >= 1 ? p.price.toFixed(2) : p?.price.toFixed(4)}</span>
-              <span style={{ color: isPos ? 'var(--text-positive)' : 'var(--text-negative)' }}>{arrow(p?.changePct ?? 0)}{Math.abs(p?.changePct ?? 0).toFixed(2)}%</span>
+            <span key={i} style={{ fontSize: 'var(--fs-meta)', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 26, lineHeight: '26px', borderRight: 'var(--bw) solid var(--divider)' }}>
+              <span style={{ color: 'var(--accent-text)', fontWeight: 'var(--fw-bold)' }}>{sym.replace('-USD', '').replace('=X', '')}</span>
+              <span className="gv-num" style={{ color: 'var(--text)' }}>${p?.price >= 1 ? p.price.toFixed(2) : p?.price.toFixed(4)}</span>
+              <span className="gv-num" style={{ color: isPos ? 'var(--up)' : 'var(--down)', fontWeight: 'var(--fw-semibold)' }}>{arrow(p?.changePct ?? 0)}{Math.abs(p?.changePct ?? 0).toFixed(2)}%</span>
             </span>
           )
         })}
@@ -413,51 +395,51 @@ function IndiaCryptoMini() {
   }
 
   return (
-    <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-header)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>₿ CRYPTO / INR</span>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>CoinGecko · INR</span>
+    <div className="gv-card">
+      <div className="gv-card-head">
+        <span>₿ Crypto / INR</span>
+        <span className="gv-label">CoinGecko · ₹</span>
       </div>
       {loading ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--saffron)' }}>LOADING<span className="blink-cursor" /></div>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)' }}>Loading<span className="blink-cursor" /></div>
       ) : coins.length === 0 ? (
-        <div style={{ padding: '12px 10px', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+        <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--muted)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
           <span>INR crypto prices temporarily unavailable</span>
-          <button onClick={load} style={{ background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', padding: '2px 8px', borderRadius: 2, cursor: 'pointer' }}>↻ RETRY</button>
+          <button type="button" onClick={load} className="gv-tab">↻ Retry</button>
         </div>
       ) : (
         <>
-          <div style={{ padding: '4px 8px', fontSize: 'var(--fs-meta)', fontFamily: 'IBM Plex Mono', color: 'var(--text-muted)', borderBottom: '1px solid #0d1a0d' }}>
+          <div style={{ padding: '8px 16px', fontSize: 'var(--fs-meta)', color: 'var(--muted)', borderBottom: 'var(--bw) solid var(--divider)' }}>
             30% flat tax + 1% TDS on gains · India Crypto Tax
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="gv-movers">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                {['COIN', 'PRICE (INR)', '24H %'].map(h => (
-                  <th key={h} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', padding: '3px 6px', textAlign: h === 'COIN' ? 'left' : 'right', fontWeight: 400, letterSpacing: '0.06em' }}>{h}</th>
+              <tr>
+                {['COIN', 'PRICE (₹)', '24H %'].map(h => (
+                  <th key={h} style={{ textAlign: h === 'COIN' ? 'left' : 'right' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {coins.map(c => {
                 const pos = c.change24h >= 0
-                const cc  = pos ? 'var(--text-positive)' : 'var(--text-negative)'
+                const cc  = pos ? 'var(--up)' : 'var(--down)'
                 return (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #0d1a0d' }}>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', padding: '3px 6px' }}>
+                  <tr key={c.id} className="gv-row">
+                    <td style={{ fontWeight: 'var(--fw-bold)', color: 'var(--accent-text)', paddingBottom: 6 }}>
                       {c.symbol}
-                      {c.isIndianProject && <span style={{ fontSize: 'var(--fs-meta)', marginLeft: 4, color: 'var(--saffron)', background: '#FF993320', padding: '0 3px', borderRadius: 2 }}>🇮🇳</span>}
+                      {c.isIndianProject && <span style={{ fontSize: 'var(--fs-meta)', marginLeft: 4 }}>🇮🇳</span>}
                     </td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-primary)', padding: '3px 6px', textAlign: 'right' }}>{fmtINR(c.priceINR)}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700, color: cc, padding: '3px 6px', textAlign: 'right' }}>{formatPercent(c.change24h)}</td>
+                    <td className="gv-num" style={{ color: 'var(--text)', textAlign: 'right', paddingBottom: 6 }}>{fmtINR(c.priceINR)}</td>
+                    <td className="gv-num" style={{ fontWeight: 'var(--fw-bold)', color: cc, textAlign: 'right', paddingBottom: 6, whiteSpace: 'nowrap' }}>{arrow(c.change24h)} {formatPercent(c.change24h)}</td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          <div style={{ padding: '5px 8px', borderTop: '1px solid #0d1a0d', display: 'flex', gap: 8 }}>
+          <div style={{ padding: '8px 16px', borderTop: 'var(--bw) solid var(--divider)', display: 'flex', gap: 8 }}>
             {['WazirX', 'CoinDCX', 'ZebPay'].map(ex => (
-              <span key={ex} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', background: 'var(--bg-header)', padding: '1px 5px', borderRadius: 2 }}>{ex}</span>
+              <span key={ex} className="gv-label" style={{ background: 'var(--surface-2)', padding: '1px 8px', borderRadius: 'var(--radius-inner)' }}>{ex}</span>
             ))}
           </div>
         </>
@@ -491,25 +473,44 @@ function IndiaNewsMini({ limit = 8 }: { limit?: number }) {
   if (articles.length === 0) return <PanelEmpty title="📡 INDIA MARKETS NEWS" accent="var(--saffron)" message="India market headlines temporarily unavailable" onRetry={load} />
 
   return (
-    <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'var(--bg-panel)', overflow: 'hidden' }}>
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-header)' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--saffron)', letterSpacing: '0.08em' }}>📡 INDIA MARKETS NEWS</span>
+    <div className="gv-card">
+      <div className="gv-card-head">
+        <span>📡 India markets news</span>
       </div>
       <div style={{ overflowY: 'auto', maxHeight: 320 }}>
         {articles.map((a, i) => (
           // A real link (keyboard-reachable); the full headline is in the title, since the line is truncated.
-          <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" title={a.title}
-            style={{ display: 'block', padding: '6px 10px', borderBottom: '1px solid #0d1526', cursor: 'pointer', textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-buy)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-            <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{a.title}</div>
+          <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" title={a.title} className="gv-row"
+            style={{ display: 'block', padding: '8px 16px', borderBottom: 'var(--bw) solid var(--divider)', cursor: 'pointer', textDecoration: 'none' }}>
+            <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text)', lineHeight: 1.4, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{a.title}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--saffron)' }}>{a.source}</span>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{new Date(a.publishedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} IST</span>
+              <span style={{ fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-semibold)', color: 'var(--accent-text)' }}>{a.source}</span>
+              <span className="gv-num" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)' }}>{new Date(a.publishedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} IST</span>
             </div>
           </a>
         ))}
       </div>
+    </div>
+  )
+}
+
+/* ── India status line: "NSE open · 14:32 IST · All prices in ₹" ─────────── */
+const NSE_STATUS: Record<ReturnType<typeof getIndianMarketStatus>, string> = { OPEN: 'NSE open', CLOSED: 'NSE closed', 'PRE-OPEN': 'NSE pre-open', 'AFTER-HOURS': 'NSE closing session' }
+function IndiaStatusLine() {
+  const [now, setNow] = useState<{ status: ReturnType<typeof getIndianMarketStatus>; time: string } | null>(null)
+  useEffect(() => {
+    const tick = () => setNow({ status: getIndianMarketStatus(), time: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }) })
+    tick()
+    const id = setInterval(tick, 30_000)
+    return () => clearInterval(id)
+  }, [])
+  if (!now) return null
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-2)' }}>
+      <span style={{ color: now.status === 'OPEN' ? 'var(--up)' : 'var(--muted)' }}>●</span>
+      <span>{NSE_STATUS[now.status]} · <span className="gv-num">{now.time}</span> IST</span>
+      <span style={{ color: 'var(--muted)' }}>·</span>
+      <span style={{ color: 'var(--accent-text)' }}>All prices in ₹</span>
     </div>
   )
 }
@@ -519,7 +520,7 @@ const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 function PanelSkeleton({ h = 200 }: { h?: number }) {
   const rows = [100, 100, 70, 100, 85]
   return (
-    <div style={{ height: h, padding: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
+    <div className="gv-card" style={{ height: h, padding: 16 }}>
       {rows.map((w, i) => (
         <div key={i} className={'skeleton'} style={{ height: '24px', marginBottom: '6px', width: w + '%' }} />
       ))}
@@ -626,11 +627,11 @@ export default function DashboardPage() {
         }
 
         const updated: Metric[] = [
-          { label: 'NIFTY 50',   symbol: '^NSEI',     price: idxMap['^NSEI']?.price     ?? null, change: idxMap['^NSEI']?.change     ?? null, changePct: idxMap['^NSEI']?.changePct     ?? null, sparkline: idxMap['^NSEI']?.sparkline     ?? [], accent: '#FF9933' },
-          { label: 'SENSEX',     symbol: '^BSESN',    price: idxMap['^BSESN']?.price    ?? null, change: idxMap['^BSESN']?.change    ?? null, changePct: idxMap['^BSESN']?.changePct    ?? null, sparkline: idxMap['^BSESN']?.sparkline    ?? [], accent: '#138808' },
-          { label: 'BANK NIFTY', symbol: '^NSEBANK',  price: idxMap['^NSEBANK']?.price  ?? null, change: idxMap['^NSEBANK']?.change  ?? null, changePct: idxMap['^NSEBANK']?.changePct  ?? null, sparkline: idxMap['^NSEBANK']?.sparkline  ?? [], accent: 'var(--text-warning)' },
-          { label: 'INDIA VIX',  symbol: '^INDIAVIX', price: idxMap['^INDIAVIX']?.price ?? null,  change: idxMap['^INDIAVIX']?.change ?? null, changePct: idxMap['^INDIAVIX']?.changePct ?? null, sparkline: idxMap['^INDIAVIX']?.sparkline ?? [], accent: 'var(--text-negative)' },
-          { label: 'USD/INR',    symbol: 'USDINR=X',  price: usdInr.price, change: usdInr.change, changePct: usdInr.changePct, sparkline: [], accent: '#34d399' },
+          { label: 'NIFTY 50',   symbol: '^NSEI',     price: idxMap['^NSEI']?.price     ?? null, change: idxMap['^NSEI']?.change     ?? null, changePct: idxMap['^NSEI']?.changePct     ?? null, sparkline: idxMap['^NSEI']?.sparkline     ?? [] },
+          { label: 'SENSEX',     symbol: '^BSESN',    price: idxMap['^BSESN']?.price    ?? null, change: idxMap['^BSESN']?.change    ?? null, changePct: idxMap['^BSESN']?.changePct    ?? null, sparkline: idxMap['^BSESN']?.sparkline    ?? [] },
+          { label: 'BANK NIFTY', symbol: '^NSEBANK',  price: idxMap['^NSEBANK']?.price  ?? null, change: idxMap['^NSEBANK']?.change  ?? null, changePct: idxMap['^NSEBANK']?.changePct  ?? null, sparkline: idxMap['^NSEBANK']?.sparkline  ?? [] },
+          { label: 'INDIA VIX',  symbol: '^INDIAVIX', price: idxMap['^INDIAVIX']?.price ?? null,  change: idxMap['^INDIAVIX']?.change ?? null, changePct: idxMap['^INDIAVIX']?.changePct ?? null, sparkline: idxMap['^INDIAVIX']?.sparkline ?? [] },
+          { label: 'USD/INR',    symbol: 'USDINR=X',  price: usdInr.price, change: usdInr.change, changePct: usdInr.changePct, sparkline: [] },
         ]
         setMetrics(updated)
       } catch {}
@@ -648,9 +649,10 @@ export default function DashboardPage() {
   if (isIndia) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
-        <div className="gv-dash-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 8, display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div className="gv-dash-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <IndiaStatusLine />
           {/* Row 0: 5 India metric cards — immediate */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 }}>
             {metrics.map(m => <MetricCard key={m.symbol} m={m} isIndia />)}
           </div>
 
@@ -659,7 +661,7 @@ export default function DashboardPage() {
 
           {/* Row 2: Market Brain + RBI Policy — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)', gap: 12 }}>
               <ErrorBoundary name="Market Brain"><MarketBrain /></ErrorBoundary>
               <ErrorBoundary name="RBI Policy Tracker"><RBIPolicyTracker /></ErrorBoundary>
             </div>
@@ -667,7 +669,7 @@ export default function DashboardPage() {
 
           {/* Row 3: Nifty Movers + India Crypto — 500ms */}
           {phase >= 1 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, minHeight: 260 }}>
               <ErrorBoundary name="India Market Movers"><IndiaMarketMovers /></ErrorBoundary>
               <ErrorBoundary name="India Crypto"><IndiaCryptoMini /></ErrorBoundary>
             </div>
@@ -678,7 +680,7 @@ export default function DashboardPage() {
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'minmax(0, 380px) minmax(0, 1fr)',
-              gap: 6,
+              gap: 12,
               minHeight: 520,
               width: '100%',
               maxWidth: '100%',
@@ -698,7 +700,7 @@ export default function DashboardPage() {
             // neither leaves bare background beneath it (the old black void above
             // the ISS row). The Narrative Detector that sat between them is now
             // part of the Market Brain (row 2).
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 1fr)', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 280px) minmax(0, 1fr)', gap: 12 }}>
               <ErrorBoundary name="FII/DII Flow"><FIIDIIFlow /></ErrorBoundary>
               <ErrorBoundary name="India News"><IndiaNewsMini limit={12} /></ErrorBoundary>
             </div>
@@ -706,8 +708,8 @@ export default function DashboardPage() {
 
           {/* Row 6: ISS + Earthquake + Weather — 2000ms */}
           {phase >= 4 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 200, width: '100%', overflow: 'hidden' }}>
-              <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 12, minHeight: 200, width: '100%', overflow: 'hidden' }}>
+              <div className="gv-card">
                 <ErrorBoundary name="ISS Tracker"><ISSTracker /></ErrorBoundary>
               </div>
               <ErrorBoundary name="Earthquake Panel"><EarthquakePanel limit={6} /></ErrorBoundary>
@@ -725,9 +727,9 @@ export default function DashboardPage() {
   // USA MODE (original layout)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      <div className="gv-dash-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 8, display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+      <div className="gv-dash-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         {/* Row 0: 5 quick metric cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 }}>
           {metrics.map(m => <MetricCard key={m.symbol} m={m} />)}
         </div>
 
@@ -736,7 +738,7 @@ export default function DashboardPage() {
 
         {/* Row 2: Market Brain + Fear Radar — 500ms */}
         {phase >= 1 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 12 }}>
             <ErrorBoundary name="Market Brain"><MarketBrain /></ErrorBoundary>
             <ErrorBoundary name="Fear Radar"><FearRadar compact={false} /></ErrorBoundary>
           </div>
@@ -744,7 +746,7 @@ export default function DashboardPage() {
 
         {/* Row 3: Market Movers + Crypto — 500ms */}
         {phase >= 1 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 6, minHeight: 260 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, minHeight: 260 }}>
             <ErrorBoundary name="Market Movers"><MarketMovers /></ErrorBoundary>
             <ErrorBoundary name="Crypto Panel"><CryptoPanel /></ErrorBoundary>
           </div>
@@ -768,14 +770,12 @@ export default function DashboardPage() {
             ISS, leaving dead space under Reddit/ISS/Seismic). 2fr gives weather
             about the width India's three-column row does → 4+ card columns. */}
         {phase >= 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr)', gap: 6, minHeight: 200 }}>
-            <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
-              <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border-color)' }}>
-                <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>REDDIT SENTIMENT</span>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr)', gap: 12, minHeight: 200 }}>
+            <div className="gv-card">
+              <div className="gv-card-head">Reddit sentiment</div>
               <ErrorBoundary name="Reddit Sentiment"><RedditSentiment /></ErrorBoundary>
             </div>
-            <div style={{ border: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
+            <div className="gv-card">
               <ErrorBoundary name="ISS Tracker"><ISSTracker /></ErrorBoundary>
             </div>
             <ErrorBoundary name="Earthquake Panel"><EarthquakePanel limit={6} /></ErrorBoundary>

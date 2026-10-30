@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
+import { useTheme, readToken } from '@/lib/context/ThemeContext'
 import {
   createChart, ColorType, CrosshairMode,
   IChartApi, ISeriesApi, Time,
@@ -27,23 +28,12 @@ interface Props {
   }
 }
 
-// Hardcoded hex — lightweight-charts cannot parse CSS variables
-const BG          = '#050a05'
-const GRID        = '#1b2e1b'
-const TEXT        = '#607d8b'
-const UP_COLOR    = '#00e676'
-const DOWN_COLOR  = '#ff1744'
-const BORDER_UP   = '#00e676'
-const BORDER_DOWN = '#ff1744'
-const WICK_UP     = '#00e676'
-const WICK_DOWN   = '#ff1744'
-const SMA20_COLOR = '#40c4ff'
-const SMA50_COLOR = '#ff6d00'
-const CROSSHAIR   = '#607d8b'
-
 function filterNull(data: IndicatorPoint[]): { time: Time; value: number }[] {
   return data.filter(d => d.value !== null).map(d => ({ time: d.time as Time, value: d.value as number }))
 }
+
+/** '#RRGGBB' + alpha → '#RRGGBBAA' (lightweight-charts can't read CSS variables, so tokens are read as hex). */
+const alpha = (hex: string, a: number) => hex.length === 7 ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex
 
 export default function CandlestickChartInner({
   candles, height = 420, showVolume = true, showRsi = false, showMacd = false,
@@ -55,37 +45,44 @@ export default function CandlestickChartInner({
   const mainChart = useRef<IChartApi | null>(null)
   const rsiChart  = useRef<IChartApi | null>(null)
   const macdChart = useRef<IChartApi | null>(null)
-
-  const makeChart = useCallback((el: HTMLDivElement, h: number) =>
-    createChart(el, {
-      width: el.offsetWidth,
-      height: h,
-      layout: {
-        background: { type: ColorType.Solid, color: BG },
-        textColor: TEXT,
-      },
-      grid: {
-        vertLines: { color: GRID },
-        horzLines: { color: GRID },
-      },
-      crosshair: {
-        mode: CrosshairMode.Normal,
-        vertLine: { color: CROSSHAIR, labelBackgroundColor: '#0a140a' },
-        horzLine: { color: CROSSHAIR, labelBackgroundColor: '#0a140a' },
-      },
-      rightPriceScale: {
-        borderColor: GRID,
-        scaleMargins: { top: 0.05, bottom: 0.05 },
-      },
-      timeScale: {
-        borderColor: GRID,
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    }), [])
+  // The chart is rebuilt from the current tokens whenever either setting changes.
+  const { theme, contrast } = useTheme()
 
   useEffect(() => {
     if (!mainRef.current || !candles?.length) return
+
+    const tok = (name: string, fallback: string) => readToken(name) || fallback
+    const BG = tok('--surface', '#1B1B1B'), GRID = tok('--divider', '#242424'), TEXT = tok('--muted', '#B5B5B5')
+    const UP_COLOR = tok('--up', '#2EBD85'), DOWN_COLOR = tok('--down', '#F6685E')
+    const SMA20_COLOR = tok('--info', '#6CB6FF'), SMA50_COLOR = tok('--accent-text', '#FF9933')
+    const LABEL_BG = tok('--surface-2', '#222222'), W = (contrast === 'high' ? 3 : 1) as 1 | 3
+    const makeChart = (el: HTMLDivElement, h: number) =>
+      createChart(el, {
+        width: el.offsetWidth,
+        height: h,
+        layout: {
+          background: { type: ColorType.Solid, color: BG },
+          textColor: TEXT,
+        },
+        grid: {
+          vertLines: { color: GRID },
+          horzLines: { color: GRID },
+        },
+        crosshair: {
+          mode: CrosshairMode.Normal,
+          vertLine: { color: TEXT, labelBackgroundColor: LABEL_BG },
+          horzLine: { color: TEXT, labelBackgroundColor: LABEL_BG },
+        },
+        rightPriceScale: {
+          borderColor: GRID,
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        },
+        timeScale: {
+          borderColor: GRID,
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      })
 
     const subH  = showRsi || showMacd ? 110 : 0
     const count = (showRsi ? 1 : 0) + (showMacd ? 1 : 0)
@@ -98,10 +95,10 @@ export default function CandlestickChartInner({
     const candleSeries: ISeriesApi<'Candlestick'> = chart.addCandlestickSeries({
       upColor:        UP_COLOR,
       downColor:      DOWN_COLOR,
-      borderUpColor:  BORDER_UP,
-      borderDownColor: BORDER_DOWN,
-      wickUpColor:    WICK_UP,
-      wickDownColor:  WICK_DOWN,
+      borderUpColor:  UP_COLOR,
+      borderDownColor: DOWN_COLOR,
+      wickUpColor:    UP_COLOR,
+      wickDownColor:  DOWN_COLOR,
     })
     candleSeries.setData(
       candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close }))
@@ -112,26 +109,26 @@ export default function CandlestickChartInner({
       const volSeries = chart.addHistogramSeries({
         priceFormat: { type: 'volume' },
         priceScaleId: 'vol',
-        color: '#38bdf820',
+        color: alpha(SMA20_COLOR, 0.12),
       })
       chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } })
       volSeries.setData(
         candles.filter(c => c.volume).map(c => ({
           time: c.time as Time, value: c.volume!,
-          color: c.close >= c.open ? '#22c55e30' : '#ef444430',
+          color: alpha(c.close >= c.open ? UP_COLOR : DOWN_COLOR, 0.2),
         }))
       )
     }
 
     // Overlay lines
-    const lineOpts = (color: string, w = 1) => ({ color, lineWidth: w as 1|2|3|4, lastValueVisible: false, priceLineVisible: false })
+    const lineOpts = (color: string) => ({ color, lineWidth: W, lastValueVisible: false, priceLineVisible: false })
     if (overlays.sma20?.length)   { const s = chart.addLineSeries(lineOpts(SMA20_COLOR)); s.setData(filterNull(overlays.sma20)) }
     if (overlays.sma50?.length)   { const s = chart.addLineSeries(lineOpts(SMA50_COLOR)); s.setData(filterNull(overlays.sma50)) }
-    if (overlays.sma200?.length)  { const s = chart.addLineSeries(lineOpts('#a78bfa')); s.setData(filterNull(overlays.sma200)) }
-    if (overlays.ema12?.length)   { const s = chart.addLineSeries(lineOpts('#34d399')); s.setData(filterNull(overlays.ema12)) }
-    if (overlays.ema26?.length)   { const s = chart.addLineSeries(lineOpts('#fb923c')); s.setData(filterNull(overlays.ema26)) }
+    if (overlays.sma200?.length)  { const s = chart.addLineSeries(lineOpts(tok('--text-2', '#CFCFCF'))); s.setData(filterNull(overlays.sma200)) }
+    if (overlays.ema12?.length)   { const s = chart.addLineSeries(lineOpts(tok('--warning', '#F5B841'))); s.setData(filterNull(overlays.ema12)) }
+    if (overlays.ema26?.length)   { const s = chart.addLineSeries(lineOpts(TEXT)); s.setData(filterNull(overlays.ema26)) }
     if (overlays.bbUpper?.length && overlays.bbLower?.length) {
-      const opt = { color: '#22c55e40', lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false }
+      const opt = { color: alpha(UP_COLOR, 0.4), lineWidth: W, lastValueVisible: false, priceLineVisible: false }
       const u = chart.addLineSeries(opt); u.setData(filterNull(overlays.bbUpper))
       const l = chart.addLineSeries(opt); l.setData(filterNull(overlays.bbLower))
     }
@@ -141,11 +138,11 @@ export default function CandlestickChartInner({
       const rc = makeChart(rsiRef.current, subH)
       rsiChart.current = rc
       rc.timeScale().applyOptions({ visible: false })
-      const rsiSeries = rc.addLineSeries({ color: SMA20_COLOR, lineWidth: 1 as 1, lastValueVisible: true, priceLineVisible: false })
+      const rsiSeries = rc.addLineSeries({ color: SMA20_COLOR, lineWidth: W, lastValueVisible: true, priceLineVisible: false })
       rsiSeries.setData(filterNull(rsiData))
-      rc.addLineSeries({ color: '#ef444460', lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
+      rc.addLineSeries({ color: alpha(DOWN_COLOR, 0.4), lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
         .setData(rsiData.filter(d => d.value !== null).map(d => ({ time: d.time as Time, value: 70 })))
-      rc.addLineSeries({ color: '#22c55e60', lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
+      rc.addLineSeries({ color: alpha(UP_COLOR, 0.4), lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
         .setData(rsiData.filter(d => d.value !== null).map(d => ({ time: d.time as Time, value: 30 })))
 
       // Sync time ranges
@@ -164,16 +161,16 @@ export default function CandlestickChartInner({
       mc.timeScale().applyOptions({ visible: true })
 
       const histSeries = mc.addHistogramSeries({
-        color: '#22c55e60', lastValueVisible: false, priceLineVisible: false,
+        color: alpha(UP_COLOR, 0.4), lastValueVisible: false, priceLineVisible: false,
       })
       histSeries.setData(
         macdData.filter(d => d.hist !== null).map(d => ({
           time: d.time as Time, value: d.hist!,
-          color: d.hist! >= 0 ? '#22c55e80' : '#ef444480',
+          color: alpha(d.hist! >= 0 ? UP_COLOR : DOWN_COLOR, 0.5),
         }))
       )
-      const macdLine   = mc.addLineSeries({ color: SMA20_COLOR, lineWidth: 1 as 1, lastValueVisible: true,  priceLineVisible: false })
-      const signalLine = mc.addLineSeries({ color: SMA50_COLOR, lineWidth: 1 as 1, lastValueVisible: false, priceLineVisible: false })
+      const macdLine   = mc.addLineSeries({ color: SMA20_COLOR, lineWidth: W, lastValueVisible: true,  priceLineVisible: false })
+      const signalLine = mc.addLineSeries({ color: SMA50_COLOR, lineWidth: W, lastValueVisible: false, priceLineVisible: false })
       macdLine.setData(macdData.filter(d => d.macd   !== null).map(d => ({ time: d.time as Time, value: d.macd! })))
       signalLine.setData(macdData.filter(d => d.signal !== null).map(d => ({ time: d.time as Time, value: d.signal! })))
 
@@ -202,13 +199,13 @@ export default function CandlestickChartInner({
       macdChart.current = null
       mainChart.current = null
     }
-  }, [candles, showVolume, showRsi, showMacd, rsiData, macdData, overlays, height, makeChart])
+  }, [candles, showVolume, showRsi, showMacd, rsiData, macdData, overlays, height, theme, contrast])
 
   return (
     <div style={{ width: '100%' }}>
       <div ref={mainRef}  style={{ width: '100%' }} />
-      {showRsi  && <div ref={rsiRef}  style={{ width: '100%', borderTop: `1px solid ${GRID}` }} />}
-      {showMacd && <div ref={macdRef} style={{ width: '100%', borderTop: `1px solid ${GRID}` }} />}
+      {showRsi  && <div ref={rsiRef}  style={{ width: '100%', borderTop: '1px solid var(--divider)' }} />}
+      {showMacd && <div ref={macdRef} style={{ width: '100%', borderTop: '1px solid var(--divider)' }} />}
     </div>
   )
 }

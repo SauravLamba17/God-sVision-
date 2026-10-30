@@ -82,15 +82,15 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
           key={u}
           onClick={() => onTempUnitChange?.(u)}
           style={{
-            background: tempUnit === u ? 'var(--text-accent)' : 'transparent',
-            color: tempUnit === u ? '#000' : 'var(--text-muted)',
+            background: tempUnit === u ? 'var(--accent)' : 'transparent',
+            color: tempUnit === u ? 'var(--on-accent)' : 'var(--text-muted)',
             border: '1px solid var(--border-color)',
             borderRadius: '2px',
             padding: '2px 7px',
             fontSize: 'var(--fs-meta)',
             fontWeight: 700,
             cursor: 'pointer',
-            fontFamily: 'IBM Plex Mono, monospace',
+            fontFamily: 'inherit',
             transition: 'all 150ms',
           }}
         >
@@ -115,13 +115,13 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    fontFamily: 'IBM Plex Mono, monospace',
+    fontFamily: 'inherit',
   }
   const tempStyle: React.CSSProperties = {
     fontSize: 'var(--fs-lg)',
     fontWeight: 700,
     color: 'var(--text-primary)',
-    fontFamily: 'IBM Plex Mono, monospace',
+    fontFamily: 'inherit',
   }
   const conditionStyle: React.CSSProperties = {
     fontSize: 'var(--fs-meta)',
@@ -162,7 +162,7 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
                     padding: '0 3px',
                     borderLeft: `2px solid ${AQI_COLORS[a.band]}`,
                     fontSize: 'var(--fs-meta)',
-                    fontFamily: 'IBM Plex Mono, monospace',
+                    fontFamily: 'inherit',
                     color: AQI_COLORS[a.band],
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
@@ -173,7 +173,7 @@ export default function WeatherPanel({ tempUnit = 'C', onTempUnitChange }: Weath
                   <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{AQI_LABELS[a.band]}</span>
                 </div>
               ) : (
-                <div style={{ marginTop: 3, fontSize: 'var(--fs-meta)', fontFamily: 'IBM Plex Mono, monospace', color: 'var(--text-muted)', opacity: 0.5 }}>
+                <div style={{ marginTop: 3, fontSize: 'var(--fs-meta)', fontFamily: 'inherit', color: 'var(--text-muted)', opacity: 0.5 }}>
                   AQI —
                 </div>
               )}

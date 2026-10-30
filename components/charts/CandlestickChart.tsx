@@ -6,9 +6,9 @@ export default dynamic(() => import('./CandlestickChartInner'), {
   loading: () => (
     <div style={{
       width: '100%', height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-terminal)', border: '1px solid #1e293b',
+      background: 'var(--surface)',
     }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-accent)' }}>
+      <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
         LOADING CHART<span className="blink-cursor" />
       </span>
     </div>

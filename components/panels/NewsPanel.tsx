@@ -73,7 +73,7 @@ export default function NewsPanel({ limit = 10 }: { limit?: number }) {
             <div className="flex items-start gap-2">
               <span
                 className="font-mono text-[10px] px-1 py-0.5 flex-shrink-0 mt-0.5"
-                style={{ color: SENTIMENT_COLORS[item.sentiment], border: `1px solid ${SENTIMENT_COLORS[item.sentiment]}40` }}
+                style={{ color: SENTIMENT_COLORS[item.sentiment], border: `var(--bw) solid ${SENTIMENT_COLORS[item.sentiment]}` }}
               >
                 {SENTIMENT_LABELS[item.sentiment]}
               </span>

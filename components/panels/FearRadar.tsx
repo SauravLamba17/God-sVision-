@@ -19,9 +19,9 @@ interface FearRadarData {
 
 const ZONE_COLORS = [
   { from: 0, to: 20, color: 'var(--text-positive)', label: 'EXTREME GREED' },
-  { from: 20, to: 40, color: '#86efac', label: 'GREED' },
+  { from: 20, to: 40, color: 'var(--up)', label: 'GREED' },
   { from: 40, to: 60, color: 'var(--text-warning)', label: 'NEUTRAL' },
-  { from: 60, to: 80, color: '#fb923c', label: 'FEAR' },
+  { from: 60, to: 80, color: 'var(--accent-text)', label: 'FEAR' },
   { from: 80, to: 100, color: 'var(--text-negative)', label: 'EXTREME FEAR' },
 ]
 
@@ -54,7 +54,7 @@ function GaugeArc({ cx, cy, r, score }: { cx: number; cy: number; r: number; sco
   return (
     <g>
       {/* Background arc */}
-      <path d={describeArc(cx, cy, r, GAUGE_START, GAUGE_END)} fill="none" stroke="#1b2e1b" strokeWidth={14} />
+      <path d={describeArc(cx, cy, r, GAUGE_START, GAUGE_END)} fill="none" stroke="var(--divider)" strokeWidth={14} />
       {/* Colored zones */}
       {ZONE_COLORS.map(z => (
         <path
@@ -90,7 +90,7 @@ function Needle({ cx, cy, r, score }: { cx: number; cy: number; r: number; score
         fill={getColor(score)}
         opacity={0.9}
       />
-      <circle cx={cx} cy={cy} r={6} fill="#0f172a" stroke={getColor(score)} strokeWidth={2} />
+      <circle cx={cx} cy={cy} r={6} fill="var(--surface)" stroke={getColor(score)} strokeWidth={2} />
     </g>
   )
 }
@@ -114,7 +114,7 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: compact ? 8 : 16, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-accent)' }}>
+    <div style={{ padding: compact ? 8 : 16, fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
       LOADING FEAR INDEX...
     </div>
   )
@@ -126,11 +126,11 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
   const W = 240, H = compact ? 150 : 210
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono' }}>
+    <div className={compact ? undefined : 'gv-card'} style={{ height: compact ? undefined : '100%' }}>
       {!compact && (
-        <div style={{ padding: '6px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 'var(--fs-header)', color: 'var(--text-muted)', letterSpacing: '0.03em', fontWeight: 700 }}>FEAR RADAR — 5-SIGNAL INDEX</span>
-          <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{new Date(data.timestamp).toLocaleTimeString()}</span>
+        <div className="gv-card-head">
+          <span>Fear radar — 5-signal index</span>
+          <span className="gv-num" style={{ fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-normal)', color: 'var(--text-muted)' }}>{new Date(data.timestamp).toLocaleTimeString()}</span>
         </div>
       )}
       <div style={{ display: 'flex', alignItems: compact ? 'center' : 'flex-start', gap: 8, padding: compact ? 4 : 0 }}>
@@ -150,22 +150,22 @@ export default function FearRadar({ compact = false }: { compact?: boolean }) {
           })}
           {/* Score display */}
           <text x={cx} y={cy + 30} textAnchor="middle" fontSize={compact ? 22 : 28} fontWeight={700}
-            fill={getColor(data.score)} fontFamily="IBM Plex Mono">
+            fill={getColor(data.score)} style={{ fontFamily: 'var(--font-mono)' }}>
             {data.score}
           </text>
           <text x={cx} y={cy + (compact ? 44 : 50)} textAnchor="middle" fontSize={11}
-            fill={getColor(data.score)} fontFamily="IBM Plex Mono" letterSpacing="0.1em">
+            fill={getColor(data.score)} style={{ fontFamily: 'var(--font-sans)' }} letterSpacing="0.1em">
             {data.label}
           </text>
         </svg>
         {!compact && (
-          <div style={{ flex: 1, minWidth: 0, paddingTop: 8, paddingRight: 8 }}>
-            <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.04em' }}>SIGNAL BREAKDOWN</div>
+          <div style={{ flex: 1, minWidth: 0, paddingTop: 12, paddingRight: 16 }}>
+            <div className="gv-label" style={{ marginBottom: 6 }}>SIGNAL BREAKDOWN</div>
             {data.signals.map(sig => (
               <div key={sig.name} style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                   <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-secondary)', lineHeight: 1.25 }}>{sig.name}</span>
-                  <span style={{ fontSize: 'var(--fs-body)', color: getColor(sig.score), whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>{sig.label}</span>
+                  <span className="gv-num" style={{ fontSize: 'var(--fs-body)', color: getColor(sig.score), whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>{sig.label}</span>
                 </div>
                 <div style={{ height: 3, background: 'var(--border-color)', borderRadius: 2, position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${sig.score}%`, background: getColor(sig.score), borderRadius: 2, transition: 'width 1s ease' }} />

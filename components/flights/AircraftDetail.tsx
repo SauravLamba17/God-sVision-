@@ -30,8 +30,11 @@ export default function AircraftDetail({ a, compact = false }: { a: Aircraft; co
   if (seen) rows.push(['POS AGE', seen])
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: compact ? 10 : 11, minWidth: compact ? 190 : 230 }}>
-      <div style={{ color: band.color, fontWeight: 700, fontSize: compact ? 12 : 14 }}>
+    <div style={{ fontSize: compact ? 10 : 11, minWidth: compact ? 190 : 230 }}>
+      {/* Callsign in the theme text colour, with a swatch of the map's altitude colour
+          (those marker hues are tuned for the satellite map, not for text on a panel). */}
+      <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: compact ? 12 : 14 }}>
+        <span aria-hidden="true" style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: band.color, marginRight: 6 }} />
         {a.callsign || a.icao24.toUpperCase()}
         {a.onGround && (
           <span style={{ color: 'var(--text-muted)', fontSize: 9, marginLeft: 6 }}>ON GROUND</span>

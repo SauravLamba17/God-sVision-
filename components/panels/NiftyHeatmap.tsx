@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { PanelEmpty } from '@/components/ui/Panel'
-import { pct } from '@/lib/format'
+import { arrow, pct } from '@/lib/format'
 
 interface Stock {
   symbol: string
@@ -24,12 +24,12 @@ const SECTOR_MAP: Record<string, string[]> = {
 }
 
 function intensityColor(pct: number): string {
-  if (pct > 3)  return '#14532d'
-  if (pct > 1)  return '#15803d'
-  if (pct > 0)  return '#166534'
-  if (pct > -1) return '#7f1d1d'
-  if (pct > -3) return '#991b1b'
-  return '#450a0a'
+  if (pct > 3)  return 'var(--heat-up-3)'
+  if (pct > 1)  return 'var(--heat-up-2)'
+  if (pct > 0)  return 'var(--heat-up-1)'
+  if (pct > -1) return 'var(--heat-down-1)'
+  if (pct > -3) return 'var(--heat-down-2)'
+  return 'var(--heat-down-3)'
 }
 
 export default function NiftyHeatmap() {
@@ -71,23 +71,23 @@ export default function NiftyHeatmap() {
     // height:100% + a scrolling body makes the panel fill its grid cell. Left
     // auto-height, the cell's remaining space rendered as bare page background
     // — a black rectangle under the heatmap.
-    <div style={{ fontFamily: 'IBM Plex Mono', border: '1px solid #1e293b', borderLeft: '2px solid #FF9933', background: 'linear-gradient(180deg,#0a0f1e,#060d1a)', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div style={{ padding: '5px 10px', borderBottom: '1px solid #1e293b', background: '#0d1526', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--saffron)', letterSpacing: '0.08em' }}>NIFTY 50 HEATMAP</span>
-        <div style={{ display: 'flex', gap: 6, fontSize: 'var(--fs-meta)' }}>
-          {[['STRONG UP', '#14532d'], ['UP', '#166534'], ['DOWN', '#991b1b'], ['STRONG DN', '#450a0a']].map(([l, c]) => (
+    <div className="gv-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      <div className="gv-card-head" style={{ flexShrink: 0, flexWrap: 'wrap' }}>
+        <span>Nifty 50 heatmap</span>
+        <div style={{ display: 'flex', gap: 6, fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-normal)' }}>
+          {[['STRONG UP', 'var(--heat-up-3)'], ['UP', 'var(--heat-up-1)'], ['DOWN', 'var(--heat-down-2)'], ['STRONG DN', 'var(--heat-down-3)']].map(([l, c]) => (
             <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)' }}>
-              <span style={{ width: 8, height: 8, background: c as string, borderRadius: 1, display: 'inline-block' }} />
+              <span className="gv-heat-swatch" style={{ width: 8, height: 8, background: c as string, borderRadius: 1, display: 'inline-block' }} />
               {l}
             </span>
           ))}
         </div>
       </div>
 
-      <div style={{ padding: 8, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <div style={{ padding: '10px 16px', flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {Object.entries(SECTOR_MAP).map(([sector, tickers]) => (
           <div key={sector} style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 'var(--fs-meta)', color: '#607d8b', letterSpacing: '0.1em', marginBottom: 3 }}>{sector}</div>
+            <div className="gv-label" style={{ marginBottom: 3 }}>{sector}</div>
             <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               {tickers.map(t => {
                 const s = stocks[t]
@@ -101,15 +101,16 @@ export default function NiftyHeatmap() {
                     onClick={() => window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } }))}
                     role="button" tabIndex={0}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.dispatchEvent(new CustomEvent('stockSelected', { detail: { ticker: t } })) } }}
+                    className="gv-heat" data-dir={isPos ? 'up' : 'down'}
                     style={{
-                      background: bg, border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 3, padding: '4px 6px',
+                      ['--heat-bg' as string]: bg,
+                      borderRadius: 6, padding: '4px 6px',
                       cursor: 'pointer', minWidth: 52, textAlign: 'center',
                     }}>
-                    {/* Tiles are always a saturated red/green, so the label is fixed light text (theme text went black on dark red in light mode). */}
-                    <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, color: '#f1f5f9' }}>{displayName.slice(0, 8)}</div>
-                    <div style={{ fontSize: 'var(--fs-meta)', color: isPos ? '#86efac' : '#fca5a5', marginTop: 1 }}>
-                      {pct(s.changePct ?? 0, 1)}
+                    {/* Saturated red/green tiles with white text (≥5:1); high contrast swaps to outlined tiles (globals.css). */}
+                    <div style={{ fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-bold)' }}>{displayName.slice(0, 8)}</div>
+                    <div className="gv-num" style={{ fontSize: 'var(--fs-meta)', marginTop: 1 }}>
+                      {arrow(s.changePct ?? 0, 1)}{pct(s.changePct ?? 0, 1)}
                     </div>
                   </div>
                 )

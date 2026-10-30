@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import PanelWrapper from './PanelWrapper'
 import { sharedFetch } from '@/lib/sharedFetch'
-import { magnitudeColor, timeAgo } from '@/lib/utils'
+import { magnitudeTextColor, timeAgo } from '@/lib/utils'
 
 interface Earthquake {
   id: string
@@ -50,7 +50,7 @@ export default function EarthquakePanel({ limit = 5 }: { limit?: number }) {
               <div className="flex items-center gap-2">
                 <span
                   className="font-mono text-[15px] font-bold w-11 shrink-0 text-center"
-                  style={{ color: magnitudeColor(q.magnitude) }}
+                  style={{ color: magnitudeTextColor(q.magnitude) }}
                 >
                   M{q.magnitude.toFixed(1)}
                 </span>

@@ -1,4 +1,5 @@
 'use client'
+import { useTheme } from '@/lib/context/ThemeContext'
 import {
   LineChart as ReLineChart,
   Line,
@@ -35,22 +36,26 @@ const CustomTooltip = ({ active, payload, label, formatValue }: {
   if (!active || !payload?.length) return null
   const val = (payload[0] as { value?: number })?.value
   return (
-    <div style={{ background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', padding: '6px 10px', fontFamily: 'IBM Plex Mono' }}>
-      <p style={{ color: '#546e7a', fontSize: 10 }}>{label}</p>
-      <p style={{ color: 'var(--text-accent)', fontSize: 11 }}>{formatValue && val !== undefined ? formatValue(Number(val)) : typeof val === 'number' ? val.toFixed(2) : val}</p>
+    <div style={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '6px 10px', fontFamily: 'var(--font-mono)' }}>
+      <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-meta)' }}>{label}</p>
+      <p style={{ color: 'var(--accent-text)', fontSize: 'var(--fs-body)' }}>{formatValue && val !== undefined ? formatValue(Number(val)) : typeof val === 'number' ? val.toFixed(2) : val}</p>
     </div>
   )
 }
 
+// Colours are token vars (recharts passes them to SVG), so a theme switch re-colours instantly.
+const TICK = { fill: 'var(--muted)', fontSize: 'var(--fs-badge)', fontFamily: 'var(--font-mono)' }
+
 export default function LineChartComponent({
   data,
   dataKey = 'value',
-  color = 'var(--text-positive)',
+  color = 'var(--up)',
   height = 200,
   showGrid = true,
   formatValue,
   label
 }: LineChartProps) {
+  const { contrast } = useTheme()
   if (!data || data.length === 0) {
     return (
       <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -61,19 +66,20 @@ export default function LineChartComponent({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <ReLineChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 40 }}>
+      {/* right: 20 so the last x-axis label (e.g. "23:00" in the mono font) isn't clipped */}
+      <ReLineChart data={data} margin={{ top: 4, right: 20, bottom: 4, left: 40 }}>
         {showGrid && (
-          <CartesianGrid strokeDasharray="2 4" stroke="#0d1f0d" vertical={false} />
+          <CartesianGrid strokeDasharray="2 4" stroke="var(--divider)" vertical={false} />
         )}
         <XAxis
           dataKey="date"
-          tick={{ fill: '#546e7a', fontSize: 9, fontFamily: 'IBM Plex Mono' }}
+          tick={TICK}
           tickLine={false}
-          axisLine={{ stroke: 'var(--border-color)' }}
+          axisLine={{ stroke: 'var(--border)' }}
           interval="preserveStartEnd"
         />
         <YAxis
-          tick={{ fill: '#546e7a', fontSize: 9, fontFamily: 'IBM Plex Mono' }}
+          tick={TICK}
           tickLine={false}
           axisLine={false}
           tickFormatter={formatValue}
@@ -84,7 +90,7 @@ export default function LineChartComponent({
           type="monotone"
           dataKey={dataKey}
           stroke={color}
-          strokeWidth={1.5}
+          strokeWidth={contrast === 'high' ? 3 : 1.5}
           dot={false}
           isAnimationActive={false}
         />

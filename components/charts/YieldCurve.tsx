@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useTheme } from '@/lib/context/ThemeContext'
 import {
   AreaChart,
   Area,
@@ -20,14 +21,17 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   if (!active || !payload?.length) return null
   const val = (payload[0] as { value?: number })?.value
   return (
-    <div style={{ background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', padding: '6px 10px', fontFamily: 'IBM Plex Mono' }}>
-      <p style={{ color: '#546e7a', fontSize: 10 }}>{label}</p>
-      <p style={{ color: 'var(--text-accent)', fontSize: 12 }}>{val?.toFixed(3)}%</p>
+    <div style={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '6px 10px', fontFamily: 'var(--font-mono)' }}>
+      <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-meta)' }}>{label}</p>
+      <p style={{ color: 'var(--accent-text)', fontSize: 'var(--fs-body)' }}>{val?.toFixed(3)}%</p>
     </div>
   )
 }
 
+const TICK = { fill: 'var(--muted)', fontSize: 'var(--fs-badge)', fontFamily: 'var(--font-mono)' }
+
 export default function YieldCurve() {
+  const { contrast } = useTheme()
   const [data, setData] = useState<YieldPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [inverted, setInverted] = useState(false)
@@ -81,15 +85,15 @@ export default function YieldCurve() {
       <div className="p-2">
         <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 30 }}>
-            <CartesianGrid strokeDasharray="2 4" stroke="#0d1f0d" vertical={false} />
+            <CartesianGrid strokeDasharray="2 4" stroke="var(--divider)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fill: '#546e7a', fontSize: 9, fontFamily: 'IBM Plex Mono' }}
+              tick={TICK}
               tickLine={false}
-              axisLine={{ stroke: 'var(--border-color)' }}
+              axisLine={{ stroke: 'var(--border)' }}
             />
             <YAxis
-              tick={{ fill: '#546e7a', fontSize: 9, fontFamily: 'IBM Plex Mono' }}
+              tick={TICK}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => `${v.toFixed(1)}%`}
@@ -99,18 +103,18 @@ export default function YieldCurve() {
             <Area
               type="monotone"
               dataKey="value"
-              stroke={inverted ? 'var(--text-negative)' : 'var(--text-positive)'}
-              fill={inverted ? '#ff174420' : '#00e67620'}
-              strokeWidth={2}
-              dot={{ fill: inverted ? 'var(--text-negative)' : 'var(--text-positive)', r: 3 }}
+              stroke={inverted ? 'var(--down)' : 'var(--up)'}
+              fill={inverted ? 'var(--down-soft)' : 'var(--up-soft)'}
+              strokeWidth={contrast === 'high' ? 3 : 2}
+              dot={{ fill: inverted ? 'var(--down)' : 'var(--up)', r: 3 }}
               isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
-        <div className="flex items-center justify-center gap-4 mt-1">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-1">
           {data.map(p => (
             <div key={p.label} className="text-center">
-              <div className="font-mono text-[9px] text-muted">{p.label}</div>
+              <div className="text-[9px] text-muted">{p.label}</div>
               <div className="font-mono text-[10px] text-accent">{p.value?.toFixed(2)}%</div>
             </div>
           ))}
