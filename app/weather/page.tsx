@@ -53,31 +53,13 @@ function getIcon(code: string) { return getWeatherEmoji(code) }
 
 function TempToggle({ unit, onChange }: { unit: TempUnit; onChange: (u: TempUnit) => void }) {
   return (
-    <div style={{
-      display: 'inline-flex',
-      background: 'var(--bg-header, #0d1526)',
-      border: '1px solid var(--border-dim, #1e293b)',
-      borderRadius: 20,
-      padding: 2,
-      gap: 2,
-      flexShrink: 0,
-    }}>
+    <div role="group" aria-label="Temperature unit" className="gv-seg" style={{ flexShrink: 0 }}>
       {(['C', 'F'] as TempUnit[]).map(u => (
         <button
           key={u}
+          type="button"
+          aria-pressed={unit === u}
           onClick={() => onChange(u)}
-          style={{
-            background: unit === u ? 'var(--text-accent, #38bdf8)' : 'transparent',
-            color: unit === u ? '#000' : 'var(--text-muted, #475569)',
-            border: 'none',
-            borderRadius: 16,
-            padding: '3px 10px',
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontFamily: 'IBM Plex Mono',
-            transition: 'all 150ms ease',
-          }}
         >
           °{u}
         </button>
@@ -216,7 +198,7 @@ export default function WeatherPage() {
 
         {/* Current Weather */}
         {current && (
-          <div style={{ border: '1px solid var(--border-dim, #1e293b)', background: 'var(--bg-panel, #0a0f1e)', padding: 16 }}>
+          <div className="gv-card" style={{ padding: 16 }}>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <div className="font-mono text-[20px] text-accent font-bold">{current.city}</div>
@@ -265,7 +247,7 @@ export default function WeatherPage() {
         {/* 7-Day Forecast */}
         {forecast?.daily && (
           <PanelWrapper title="7-DAY FORECAST" source={fcSource}>
-            <div className="flex divide-x" style={{ borderColor: 'var(--border-dim, #1e293b)' }}>
+            <div className="flex divide-x" style={{ borderColor: 'var(--divider)' }}>
               {forecast.daily.time.slice(0, 7).map((date, i) => {
                 const maxT = forecast.daily.temperature_2m_max[i]
                 const minT = forecast.daily.temperature_2m_min[i]
@@ -301,7 +283,7 @@ export default function WeatherPage() {
             <LineChartComponent
               key={tempUnit}
               data={hourlyChartData}
-              color="#ff6d00"
+              color="var(--accent-text)"
               height={140}
               formatValue={(v) => `${v.toFixed(0)}°${tempUnit}`}
             />
@@ -312,7 +294,7 @@ export default function WeatherPage() {
       {/* Right: World Cities + NOAA Alerts */}
       <div style={{ width: 280, flexShrink: 0 }} className="space-y-2">
         {/* City Selector */}
-        <div style={{ border: '1px solid var(--border-dim, #1e293b)', background: 'var(--bg-panel, #0a0f1e)' }}>
+        <div className="gv-card">
           <div className="panel-header" style={{ justifyContent: 'space-between' }}>
             <span className="panel-header-title">WORLD CITIES</span>
             <TempToggle unit={tempUnit} onChange={handleUnitChange} />

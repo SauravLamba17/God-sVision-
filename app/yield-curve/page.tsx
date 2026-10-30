@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine, CartesianGrid,
 } from 'recharts'
 import PanelWrapper from '@/components/panels/PanelWrapper'
-import { pct, signed } from '@/lib/format'
+import { arrow, pct, signed } from '@/lib/format'
 
 interface MaturityPoint { label: string; value: number | null; prev: number | null; change: number | null; months: number }
 interface Spreads { '10Y-2Y': number | null; '10Y-3M': number | null; '30Y-5Y': number | null; '5Y-2Y': number | null }
@@ -15,12 +15,12 @@ function SpreadBadge({ label, value }: { label: string; value: number | null }) 
   if (value === null) return null
   const inv = value < 0
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 14px', background: inv ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)', border: `1px solid ${inv ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`, borderRadius: 4, minWidth: 100 }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 16, fontWeight: 700, color: inv ? 'var(--text-negative)' : 'var(--text-positive)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 14px', background: inv ? 'var(--down-soft)' : 'var(--up-soft)', border: `var(--bw) solid ${inv ? 'var(--down)' : 'var(--up)'}`, borderRadius: 'var(--radius-inner)', minWidth: 100 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: inv ? 'var(--text-negative)' : 'var(--text-positive)' }}>
         {pct(value, 2)}
       </span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 2 }}>{label} SPREAD</span>
-      {inv && <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-negative)', marginTop: 2 }}>⚠ INVERTED</span>}
+      <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', marginTop: 2 }}>{label} SPREAD</span>
+      {inv && <span style={{ fontSize: 8, color: 'var(--text-negative)', marginTop: 2 }}>⚠ INVERTED</span>}
     </div>
   )
 }
@@ -28,7 +28,7 @@ function SpreadBadge({ label, value }: { label: string; value: number | null }) 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--bg-panel)', border: '1px solid #1e293b', padding: '8px 12px', fontFamily: 'IBM Plex Mono', fontSize: 10 }}>
+    <div style={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 12px', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
       <div style={{ color: 'var(--text-accent)', marginBottom: 4, fontWeight: 700 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.name} style={{ color: p.color }}>
@@ -76,19 +76,19 @@ export default function YieldCurvePage() {
   return (
     <div style={{ padding: 8, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(90deg, #0d1526, #070e1b)', border: '1px solid #1e293b', borderLeft: '2px solid #38bdf8', padding: '6px 14px' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 12, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(56,189,248,0.4)' }}>
+      <div className="gv-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', flexWrap: 'wrap', flexShrink: 0 }}>
+        <span style={{ fontSize: 'var(--fs-header)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
           US TREASURY YIELD CURVE
         </span>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>Source: FRED / Federal Reserve</span>
+        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Source: FRED / Federal Reserve</span>
         {(inverted10_2 || inverted10_3m) && (
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fontWeight: 700, color: 'var(--text-negative)', padding: '2px 8px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 3 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-negative)', padding: '2px 8px', background: 'var(--down-soft)', border: 'var(--bw) solid var(--down)', borderRadius: 4 }}>
             ⚠ YIELD CURVE INVERTED — RECESSION SIGNAL
           </span>
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           {(['curve', 'spreads'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 10px', border: '1px solid', borderRadius: 3, cursor: 'pointer', background: tab === t ? 'rgba(56,189,248,0.1)' : 'transparent', color: tab === t ? 'var(--text-accent)' : 'var(--text-muted)', borderColor: tab === t ? 'var(--text-accent)' : 'var(--border-color)' }}>
+            <button key={t} type="button" className="gv-tab" aria-pressed={tab === t} onClick={() => setTab(t)}>
               {t.toUpperCase()}
             </button>
           ))}
@@ -103,14 +103,14 @@ export default function YieldCurvePage() {
       <div style={{ flex: 1, display: 'flex', gap: 8 }}>
         {/* Left: current curve + table */}
         <div style={{ width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PanelWrapper title="CURRENT YIELD CURVE" loading={loading} error={error} source={curveSource} accentColor="#38bdf8">
+          <PanelWrapper title="CURRENT YIELD CURVE" loading={loading} error={error} source={curveSource}>
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={curveChartData}>
-                <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
-                <XAxis dataKey="name" tick={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fill: 'var(--text-muted)' }} />
-                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
+                <CartesianGrid stroke="var(--divider)" strokeDasharray="2 4" />
+                <XAxis dataKey="name" tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-muted)' }} />
+                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="yield" stroke="#38bdf8" fill="rgba(56,189,248,0.08)" strokeWidth={2} dot={{ fill: 'var(--text-accent)', r: 3 }} />
+                <Area type="monotone" dataKey="yield" stroke="var(--accent-text)" fill="var(--accent-soft)" strokeWidth={2} dot={{ fill: 'var(--text-accent)', r: 3 }} />
               </AreaChart>
             </ResponsiveContainer>
 
@@ -128,7 +128,7 @@ export default function YieldCurvePage() {
                     <td style={{ textAlign: 'left', color: 'var(--text-accent)', fontWeight: 700 }}>{m.label}</td>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{m.value !== null ? `${m.value.toFixed(3)}%` : '—'}</td>
                     <td style={{ color: m.change !== null ? (m.change >= 0 ? 'var(--text-positive)' : 'var(--text-negative)') : 'var(--text-muted)' }}>
-                      {m.change !== null ? signed(m.change, 3) : '—'}
+                      {m.change !== null ? `${arrow(m.change, 3)}${signed(m.change, 3)}` : '—'}
                     </td>
                   </tr>
                 ))}
@@ -139,39 +139,39 @@ export default function YieldCurvePage() {
 
         {/* Right: historical */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <PanelWrapper title="HISTORICAL YIELDS (2Y / 10Y)" loading={histLoad} source={histSource} accentColor="#a78bfa">
+          <PanelWrapper title="HISTORICAL YIELDS (2Y / 10Y)" loading={histLoad} source={histSource}>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={history.slice(-252)}>
-                <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
-                <XAxis dataKey="date" tick={{ fontFamily: 'IBM Plex Mono', fontSize: 8, fill: 'var(--text-muted)' }} tickFormatter={v => v.slice(5)} />
-                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
+                <CartesianGrid stroke="var(--divider)" strokeDasharray="2 4" />
+                <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 8, fill: 'var(--text-muted)' }} tickFormatter={v => v.slice(5)} />
+                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="y10" name="10Y" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="y2"  name="2Y"  stroke="#a78bfa" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="y3m" name="3M"  stroke="#f59e0b" strokeWidth={1}   dot={false} />
+                <Line type="monotone" dataKey="y10" name="10Y" stroke="var(--accent-text)" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="y2"  name="2Y"  stroke="var(--info)" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="y3m" name="3M"  stroke="var(--warning)" strokeWidth={1}   dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </PanelWrapper>
 
-          <PanelWrapper title="10Y-2Y SPREAD (Recession Indicator)" loading={histLoad} source={histSource} accentColor="#ef4444">
-            <div style={{ padding: '4px 8px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4 }}>
+          <PanelWrapper title="10Y-2Y SPREAD (Recession Indicator)" loading={histLoad} source={histSource}>
+            <div style={{ padding: '4px 8px', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4 }}>
               When spread {"<"} 0 (inverted): historically precedes recession by 12-18 months
             </div>
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={history.slice(-252)}>
-                <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
-                <XAxis dataKey="date" tick={{ fontFamily: 'IBM Plex Mono', fontSize: 8, fill: 'var(--text-muted)' }} tickFormatter={v => v.slice(5)} />
-                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'IBM Plex Mono', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
+                <CartesianGrid stroke="var(--divider)" strokeDasharray="2 4" />
+                <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 8, fill: 'var(--text-muted)' }} tickFormatter={v => v.slice(5)} />
+                <YAxis domain={['auto','auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
                 <Tooltip content={<CustomTooltip />} />
-                <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="4 2" />
+                <ReferenceLine y={0} stroke="var(--down)" strokeDasharray="4 2" />
                 <Area type="monotone" dataKey="spread_10_2" name="10Y-2Y"
-                  stroke="#38bdf8" fill="url(#spreadGrad)" strokeWidth={1.5}
+                  stroke="var(--accent-text)" fill="url(#spreadGrad)" strokeWidth={1.5}
                   dot={false}
                 />
                 <defs>
                   <linearGradient id="spreadGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.3}/>
-                    <stop offset="50%" stopColor="#ef4444" stopOpacity={0.05}/>
+                    <stop offset="5%"  stopColor="var(--up)" stopOpacity={0.3}/>
+                    <stop offset="50%" stopColor="var(--down)" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
               </AreaChart>

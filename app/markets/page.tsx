@@ -11,6 +11,7 @@ import { useFlash } from '@/lib/hooks/useFlash'
 import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
 import { arrow } from '@/lib/format'
+import { tint } from '@/lib/context/ThemeContext'
 
 const DEFAULT_TICKERS = ['SPY','QQQ','AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA','JPM','PLTR','AMD']
 
@@ -47,7 +48,7 @@ const SIGNAL_COLORS: Record<string, string> = {
   'N/A': 'var(--text-muted)',
 }
 
-const IND_COLORS: Record<string,string> = { SMA20:'var(--text-accent)', SMA50:'var(--text-warning)', SMA200:'#a78bfa', EMA12:'#34d399', EMA26:'#fb923c', BB:'var(--text-positive)', RSI:'var(--text-accent)', MACD:'#ec4899' }
+const IND_COLORS: Record<string,string> = { SMA20:'var(--info)', SMA50:'var(--accent-text)', SMA200:'var(--text-2)', EMA12:'var(--warning)', EMA26:'var(--muted)', BB:'var(--up)', RSI:'var(--info)', MACD:'var(--accent-text)' }
 
 function MarketsInner() {
   const searchParams = useSearchParams()
@@ -188,7 +189,7 @@ function MarketsInner() {
                     </td>
                     <td style={{ fontSize:'var(--fs-body)' }}>{getCurrencyForTicker(q.symbol)}{q.regularMarketPrice?.toFixed(2)}</td>
                     <td style={{ fontSize:'var(--fs-body)', color: q.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
-                      {formatPercent(q.regularMarketChangePercent)}
+                      {arrow(q.regularMarketChangePercent)}{formatPercent(q.regularMarketChangePercent)}
                     </td>
                   </tr>
                 ))}
@@ -202,25 +203,25 @@ function MarketsInner() {
       <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8, minWidth:0 }}>
         {/* Quote Header */}
         {quote && (
-          <div style={{ border:'1px solid #1e293b', borderLeft:'2px solid #38bdf8', background:'var(--bg-header)', padding:'8px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+          <div className="gv-card" style={{ padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:20, fontWeight:700, color:'var(--text-accent)', letterSpacing:'0.06em' }}>{quote.symbol}</span>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>{quote.shortName}</span>
+              <span style={{ fontSize:20, fontWeight:'var(--fw-bold)', color:'var(--accent-text)' }}>{quote.symbol}</span>
+              <span style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>{quote.shortName}</span>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-              <span style={{
-                fontFamily:'IBM Plex Mono', fontSize:24, fontWeight:700,
-                color: flash === 'up' ? '#00e676' : flash === 'down' ? '#ff1744' : 'var(--text-primary)',
-                background: flash === 'up' ? 'rgba(0,230,118,0.08)' : flash === 'down' ? 'rgba(255,23,68,0.08)' : 'transparent',
+              <span className="gv-num" style={{
+                fontSize:24, fontWeight:'var(--fw-bold)',
+                color: flash === 'up' ? 'var(--up)' : flash === 'down' ? 'var(--down)' : 'var(--text-primary)',
+                background: flash === 'up' ? 'var(--up-soft)' : flash === 'down' ? 'var(--down-soft)' : 'transparent',
                 transition: 'all 400ms ease',
                 padding: '2px 6px',
                 borderRadius: '3px',
               }}>{formatCurrency(displayPrice, 2, cur)}</span>
               <div>
-                <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, fontWeight:700, color: displayChangePct>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                <div className="gv-num" style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-bold)', color: displayChangePct>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                   {arrow(displayChangePct)} {formatPercent(displayChangePct)}
                 </div>
-                <div style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color: quote.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                <div className="gv-num" style={{ fontSize:'var(--fs-body)', color: quote.regularMarketChangePercent>=0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                   {quote.regularMarketChange>=0 ? '+' : ''}{quote.regularMarketChange?.toFixed(2)}
                 </div>
               </div>
@@ -230,7 +231,7 @@ function MarketsInner() {
             </div>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
               {Object.entries(signals).filter(([k]) => k !== 'rsi' && k !== 'macdValue').map(([k,v]) => (
-                <span key={k} style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-badge)', padding:'2px 7px', background:`${SIGNAL_COLORS[v as string]||'var(--text-muted)'}18`, border:`1px solid ${SIGNAL_COLORS[v as string]||'var(--text-muted)'}40`, color:SIGNAL_COLORS[v as string]||'var(--text-muted)', borderRadius:3 }}>
+                <span key={k} style={{ fontSize:'var(--fs-badge)', fontWeight:'var(--fw-semibold)', padding:'2px 7px', background:tint(SIGNAL_COLORS[v as string]||'var(--text-muted)', 10), border:'var(--bw) solid currentColor', color:SIGNAL_COLORS[v as string]||'var(--text-muted)', borderRadius:6 }}>
                   {v as string}
                 </span>
               ))}
@@ -247,13 +248,7 @@ function MarketsInner() {
         <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
           <div style={{ display:'flex', gap:3 }}>
             {PERIODS.map(p => (
-              <button key={p.value} onClick={() => setPeriod(p.value)} style={{
-                fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', padding:'4px 9px', cursor:'pointer',
-                border:'1px solid', borderRadius:3,
-                background: period===p.value ? 'rgba(255,109,0,0.12)' : 'transparent',
-                color:       period===p.value ? 'var(--text-accent)' : 'var(--text-muted)',
-                borderColor: period===p.value ? 'var(--text-accent)' : 'var(--border-color)',
-              }}>{p.label}</button>
+              <button key={p.value} type="button" className="gv-tab" aria-pressed={period===p.value} onClick={() => setPeriod(p.value)}>{p.label}</button>
             ))}
           </div>
           <div style={{ width:1, height:20, background:'var(--border-color)' }} />
@@ -261,11 +256,11 @@ function MarketsInner() {
             {Object.keys(IND_COLORS).map(ind => {
               const active = activeIndicators.includes(ind)
               return (
-                <button key={ind} onClick={() => toggle(ind)} style={{
-                  fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', padding:'4px 9px', cursor:'pointer',
-                  border:`1px solid ${active ? IND_COLORS[ind] : 'var(--border-color)'}`,
-                  background: active ? `${IND_COLORS[ind]}15` : 'transparent',
-                  color: active ? IND_COLORS[ind] : 'var(--text-muted)', borderRadius:3,
+                <button key={ind} type="button" aria-pressed={active} onClick={() => toggle(ind)} style={{
+                  fontSize:'var(--fs-meta)', fontWeight:'var(--fw-semibold)', padding:'4px 10px', cursor:'pointer',
+                  border:`var(--bw) solid ${active ? IND_COLORS[ind] : 'var(--border-color)'}`,
+                  background: active ? tint(IND_COLORS[ind], 8) : 'transparent',
+                  color: active ? IND_COLORS[ind] : 'var(--text-2)', borderRadius:'var(--radius-inner)',
                   transition:'all 0.15s',
                 }}>
                   <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%', background: active ? IND_COLORS[ind] : 'var(--border-color)', marginRight:4, verticalAlign:'middle' }} />
@@ -277,24 +272,23 @@ function MarketsInner() {
         </div>
 
         {/* Candlestick Chart with integrated RSI/MACD */}
-        <div style={{ border:'1px solid #1e293b', background:'var(--bg-terminal)', borderRadius:2, overflow:'hidden' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">{selectedTicker} — OHLCV · {PERIODS.find(p=>p.value===period)?.label}</span>
             {toDataStatus(source) && <DataStatusBadge status={toDataStatus(source)!} source="Yahoo Finance" />}
           </div>
           {rateLimited ? (
             <div style={{ height:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:13, color:'var(--text-warning)' }}>⚠ YAHOO FINANCE RATE LIMIT</div>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-muted)' }}>Auto-retrying in {retryCountdown}s...</div>
-              <button onClick={() => fetchTechnicals(selectedTicker, period)}
-                style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-accent)', background:'transparent', border:'1px solid #1e3a5f', padding:'4px 12px', cursor:'pointer', borderRadius:2 }}>
+              <div style={{ fontSize:'var(--fs-body)', fontWeight:'var(--fw-semibold)', color:'var(--text-warning)' }}>⚠ YAHOO FINANCE RATE LIMIT</div>
+              <div style={{ fontSize:'var(--fs-body)', color:'var(--text-muted)' }}>Auto-retrying in <span className="gv-num">{retryCountdown}</span>s...</div>
+              <button type="button" className="gv-tab" onClick={() => fetchTechnicals(selectedTicker, period)}>
                 RETRY NOW
               </button>
             </div>
           ) : loading && candles.length === 0 ? (
-            <div style={{ height:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, background:'var(--bg-terminal)' }}>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-accent)' }}>FETCHING {selectedTicker} CHART<span className="blink-cursor" /></span>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>CONNECTING TO MARKET DATA...</span>
+            <div style={{ height:400, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <span style={{ fontSize:'var(--fs-body)', color:'var(--text-accent)' }}>FETCHING {selectedTicker} CHART<span className="blink-cursor" /></span>
+              <span style={{ fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>CONNECTING TO MARKET DATA...</span>
             </div>
           ) : (
             <CandlestickChart
@@ -314,7 +308,7 @@ function MarketsInner() {
       {/* Right: Fundamentals */}
       <div style={{ width:210, flexShrink:0, display:'flex', flexDirection:'column', gap:8 }}>
         {quote && (
-          <PanelWrapper title={`${quote.symbol} FUNDAMENTALS`} accentColor="#f59e0b">
+          <PanelWrapper title={`${quote.symbol} FUNDAMENTALS`}>
             <div style={{ padding:'4px 10px' }}>
               {[
                 { label:'MKT CAP',    value: quote.marketCap ? formatNumber(quote.marketCap) : 'N/A' },
@@ -330,42 +324,41 @@ function MarketsInner() {
                 { label:'REV GROWTH', value: (summary as any)?.financialData?.revenueGrowth  ? `${((summary as any).financialData.revenueGrowth*100).toFixed(1)}%`  : 'N/A' },
                 { label:'GROSS MGN',  value: (summary as any)?.financialData?.grossMargins   ? `${((summary as any).financialData.grossMargins*100).toFixed(1)}%`   : 'N/A' },
               ].map(row => (
-                <div key={row.label} style={{ display:'flex', justifyContent:'space-between', padding:'3px 0', borderBottom:'1px solid rgba(30,41,59,0.5)' }}>
-                  <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color:'var(--text-muted)' }}>{row.label}</span>
-                  <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-secondary)' }}>{row.value}</span>
+                <div key={row.label} style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', borderBottom:'var(--bw) solid var(--divider)' }}>
+                  <span className="gv-label">{row.label}</span>
+                  <span className="gv-num" style={{ fontSize:'var(--fs-body)', color:'var(--text)' }}>{row.value}</span>
                 </div>
               ))}
             </div>
           </PanelWrapper>
         )}
         {quote?.fiftyTwoWeekHigh && quote?.fiftyTwoWeekLow && (
-          <div style={{ border:'1px solid #1e293b', background:'var(--bg-panel)', padding:'8px 10px' }}>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color:'var(--text-accent)', letterSpacing:'0.06em', marginBottom:6 }}>52W RANGE</div>
+          <div className="gv-card" style={{ padding:'12px 16px' }}>
+            <div className="gv-label" style={{ marginBottom:6 }}>52W RANGE</div>
             <div style={{ position:'relative', height:6, background:'var(--border-color)', borderRadius:3 }}>
               <div style={{
                 position:'absolute', left:0, top:0, height:'100%', borderRadius:3,
                 width:`${((quote.regularMarketPrice-quote.fiftyTwoWeekLow)/(quote.fiftyTwoWeekHigh-quote.fiftyTwoWeekLow))*100}%`,
-                background:'linear-gradient(90deg,var(--text-positive),var(--text-accent))',
+                background:'var(--accent)',
               }} />
             </div>
             <div style={{ display:'flex', justifyContent:'space-between', marginTop:4 }}>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-negative)' }}>{cur}{quote.fiftyTwoWeekLow.toFixed(0)}</span>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-positive)' }}>{cur}{quote.fiftyTwoWeekHigh.toFixed(0)}</span>
+              <span className="gv-num" style={{ fontSize:'var(--fs-body)', color:'var(--text-negative)' }}>{cur}{quote.fiftyTwoWeekLow.toFixed(0)}</span>
+              <span className="gv-num" style={{ fontSize:'var(--fs-body)', color:'var(--text-positive)' }}>{cur}{quote.fiftyTwoWeekHigh.toFixed(0)}</span>
             </div>
           </div>
         )}
         {/* Quick links to financial pages */}
         {quote && (
-          <div style={{ border:'1px solid #1e293b', background:'var(--bg-panel)', padding:'8px 10px' }}>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:'var(--fs-meta)', color:'var(--text-accent)', letterSpacing:'0.06em', marginBottom:6 }}>QUICK LINKS</div>
+          <div className="gv-card" style={{ padding:'12px 16px' }}>
+            <div className="gv-label" style={{ marginBottom:6 }}>QUICK LINKS</div>
             {[
               { label:'FINANCIALS', href:`/financials?ticker=${quote.symbol}` },
               { label:'OPTIONS',    href:`/options?ticker=${quote.symbol}` },
               { label:'EARNINGS',   href:'/earnings' },
               { label:'INSIDER',    href:'/insiders' },
             ].map(l => (
-              <a key={l.label} href={l.href} style={{ display:'block', fontFamily:'IBM Plex Mono', fontSize:'var(--fs-body)', color:'var(--text-accent)', padding:'4px 0', borderBottom:'1px solid rgba(30,41,59,0.3)', textDecoration:'none' }}
-                onMouseEnter={e => (e.currentTarget.style.color='var(--text-accent)')} onMouseLeave={e => (e.currentTarget.style.color='var(--text-accent)')}>
+              <a key={l.label} href={l.href} style={{ display:'block', fontSize:'var(--fs-body)', fontWeight:'var(--fw-medium)', color:'var(--text-accent)', padding:'4px 0', borderBottom:'var(--bw) solid var(--divider)', textDecoration:'none' }}>
                 → {l.label}
               </a>
             ))}
@@ -378,7 +371,7 @@ function MarketsInner() {
 
 export default function MarketsPage() {
   return (
-    <Suspense fallback={<div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontFamily:'IBM Plex Mono', color:'var(--text-accent)' }}>LOADING MARKETS<span className="blink-cursor" /></div>}>
+    <Suspense fallback={<div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'var(--text-accent)' }}>LOADING MARKETS<span className="blink-cursor" /></div>}>
       <MarketsInner />
     </Suspense>
   )

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import { formatCurrency } from '@/lib/utils'
+import { tint } from '@/lib/context/ThemeContext'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
@@ -38,6 +39,15 @@ function GreekCell({ v, prefix = '' }: { v: number|null; prefix?: string }) {
 }
 
 const POPULAR = ['AAPL','MSFT','NVDA','TSLA','SPY','QQQ','META','GOOGL','AMZN','AMD']
+
+// IV heatmap bands, highest first (cells: token tint + token border; text stays the theme text colour).
+const IV_BANDS = [
+  { min: 80, color: 'var(--down)',        label: '≥80% (Elevated)' },
+  { min: 60, color: 'var(--accent-text)', label: '60-80%' },
+  { min: 40, color: 'var(--warning)',     label: '40-60%' },
+  { min: 20, color: 'var(--up)',          label: '20-40%' },
+  { min: -Infinity, color: 'var(--info)', label: '<20% (Low)' },
+]
 
 export default function OptionsPage() {
   const [ticker,  setTicker]  = useState('AAPL')
@@ -87,19 +97,17 @@ export default function OptionsPage() {
   return (
     <div style={{ padding: 8, height: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Top bar */}
-      <div style={{
+      <div className="gv-card" style={{
         display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        background: 'linear-gradient(90deg, #0d1526 0%, #070e1b 100%)',
-        border: '1px solid #1e293b', borderLeft: '2px solid #a78bfa',
-        padding: '6px 12px',
+        padding: '10px 16px', flexShrink: 0, overflow: 'visible',
       }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: '#a78bfa', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(167,139,250,0.4)' }}>
+        <span style={{ fontSize: 'var(--fs-header)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
           OPTIONS CHAIN
         </span>
         {/* Greeks are computed here, not quoted by the exchange. Bid/ask/last/
             volume/OI come from the feed; DELTA/GAMMA/THETA/VEGA/RHO do not. */}
         <span style={{
-          fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-warning)',
+          fontSize: 9, color: 'var(--text-warning)',
           letterSpacing: '0.03em', marginLeft: 10,
         }}>
           ⚠ GREEKS ARE {data?.greeksModel ?? 'BLACK-SCHOLES'} ESTIMATES — NOT EXCHANGE-QUOTED
@@ -118,10 +126,10 @@ export default function OptionsPage() {
           {POPULAR.map(t => (
             <button key={t} onClick={() => { setTicker(t); setInput(t); setExpiry('') }}
               style={{
-                fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 7px',
-                border: '1px solid', borderColor: ticker === t ? '#a78bfa' : 'var(--border-color)',
-                background: ticker === t ? 'rgba(167,139,250,0.1)' : 'transparent',
-                color: ticker === t ? '#a78bfa' : 'var(--text-muted)', cursor: 'pointer', borderRadius: 3,
+                fontSize: 9, padding: '2px 7px',
+                border: '1px solid', borderColor: ticker === t ? 'var(--accent-text)' : 'var(--border-color)',
+                background: ticker === t ? 'var(--accent-soft)' : 'transparent',
+                color: ticker === t ? 'var(--accent-text)' : 'var(--text-muted)', cursor: 'pointer', borderRadius: 3,
               }}
             >{t}</button>
           ))}
@@ -129,24 +137,18 @@ export default function OptionsPage() {
         {/* View mode toggle */}
         <div style={{ display: 'flex', gap: 4 }}>
           {(['chain','surface'] as const).map(m => (
-            <button key={m} onClick={() => setViewMode(m)} style={{
-              fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 8px', cursor: 'pointer',
-              border: '1px solid', borderRadius: 3,
-              background: viewMode === m ? 'rgba(167,139,250,0.12)' : 'transparent',
-              color:      viewMode === m ? '#a78bfa' : 'var(--text-muted)',
-              borderColor: viewMode === m ? '#a78bfa' : 'var(--border-color)',
-            }}>
+            <button key={m} type="button" className="gv-tab" aria-pressed={viewMode === m} onClick={() => setViewMode(m)}>
               {m === 'chain' ? '≡ CHAIN' : '◫ VOL SURFACE'}
             </button>
           ))}
         </div>
         {data && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-secondary)' }}>SPOT</span>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>SPOT</span>
+            <span className="gv-num" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
               {formatCurrency(spotPrice)}
             </span>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
               {data.daysToExpiry}d TO EXPIRY
             </span>
           </div>
@@ -156,26 +158,20 @@ export default function OptionsPage() {
       {/* Expiry selector + Greek legend */}
       {data && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>EXPIRY:</span>
+          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>EXPIRY:</span>
           <div style={{ display: 'flex', gap: 4, overflowX: 'auto' }}>
             {data.expiryDates.slice(0, 12).map(d => (
               <button key={d} onClick={() => setExpiry(d)} style={{
-                fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 8px',
-                border: '1px solid', borderColor: expiry === d ? '#a78bfa' : 'var(--border-color)',
-                background: expiry === d ? 'rgba(167,139,250,0.1)' : 'transparent',
-                color: expiry === d ? '#a78bfa' : 'var(--text-muted)', cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
+                fontSize: 9, padding: '2px 8px',
+                border: '1px solid', borderColor: expiry === d ? 'var(--accent-text)' : 'var(--border-color)',
+                background: expiry === d ? 'var(--accent-soft)' : 'transparent',
+                color: expiry === d ? 'var(--accent-text)' : 'var(--text-muted)', cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap',
               }}>{d}</button>
             ))}
           </div>
           <div style={{ marginLeft: 8, display: 'flex', gap: 4 }}>
             {(['all','itm','otm'] as const).map(f => (
-              <button key={f} onClick={() => setStrikeFilter(f)} style={{
-                fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 8px',
-                border: '1px solid', borderColor: strikeFilter === f ? 'var(--text-accent)' : 'var(--border-color)',
-                background: strikeFilter === f ? 'rgba(56,189,248,0.1)' : 'transparent',
-                color: strikeFilter === f ? 'var(--text-accent)' : 'var(--text-muted)', cursor: 'pointer', borderRadius: 3,
-                textTransform: 'uppercase',
-              }}>{f}</button>
+              <button key={f} type="button" className="gv-tab" aria-pressed={strikeFilter === f} onClick={() => setStrikeFilter(f)} style={{ textTransform: 'uppercase' }}>{f}</button>
             ))}
           </div>
         </div>
@@ -184,10 +180,10 @@ export default function OptionsPage() {
       {/* Vol Surface */}
       {viewMode === 'surface' && data && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-          <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+          <div className="gv-card">
             <div className="panel-header">
               <span className="panel-header-title">IV SMILE / SKEW — {ticker} {expiry}</span>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>Implied volatility by strike vs spot ({formatCurrency(spotPrice)})</span>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Implied volatility by strike vs spot ({formatCurrency(spotPrice)})</span>
             </div>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart
@@ -202,41 +198,42 @@ export default function OptionsPage() {
                 })()}
                 margin={{ top: 8, right: 16, left: 40, bottom: 8 }}
               >
-                <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
-                <XAxis dataKey="moneyness" tick={{ fontFamily:'IBM Plex Mono', fontSize:9, fill:'var(--text-muted)' }} />
-                <YAxis domain={['auto','auto']} tick={{ fontFamily:'IBM Plex Mono', fontSize:9, fill:'var(--text-muted)' }} tickFormatter={v => `${v?.toFixed(0)}%`} />
-                <Tooltip contentStyle={{ background:'var(--bg-panel)', border:'1px solid #1e293b', fontFamily:'IBM Plex Mono', fontSize:9 }} formatter={(v: any) => v ? `${Number(v).toFixed(1)}%` : 'N/A'} />
-                <Legend wrapperStyle={{ fontFamily:'IBM Plex Mono', fontSize:9 }} />
-                <Line type="monotone" dataKey="callIV" name="Call IV%" stroke="#22c55e" strokeWidth={2} dot={false} connectNulls />
-                <Line type="monotone" dataKey="putIV"  name="Put IV%"  stroke="#ef4444" strokeWidth={2} dot={false} connectNulls />
+                <CartesianGrid stroke="var(--divider)" strokeDasharray="2 4" />
+                <XAxis dataKey="moneyness" tick={{ fontFamily:'var(--font-mono)', fontSize:9, fill:'var(--text-muted)' }} />
+                <YAxis domain={['auto','auto']} tick={{ fontFamily:'var(--font-mono)', fontSize:9, fill:'var(--text-muted)' }} tickFormatter={v => `${v?.toFixed(0)}%`} />
+                <Tooltip contentStyle={{ background:'var(--surface-2)', border:'var(--bw) solid var(--border)', borderRadius:'var(--radius-inner)', color:'var(--text)', fontFamily:'var(--font-mono)', fontSize:9 }} formatter={(v: any) => v ? `${Number(v).toFixed(1)}%` : 'N/A'} />
+                <Legend wrapperStyle={{ fontSize:9 }} />
+                <Line type="monotone" dataKey="callIV" name="Call IV%" stroke="var(--up)" strokeWidth={2} dot={false} connectNulls />
+                <Line type="monotone" dataKey="putIV"  name="Put IV%"  stroke="var(--down)" strokeWidth={2} dot={false} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           {/* IV Heatmap grid */}
-          <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+          <div className="gv-card">
             <div className="panel-header"><span className="panel-header-title">IV HEATMAP — CALLS</span></div>
             <div style={{ padding: '8px 12px', overflowX: 'auto' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {data.calls.filter(c=>c.iv>0).sort((a,b)=>a.strike-b.strike).map(c => {
                   const iv = c.iv
-                  const bg = iv>=80?'rgba(239,68,68,0.7)':iv>=60?'rgba(249,115,22,0.6)':iv>=40?'rgba(245,158,11,0.5)':iv>=20?'rgba(34,197,94,0.4)':'rgba(56,189,248,0.3)'
+                  const band = IV_BANDS.find(b => iv >= b.min)!
                   const mono = ((c.strike/spotPrice)*100).toFixed(0)
                   return (
                     <div key={c.strike} title={`Strike: $${c.strike} | IV: ${iv.toFixed(1)}% | Delta: ${c.delta?.toFixed(2)??'N/A'}`} style={{
-                      width:60, height:50, background:bg, borderRadius:3, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, cursor:'default', border:`1px solid ${c.inTheMoney?'rgba(56,189,248,0.5)':'rgba(30,41,59,0.4)'}`,
+                      minWidth:60, height:50, padding:'0 4px', background:tint(band.color, 22), borderRadius:'var(--radius-inner)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, cursor:'default',
+                      border:`var(--bw) solid ${c.inTheMoney ? 'var(--accent)' : band.color}`, fontFamily:'var(--font-mono)', color:'var(--text)',
                     }}>
-                      <span style={{ fontFamily:'IBM Plex Mono', fontSize:8, color:'var(--text-primary)' }}>${c.strike}</span>
-                      <span style={{ fontFamily:'IBM Plex Mono', fontSize:11, fontWeight:700, color:'#fff' }}>{iv.toFixed(0)}%</span>
-                      <span style={{ fontFamily:'IBM Plex Mono', fontSize:7, color:'rgba(255,255,255,0.7)' }}>{mono}%</span>
+                      <span style={{ fontSize:8 }}>${c.strike}</span>
+                      <span style={{ fontSize:11, fontWeight:700 }}>{iv.toFixed(0)}%</span>
+                      <span style={{ fontSize:7 }}>{mono}%</span>
                     </div>
                   )
                 })}
               </div>
-              <div style={{ display:'flex', gap:12, marginTop:8, fontFamily:'IBM Plex Mono', fontSize:8, color:'var(--text-muted)' }}>
-                {[['rgba(56,189,248,0.3)','<20% (Low)'],['rgba(34,197,94,0.4)','20-40%'],['rgba(245,158,11,0.5)','40-60%'],['rgba(249,115,22,0.6)','60-80%'],['rgba(239,68,68,0.7)','≥80% (Elevated)']].map(([bg,label])=>(
+              <div style={{ display:'flex', gap:12, marginTop:8, fontSize:8, color:'var(--text-muted)', flexWrap:'wrap' }}>
+                {[...IV_BANDS].reverse().map(({ color, label })=>(
                   <div key={label} style={{display:'flex',alignItems:'center',gap:4}}>
-                    <div style={{width:12,height:12,borderRadius:2,background:bg}} />{label}
+                    <div style={{width:12,height:12,borderRadius:3,background:tint(color, 22),border:`var(--bw) solid ${color}`}} />{label}
                   </div>
                 ))}
               </div>
@@ -248,17 +245,16 @@ export default function OptionsPage() {
       {/* Calls / Puts tabs + table */}
       {viewMode === 'chain' && <div style={{ flex: 1, minHeight: 0 }}>
         <PanelWrapper title={`${ticker} OPTIONS — ${tab.toUpperCase()}`}
-          loading={loading} error={error} source={source} onRefresh={() => fetchData(ticker, expiry)}
-          accentColor="#a78bfa">
-          <div style={{ display: 'flex', borderBottom: '1px solid #1e293b' }}>
+          loading={loading} error={error} source={source} onRefresh={() => fetchData(ticker, expiry)}>
+          <div style={{ display: 'flex', borderBottom: 'var(--bw) solid var(--divider)' }}>
             {(['calls','puts'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={{
                 flex: 1, padding: '6px 0',
-                fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
                 textTransform: 'uppercase', border: 'none', cursor: 'pointer',
-                background: tab === t ? 'rgba(167,139,250,0.1)' : 'transparent',
-                color: tab === t ? '#a78bfa' : 'var(--text-muted)',
-                borderBottom: tab === t ? '2px solid #a78bfa' : '2px solid transparent',
+                background: tab === t ? 'var(--accent-soft)' : 'transparent',
+                color: tab === t ? 'var(--accent-text)' : 'var(--text-muted)',
+                borderBottom: tab === t ? '3px solid var(--accent)' : '3px solid transparent',
               }}>{t === 'calls' ? '▲ CALLS' : '▼ PUTS'}</button>
             ))}
           </div>
@@ -282,7 +278,7 @@ export default function OptionsPage() {
             <tbody>
               {filtered.map(c => (
                 <tr key={c.contractSymbol} style={{
-                  background: c.inTheMoney ? 'rgba(56,189,248,0.05)' : undefined,
+                  background: c.inTheMoney ? 'var(--surface-2)' : undefined,
                 }}>
                   <td style={{
                     textAlign: 'left', fontWeight: 700,
@@ -325,7 +321,7 @@ export default function OptionsPage() {
           </table>
         </PanelWrapper>
         {/* Greeks legend */}
-        <div style={{ display: 'flex', gap: 16, padding: '4px 8px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', gap: 16, padding: '4px 8px', fontSize: 9, color: 'var(--text-muted)' }}>
           {[
             { label: 'DELTA', desc: 'Price sensitivity to $1 spot move' },
             { label: 'GAMMA', desc: 'Rate of delta change' },
@@ -341,7 +337,7 @@ export default function OptionsPage() {
             <span style={{ fontWeight: 600 }}>est.</span>: IV not quoted for that strike — 30% assumed
           </span>
         </div>
-        <div style={{ padding: '2px 8px 6px', fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+        <div style={{ padding: '2px 8px 6px', fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.5 }}>
           Greeks are calculated with a {data?.greeksModel ?? 'Black-Scholes'} model from the spot price,
           strike, time to expiry, implied volatility and a risk-free rate
           ({data?.riskFreeSource ?? 'assumed'}). They are not supplied by the exchange or a broker and

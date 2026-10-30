@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import PanelWrapper from '@/components/panels/PanelWrapper'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils'
 import { arrow } from '@/lib/format'
+import { tint } from '@/lib/context/ThemeContext'
 
 const SCREENERS = [
   { id: 'day_gainers',             label: 'TOP GAINERS' },
@@ -35,7 +36,7 @@ function RatingBadge({ rating }: { rating: string }) {
   const color = n <= 2 ? 'var(--text-positive)' : n <= 3 ? 'var(--text-warning)' : 'var(--text-negative)'
   const label = n <= 1.5 ? 'STRONG BUY' : n <= 2.5 ? 'BUY' : n <= 3.5 ? 'HOLD' : n <= 4.5 ? 'SELL' : 'STRONG SELL'
   return (
-    <span style={{ color, fontSize: 9, fontWeight: 600, padding: '1px 5px', background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 3 }}>
+    <span style={{ color, fontSize: 9, fontWeight: 600, padding: '1px 5px', background: tint(color, 8), border: `var(--bw) solid ${color}`, borderRadius: 4 }}>
       {label}
     </span>
   )
@@ -96,10 +97,10 @@ export default function ScreenerPage() {
                 style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '6px 10px', border: 'none', cursor: 'pointer',
-                  fontFamily: 'IBM Plex Mono', fontSize: 10, letterSpacing: '0.06em',
-                  background: scrId === s.id ? 'rgba(56,189,248,0.1)' : 'transparent',
-                  color:      scrId === s.id ? 'var(--text-accent)' : 'var(--text-muted)',
-                  borderLeft: scrId === s.id ? '2px solid #38bdf8' : '2px solid transparent',
+                  fontSize: 10, fontWeight: scrId === s.id ? 700 : 500,
+                  background: scrId === s.id ? 'var(--surface-2)' : 'transparent',
+                  color:      scrId === s.id ? 'var(--text-accent)' : 'var(--text-2)',
+                  borderLeft: scrId === s.id ? '3px solid var(--accent)' : '3px solid transparent',
                   transition: 'all 0.15s',
                 }}
               >
@@ -110,11 +111,11 @@ export default function ScreenerPage() {
         </PanelWrapper>
 
         {selected && (
-          <PanelWrapper title={selected.symbol} accentColor="#a78bfa">
-            <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{selected.shortName}</div>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>${selected.price?.toFixed(2)}</div>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: selected.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+          <PanelWrapper title={selected.symbol}>
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{selected.shortName}</div>
+              <div className="gv-num" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>${selected.price?.toFixed(2)}</div>
+              <div className="gv-num" style={{ fontSize: 10, color: selected.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                 {arrow(selected.changePct)} {formatPercent(selected.changePct)}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4 }}>
@@ -128,9 +129,9 @@ export default function ScreenerPage() {
                   { k: 'DIV YLD',  v: selected.dividendYield ? `${(selected.dividendYield*100).toFixed(2)}%` : 'N/A' },
                   { k: 'SECTOR',   v: (selected.sector || 'N/A').slice(0, 10) },
                 ].map(row => (
-                  <div key={row.k} style={{ borderBottom: '1px solid #1e293b', paddingBottom: 3 }}>
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)' }}>{row.k}</div>
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-secondary)' }}>{row.v}</div>
+                  <div key={row.k} style={{ borderBottom: 'var(--bw) solid var(--divider)', paddingBottom: 3 }}>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>{row.k}</div>
+                    <div className="gv-num" style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{row.v}</div>
                   </div>
                 ))}
               </div>
@@ -168,7 +169,7 @@ export default function ScreenerPage() {
                 return (
                   <tr key={s.symbol} onClick={() => setSelected(s)} style={{
                     cursor: 'pointer',
-                    background: selected?.symbol === s.symbol ? 'rgba(56,189,248,0.06)' : undefined,
+                    background: selected?.symbol === s.symbol ? 'var(--surface-2)' : undefined,
                   }}>
                     <td style={{ textAlign: 'left', minWidth: 80 }}>
                       <span style={{ color: 'var(--text-muted)', fontSize: 9, marginRight: 6 }}>{i + 1}</span>

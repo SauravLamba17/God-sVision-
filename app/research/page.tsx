@@ -17,7 +17,7 @@ interface Response {
   timings: Record<string, number>
 }
 
-const box: React.CSSProperties = { border: '1px solid var(--border-color)', background: 'var(--bg-panel)', padding: '10px 12px', minWidth: 0 }
+const box: React.CSSProperties = { border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface)', padding: '12px 16px', minWidth: 0 }
 const head: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-accent)', marginBottom: 6 }
 const meta: React.CSSProperties = { fontSize: 10, color: 'var(--text-muted)' }
 const when = (t: number | string | null) => (t == null ? '' : typeof t === 'number' ? new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : String(t).slice(0, 10))
@@ -25,7 +25,7 @@ const when = (t: number | string | null) => (t == null ? '' : typeof t === 'numb
 function Cite({ n, picked, onPick, fact }: { n: number; picked: boolean; onPick: (n: number) => void; fact?: Fact }) {
   return (
     <button onClick={() => onPick(n)} aria-pressed={picked} aria-label={`Fact ${n}`} title={fact ? `${fact.text} — ${fact.source.name}` : undefined}
-      style={{ all: 'unset', cursor: 'pointer', fontSize: 9, fontWeight: 700, padding: '0 3px', marginLeft: 2, border: `1px solid ${picked ? 'var(--text-accent)' : 'var(--border-color)'}`, color: picked ? 'var(--text-accent)' : '#38bdf8', borderRadius: 2, verticalAlign: 'text-top' }}>
+      style={{ all: 'unset', cursor: 'pointer', fontSize: 9, fontWeight: 700, padding: '0 3px', marginLeft: 2, border: `1px solid ${picked ? 'var(--accent)' : 'var(--border-color)'}`, background: picked ? 'var(--accent)' : 'transparent', color: picked ? 'var(--on-accent)' : 'var(--accent-text)', fontFamily: 'var(--font-mono)', borderRadius: 4, verticalAlign: 'text-top' }}>
       {n}
     </button>
   )
@@ -76,9 +76,9 @@ export default function ResearchPage() {
   const a = data?.answer
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace', background: 'var(--bg-terminal)', minHeight: '100%', color: 'var(--text-primary)', fontSize: 11 }}>
-      <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>RESEARCH AGENT — {market === 'US' ? 'USA' : 'INDIA'}</div>
+    <div style={{ background: 'var(--bg-terminal)', minHeight: '100%', color: 'var(--text-primary)', fontSize: 11 }}>
+      <div style={{ padding: '12px 16px', borderBottom: 'var(--bw) solid var(--border)', background: 'var(--surface)' }}>
+        <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--text)' }}>RESEARCH AGENT — {market === 'US' ? 'USA' : 'INDIA'}</div>
         <div style={{ ...meta, marginTop: 2 }}>Ask why something moved, what if a factor moves, how companies connect, or what is driving the market · every sentence cites its facts · explains moves, never gives buy/sell advice</div>
       </div>
 
@@ -86,14 +86,14 @@ export default function ResearchPage() {
         <form onSubmit={e => { e.preventDefault(); ask(question) }} style={{ ...box, display: 'flex', gap: 8, alignItems: 'center' }}>
           <input ref={input} value={question} onChange={e => setQuestion(e.target.value)} maxLength={300} aria-label="Your question"
             placeholder={EXAMPLES[market][0]}
-            style={{ flex: 1, minWidth: 0, background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontFamily: 'inherit', fontSize: 12, padding: '6px 8px' }} />
+            className="input-terminal" style={{ flex: 1, minWidth: 0, width: 'auto', fontSize: 12, padding: '6px 10px' }} />
           <button type="submit" disabled={loading || !question.trim()}
-            style={{ background: 'transparent', color: loading || !question.trim() ? 'var(--text-muted)' : 'var(--text-accent)', border: '1px solid currentColor', fontFamily: 'inherit', fontSize: 11, padding: '6px 14px', cursor: loading ? 'wait' : 'pointer' }}>ASK</button>
+            style={{ background: loading || !question.trim() ? 'transparent' : 'var(--accent)', color: loading || !question.trim() ? 'var(--text-muted)' : 'var(--on-accent)', border: `var(--bw) solid ${loading || !question.trim() ? 'var(--border)' : 'var(--accent)'}`, borderRadius: 'var(--radius-inner)', fontFamily: 'inherit', fontWeight: 700, fontSize: 11, padding: '6px 14px', cursor: loading ? 'wait' : 'pointer' }}>ASK</button>
         </form>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {EXAMPLES[market].map(q => (
             <button key={q} onClick={() => ask(q)} disabled={loading}
-              style={{ all: 'unset', cursor: 'pointer', fontSize: 10, padding: '3px 8px', border: '1px solid var(--border-color)', borderRadius: 10, color: 'var(--text-secondary)' }}>{q}</button>
+              style={{ all: 'unset', cursor: 'pointer', fontSize: 10, padding: '3px 10px', border: 'var(--bw) solid var(--border)', borderRadius: 999, background: 'var(--surface)', color: 'var(--text-2)' }}>{q}</button>
           ))}
         </div>
 
@@ -103,7 +103,7 @@ export default function ResearchPage() {
         {!loading && a && data && (
           <div style={{ ...box, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '0 5px', border: `1px solid ${data.mode === 'ai' ? '#a78bfa' : '#38bdf8'}`, color: data.mode === 'ai' ? '#a78bfa' : '#38bdf8', borderRadius: 2 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '0 5px', border: 'var(--bw) solid currentColor', color: data.mode === 'ai' ? 'var(--accent-text)' : 'var(--info)', borderRadius: 4 }}>
                 {data.mode === 'ai' ? 'AI' : 'AUTOMATIC'}
               </span>
               <span style={meta}>{data.mode === 'ai' && a.ai ? a.ai.label : a.label}</span>
@@ -116,11 +116,11 @@ export default function ResearchPage() {
             {a.notes.map((n, i) => <div key={i} style={{ ...meta, color: 'var(--text-warning)' }}>{n}</div>)}
 
             {pf && (
-              <div style={{ border: '1px solid var(--text-accent)', padding: '6px 8px', background: 'var(--bg-terminal)' }}>
+              <div style={{ border: 'var(--bw) solid var(--accent)', borderRadius: 'var(--radius-inner)', padding: '6px 8px', background: 'var(--surface-2)' }}>
                 <div style={head}>FACT {pf.id}</div>
                 <div style={{ overflowWrap: 'anywhere' }}>{pf.text}</div>
                 <div style={{ ...meta, marginTop: 4, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {pf.source.url ? <a href={pf.source.url} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>{pf.source.name}</a> : <span>{pf.source.name}</span>}
+                  {pf.source.url ? <a href={pf.source.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-text)' }}>{pf.source.name}</a> : <span>{pf.source.name}</span>}
                   {pf.source.asOf != null && <span>{when(pf.source.asOf)}</span>}
                   <DataStatusBadge status={pf.status} asOf={typeof pf.source.asOf === 'number' ? pf.source.asOf : null} source={pf.source.name} />
                 </div>
@@ -143,7 +143,7 @@ export default function ResearchPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {a.sources.map(s => (
                     <div key={s.n} style={{ ...meta, overflowWrap: 'anywhere' }}>
-                      {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8' }}>{s.name}</a> : <span style={{ color: 'var(--text-secondary)' }}>{s.name}</span>}
+                      {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-text)' }}>{s.name}</a> : <span style={{ color: 'var(--text-secondary)' }}>{s.name}</span>}
                       {s.asOf != null && ` · ${when(s.asOf)}`} · facts {s.facts.map(f => <Cite key={f} n={f} picked={picked === f} onPick={pick} fact={facts.get(f)} />)}
                     </div>
                   ))}

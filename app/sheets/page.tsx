@@ -85,20 +85,17 @@ function showAbout() {
 }
 
 const panel: React.CSSProperties = {
-  background: 'var(--bg-panel)',
-  border: '1px solid var(--border-color)',
-  borderRadius: '4px',
+  background: 'var(--surface)',
+  border: 'var(--bw) solid var(--border)',
+  borderRadius: 'var(--radius)',
   overflow: 'hidden',
 };
 const header: React.CSSProperties = {
-  background: 'var(--bg-header)',
-  borderBottom: '1px solid var(--border-color)',
-  padding: '8px 12px',
-  fontFamily: 'IBM Plex Mono, monospace',
-  fontSize: '11px',
+  borderBottom: 'var(--bw) solid var(--divider)',
+  padding: '10px 16px',
+  fontSize: 'var(--fs-header)',
   fontWeight: 700,
-  color: 'var(--text-accent)',
-  letterSpacing: '0.5px',
+  color: 'var(--text)',
 };
 
 export default function SheetsPage() {
@@ -157,8 +154,8 @@ export default function SheetsPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-terminal)', padding: '8px', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace' }}>
-      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '1px', marginBottom: '4px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-terminal)', padding: '12px', color: 'var(--text-primary)' }}>
+      <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
         GOOGLE SHEETS ADD-ON
       </div>
       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '10px' }}>
@@ -178,8 +175,8 @@ export default function SheetsPage() {
                   Sign in to get your personal Sheets API key.
                 </div>
                 <Link href="/auth/signin" style={{
-                  display: 'inline-block', background: 'var(--text-accent)', color: '#000',
-                  padding: '7px 16px', borderRadius: '3px', textDecoration: 'none',
+                  display: 'inline-block', background: 'var(--accent)', color: 'var(--on-accent)',
+                  padding: '7px 16px', borderRadius: 'var(--radius-inner)', textDecoration: 'none',
                   fontSize: '10px', fontWeight: 700,
                 }}>
                   SIGN IN
@@ -191,8 +188,8 @@ export default function SheetsPage() {
                   YOUR PERSONAL KEY{keyCreatedAt ? ` · created ${new Date(keyCreatedAt).toLocaleString()}` : ''}
                 </div>
                 <div style={{
-                  fontSize: '12px', color: apiKey ? 'var(--text-positive)' : 'var(--text-muted)', background: 'var(--bg-input)',
-                  border: '1px solid var(--border-color)', borderRadius: '3px', padding: '8px 10px',
+                  fontSize: '12px', fontFamily: 'var(--font-mono)', color: apiKey ? 'var(--text-positive)' : 'var(--text-muted)', background: 'var(--surface-2)',
+                  border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 10px',
                   wordBreak: 'break-all', marginBottom: '6px',
                 }}>
                   {apiKey ?? (keyError ?? (hasKey || keyCreatedAt ? '•••••••• (hidden — shown only once)' : 'Loading…'))}
@@ -203,16 +200,16 @@ export default function SheetsPage() {
                     : 'Your key is stored only as a hash and cannot be shown again. Regenerate to get a new one.'}
                 </div>
                 <button onClick={copyCode} style={{
-                  width: '100%', padding: '9px', background: copied ? 'var(--text-positive)' : 'var(--text-accent)',
-                  border: 'none', color: '#000', fontWeight: 700, fontSize: '10px',
-                  borderRadius: '3px', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace',
+                  width: '100%', padding: '9px', background: 'var(--accent)',
+                  border: 'none', color: 'var(--on-accent)', fontWeight: 700, fontSize: '10px',
+                  borderRadius: 'var(--radius-inner)', cursor: 'pointer', fontFamily: 'inherit',
                 }}>
                   {copied ? '✓ COPIED TO CLIPBOARD' : apiKey ? 'COPY Code.gs (with your key filled in)' : 'COPY Code.gs (paste your key into GV_API_KEY)'}
                 </button>
                 <button onClick={regenerate} disabled={regenerating} style={{
                   width: '100%', padding: '7px', marginTop: '6px', background: 'transparent',
-                  border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '10px',
-                  borderRadius: '3px', cursor: regenerating ? 'wait' : 'pointer', fontFamily: 'IBM Plex Mono, monospace',
+                  border: 'var(--bw) solid var(--border)', color: 'var(--text-secondary)', fontSize: '10px',
+                  borderRadius: 'var(--radius-inner)', cursor: regenerating ? 'wait' : 'pointer', fontFamily: 'inherit',
                 }}>
                   {regenerating ? 'GENERATING…' : '↻ REGENERATE KEY'}
                 </button>

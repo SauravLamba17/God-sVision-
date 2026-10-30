@@ -1,29 +1,18 @@
 'use client'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { tint } from '@/lib/context/ThemeContext'
 
 const AIButton = dynamic(() => import('@/components/terminal/AIButton'), { ssr: false })
 
 interface Asset { symbol: string; name: string; type: string }
 interface CorrelationData { symbols: string[]; matrix: number[][]; period: number; generatedAt: number }
 
-function corrColor(v: number): string {
-  if (v >= 0.7) return 'var(--text-positive)'
-  if (v >= 0.4) return '#86efac'
-  if (v >= 0.1) return 'var(--text-warning)'
-  if (v >= -0.1) return 'var(--text-primary)'
-  if (v >= -0.4) return '#fb923c'
-  if (v >= -0.7) return 'var(--text-negative)'
-  return '#dc2626'
-}
-
+// Cell text is always the theme text colour (it was a coloured value on a cell of the
+// same hue, often <3:1); strength and sign show as an up/down tint behind it, and by
+// the value's own minus sign in high contrast, where tints are off.
 function corrBg(v: number): string {
-  const abs = Math.abs(v)
-  const isPos = v >= 0
-  const alpha = Math.round(abs * 80)
-  return isPos
-    ? `rgba(34,197,94,${alpha / 100})`
-    : `rgba(239,68,68,${alpha / 100})`
+  return tint(v >= 0 ? 'var(--up)' : 'var(--down)', Math.round(Math.abs(v) * 45))
 }
 
 export default function CorrelationPage() {
@@ -48,7 +37,7 @@ export default function CorrelationPage() {
   }, [])
 
   if (loading) return (
-    <div style={{ padding: 40, fontFamily: 'IBM Plex Mono', fontSize: 12, color: 'var(--text-accent)', textAlign: 'center' }}>
+    <div style={{ padding: 40, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
       COMPUTING 90-DAY PEARSON CORRELATIONS FOR 10 ASSETS...
     </div>
   )
@@ -64,11 +53,11 @@ export default function CorrelationPage() {
   const selectedB = selected ? assets[selected[1]] : null
 
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono', background: 'var(--bg-terminal)', minHeight: '100%', color: 'var(--text-primary)' }}>
+    <div className="gv-card" style={{ margin: 12, color: 'var(--text-primary)' }}>
       {/* Header */}
-      <div style={{ padding: '10px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '10px 16px', borderBottom: 'var(--bw) solid var(--divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>CROSS-ASSET CORRELATION MATRIX</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--text)' }}>CROSS-ASSET CORRELATION MATRIX</div>
           <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>90-Day Pearson Correlation · {n} Assets · Daily Returns</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -78,10 +67,10 @@ export default function CorrelationPage() {
       </div>
 
       {/* Legend */}
-      <div style={{ padding: '6px 16px', borderBottom: '1px solid #1b2e1b', display: 'flex', gap: 16, alignItems: 'center' }}>
+      <div style={{ padding: '6px 16px', borderBottom: 'var(--bw) solid var(--divider)', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>SCALE:</span>
         {[[-1, 'INVERSE'], [-0.5, 'NEG'], [0, 'NEUTRAL'], [0.5, 'POS'], [1, 'PERFECT']].map(([v, label]) => (
-          <span key={label as string} style={{ fontSize: 9, color: corrColor(v as number), background: corrBg(v as number), padding: '1px 6px', borderRadius: 2 }}>
+          <span key={label as string} className="gv-num" style={{ fontSize: 9, color: 'var(--text)', background: corrBg(v as number), padding: '1px 6px', borderRadius: 4 }}>
             {label} {v !== undefined ? (v as number).toFixed(1) : ''}
           </span>
         ))}
@@ -91,14 +80,14 @@ export default function CorrelationPage() {
         <svg width={W} height={W} style={{ display: 'block' }}>
           {/* Column headers */}
           {symbols.map((sym, j) => (
-            <text key={`col-${j}`} x={CELL + j * CELL + CELL / 2} y={CELL - 6} textAnchor="middle" fontSize={9} fill="#475569" fontFamily="IBM Plex Mono">
+            <text key={`col-${j}`} x={CELL + j * CELL + CELL / 2} y={CELL - 6} textAnchor="middle" fontSize={9} fill="var(--muted)" fontFamily="var(--font-sans)">
               {sym.replace('-USD', '')}
             </text>
           ))}
           {/* Row headers + cells */}
           {symbols.map((sym, i) => (
             <g key={`row-${i}`}>
-              <text x={CELL - 4} y={CELL + i * CELL + CELL / 2 + 4} textAnchor="end" fontSize={9} fill="#475569" fontFamily="IBM Plex Mono">
+              <text x={CELL - 4} y={CELL + i * CELL + CELL / 2 + 4} textAnchor="end" fontSize={9} fill="var(--muted)" fontFamily="var(--font-sans)">
                 {sym.replace('-USD', '')}
               </text>
               {symbols.map((_, j) => {
@@ -111,8 +100,8 @@ export default function CorrelationPage() {
                       y={CELL + i * CELL + 1}
                       width={CELL - 2}
                       height={CELL - 2}
-                      fill={i === j ? 'var(--bg-panel)' : corrBg(v)}
-                      stroke={isSelected ? 'var(--text-accent)' : 'var(--bg-header)'}
+                      fill={i === j ? 'var(--surface-2)' : corrBg(v)}
+                      stroke={isSelected ? 'var(--accent)' : 'var(--divider)'}
                       strokeWidth={isSelected ? 2 : 0.5}
                       rx={2}
                     />
@@ -122,8 +111,8 @@ export default function CorrelationPage() {
                       textAnchor="middle"
                       fontSize={i === j ? 8 : 11}
                       fontWeight={i === j ? 400 : 600}
-                      fill={i === j ? 'var(--text-muted)' : corrColor(v)}
-                      fontFamily="IBM Plex Mono"
+                      fill={i === j ? 'var(--text-muted)' : 'var(--text)'}
+                      fontFamily="var(--font-mono)"
                     >
                       {i === j ? sym.replace('-USD', '') : v.toFixed(2)}
                     </text>
@@ -136,12 +125,12 @@ export default function CorrelationPage() {
 
         {/* Selected pair detail */}
         {selected && selectedA && selectedB && selectedCorr !== null && (
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--bg-panel)', border: '1px solid #1b2e1b', borderRadius: 4, maxWidth: 600 }}>
+          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', maxWidth: 600 }}>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8 }}>SELECTED PAIR ANALYSIS</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{selectedA.symbol.replace('-USD', '')} / {selectedB.symbol.replace('-USD', '')}</span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: corrColor(selectedCorr) }}>{selectedCorr.toFixed(2)}</span>
-              <span style={{ fontSize: 10, color: corrColor(selectedCorr) }}>
+              <span className="gv-num" style={{ fontSize: 24, fontWeight: 700, color: selectedCorr >= 0 ? 'var(--up)' : 'var(--down)' }}>{selectedCorr.toFixed(2)}</span>
+              <span style={{ fontSize: 10, color: selectedCorr >= 0 ? 'var(--up)' : 'var(--down)' }}>
                 {selectedCorr >= 0.7 ? 'STRONG POSITIVE' : selectedCorr >= 0.4 ? 'MODERATE POSITIVE' : selectedCorr >= -0.4 ? 'NEUTRAL' : selectedCorr >= -0.7 ? 'MODERATE NEGATIVE' : 'STRONG NEGATIVE'}
               </span>
             </div>

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useBinanceStream } from '@/lib/hooks/useBinanceStream'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 import dynamic from 'next/dynamic'
-import { pct } from '@/lib/format'
+import { arrow, pct } from '@/lib/format'
 
 const CandlestickChart = dynamic(() => import('@/components/charts/CandlestickChart'), { ssr: false })
 
@@ -22,7 +22,7 @@ function SceneWorldMap() {
   return (
     <div style={{ position:'relative', width:'100%', height:'100%', background:'var(--bg-terminal)' }}>
       <iframe src="/map" style={{ width:'100%', height:'100%', border:'none' }} title="World Map" />
-      <div style={{ position:'absolute', bottom:40, left:'50%', transform:'translateX(-50%)', fontFamily:'IBM Plex Mono', fontSize:11, color:'var(--text-accent)', textAlign:'center', background:'rgba(0,0,0,0.7)', padding:'4px 16px', borderRadius:2 }}>
+      <div style={{ position:'absolute', bottom:40, left:'50%', transform:'translateX(-50%)', fontSize:11, color:'var(--text-accent)', textAlign:'center', background:'var(--surface)', border:'var(--bw) solid var(--border)', padding:'4px 16px', borderRadius:'var(--radius-inner)' }}>
         LIVE GLOBAL MAP — FLIGHTS · EARTHQUAKES · ISS
       </div>
     </div>
@@ -32,30 +32,30 @@ function SceneWorldMap() {
 function SceneMarketPulse({ gainers, losers }: { gainers: Mover[]; losers: Mover[] }) {
   return (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', height:'100%', gap:2 }}>
-      <div style={{ background:'rgba(34,197,94,0.04)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px 40px' }}>
-        <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'var(--text-positive)', letterSpacing:'0.2em', marginBottom:24 }}>TOP GAINERS</div>
+      <div style={{ background:'var(--up-soft)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px 40px' }}>
+        <div style={{ fontSize:14, color:'var(--text-positive)', letterSpacing:'0.2em', marginBottom:24 }}>TOP GAINERS</div>
         {gainers.map((m, i) => (
           <div key={m.symbol} style={{ display:'flex', justifyContent:'space-between', width:'100%', marginBottom:16, alignItems:'center' }}>
             <div>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:28, fontWeight:700, color:'var(--text-primary)', lineHeight:1 }}>{m.symbol}</div>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
+              <div style={{ fontSize:28, fontWeight:700, color:'var(--text-primary)', lineHeight:1 }}>{m.symbol}</div>
+              <div className="gv-num" style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
             </div>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:48, fontWeight:700, color:'var(--text-positive)', lineHeight:1 }}>
-              {pct(m.changePct, 1)}
+            <div className="gv-num" style={{ fontSize:48, fontWeight:700, color:'var(--text-positive)', lineHeight:1 }}>
+              {arrow(m.changePct, 1)}{pct(m.changePct, 1)}
             </div>
           </div>
         ))}
       </div>
-      <div style={{ background:'rgba(239,68,68,0.04)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px 40px' }}>
-        <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'var(--text-negative)', letterSpacing:'0.2em', marginBottom:24 }}>TOP LOSERS</div>
+      <div style={{ background:'var(--down-soft)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px 40px' }}>
+        <div style={{ fontSize:14, color:'var(--text-negative)', letterSpacing:'0.2em', marginBottom:24 }}>TOP LOSERS</div>
         {losers.map((m, i) => (
           <div key={m.symbol} style={{ display:'flex', justifyContent:'space-between', width:'100%', marginBottom:16, alignItems:'center' }}>
             <div>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:28, fontWeight:700, color:'var(--text-primary)', lineHeight:1 }}>{m.symbol}</div>
-              <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
+              <div style={{ fontSize:28, fontWeight:700, color:'var(--text-primary)', lineHeight:1 }}>{m.symbol}</div>
+              <div className="gv-num" style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{formatCurrency(m.price)}</div>
             </div>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:48, fontWeight:700, color:'var(--text-negative)', lineHeight:1 }}>
-              {pct(m.changePct, 1)}
+            <div className="gv-num" style={{ fontSize:48, fontWeight:700, color:'var(--text-negative)', lineHeight:1 }}>
+              {arrow(m.changePct, 1)}{pct(m.changePct, 1)}
             </div>
           </div>
         ))}
@@ -74,19 +74,20 @@ function SceneCryptoMatrix({ coins, tickers }: { coins: CryptoItem[]; tickers: M
         const isPos = changePct >= 0
         return (
           <div key={coin.symbol} style={{
-            border: `1px solid ${isPos ? '#22c55e30' : '#ef444430'}`,
-            background: isPos ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+            border: `var(--bw) solid ${isPos ? 'var(--up)' : 'var(--down)'}`,
+            borderRadius: 'var(--radius-inner)',
+            background: isPos ? 'var(--up-soft)' : 'var(--down-soft)',
             display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
             padding:'16px 8px',
           }}>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:16, fontWeight:700, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)', letterSpacing:'0.06em' }}>
+            <div style={{ fontSize:16, fontWeight:700, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)', letterSpacing:'0.06em' }}>
               {coin.symbol.toUpperCase()}
             </div>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'var(--text-primary)', marginTop:4 }}>
+            <div className="gv-num" style={{ fontSize:14, color:'var(--text-primary)', marginTop:4 }}>
               {price < 1 ? `$${price.toFixed(4)}` : formatCurrency(price)}
             </div>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:18, fontWeight:700, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)', marginTop:4 }}>
-              {pct(changePct, 2)}
+            <div className="gv-num" style={{ fontSize:18, fontWeight:700, color: isPos ? 'var(--text-positive)' : 'var(--text-negative)', marginTop:4 }}>
+              {arrow(changePct)}{pct(changePct, 2)}
             </div>
           </div>
         )
@@ -100,7 +101,7 @@ function SceneBTCChart({ candles }: { candles: any[] }) {
     <div style={{ height:'100%', padding:0 }}>
       {candles.length > 0
         ? <CandlestickChart candles={candles} height={typeof window !== 'undefined' ? window.innerHeight : 800} showVolume />
-        : <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontFamily:'IBM Plex Mono', fontSize:14, color:'var(--text-accent)' }}>LOADING BTC CHART...</div>
+        : <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontSize:14, color:'var(--text-accent)' }}>LOADING BTC CHART...</div>
       }
     </div>
   )
@@ -114,17 +115,17 @@ function SceneEarthquakeWatch({ quakes }: { quakes: Quake[] }) {
         <iframe src="/map" style={{ width:'100%', height:'100%', border:'none' }} title="Earthquake Map" />
       </div>
       <div style={{ background:'var(--bg-terminal)', padding:'20px 16px', overflowY:'auto' }}>
-        <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-negative)', letterSpacing:'0.2em', marginBottom:16 }}>EARTHQUAKE WATCH</div>
+        <div style={{ fontSize:12, color:'var(--text-negative)', letterSpacing:'0.2em', marginBottom:16 }}>EARTHQUAKE WATCH</div>
         {majors.slice(0, 15).map(q => (
-          <div key={q.id} style={{ marginBottom:12, padding:'8px 0', borderBottom:'1px solid #1b2e1b' }}>
+          <div key={q.id} style={{ marginBottom:12, padding:'8px 0', borderBottom:'var(--bw) solid var(--divider)' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
               <span style={{
-                fontFamily:'IBM Plex Mono', fontSize:18, fontWeight:700,
+                fontSize:18, fontWeight:700,
                 color: q.magnitude >= 7 ? 'var(--text-negative)' : q.magnitude >= 6 ? 'var(--text-warning)' : 'var(--text-primary)',
               }}>M{q.magnitude.toFixed(1)}</span>
-              <span style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)' }}>{q.place}</span>
+              <span style={{ fontSize:10, color:'var(--text-muted)' }}>{q.place}</span>
             </div>
-            <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)' }}>
+            <div style={{ fontSize:9, color:'var(--text-muted)' }}>
               {new Date(q.time).toLocaleString()}
             </div>
           </div>
@@ -143,21 +144,21 @@ function SceneGlobalNews({ news }: { news: NewsItem[] }) {
 
   return (
     <div style={{ height:'100%', overflow:'hidden', padding:'0 40px', display:'flex', flexDirection:'column', justifyContent:'center' }}>
-      <div style={{ fontFamily:'IBM Plex Mono', fontSize:12, color:'var(--text-accent)', letterSpacing:'0.3em', marginBottom:20, textAlign:'center' }}>
+      <div style={{ fontSize:12, color:'var(--text-accent)', letterSpacing:'0.3em', marginBottom:20, textAlign:'center' }}>
         GLOBAL NEWS FEED — LIVE
       </div>
       <div style={{ flex:1, overflow:'hidden', position:'relative' }}>
         <div style={{ transform:`translateY(-${offset}px)`, transition:'none' }}>
           {[...news, ...news].map((item, i) => (
-            <div key={i} style={{ padding:'12px 0', borderBottom:'1px solid #1b2e1b' }}>
+            <div key={i} style={{ padding:'12px 0', borderBottom:'var(--bw) solid var(--divider)' }}>
               <div style={{ display:'flex', alignItems:'baseline', gap:12 }}>
-                <span style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', flexShrink:0, minWidth:120 }}>
+                <span style={{ fontSize:10, color:'var(--text-accent)', flexShrink:0, minWidth:120 }}>
                   {item.source}
                 </span>
-                <span style={{ fontFamily:'IBM Plex Mono', fontSize:14, color:'var(--text-primary)', lineHeight:1.4 }}>
+                <span style={{ fontSize:14, color:'var(--text-primary)', lineHeight:1.4 }}>
                   {item.title}
                 </span>
-                <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', flexShrink:0 }}>
+                <span style={{ fontSize:9, color:'var(--text-muted)', flexShrink:0 }}>
                   {new Date(item.publishedAt).toLocaleTimeString()}
                 </span>
               </div>
@@ -319,7 +320,7 @@ export default function GodModePage() {
       </div>
 
       {/* Scene label */}
-      <div style={{ position:'absolute', top:12, right:16, fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', letterSpacing:'0.15em', opacity:0.7 }}>
+      <div style={{ position:'absolute', top:12, right:16, fontSize:10, color:'var(--text-accent)', letterSpacing:'0.15em', opacity:0.7 }}>
         {SCENES[scene]} — PRESS ESC TO EXIT · 1-6 TO JUMP
       </div>
     </div>

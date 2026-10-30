@@ -4,7 +4,7 @@
 // /yield-curve's cached-response bug) blanked the whole document to white.
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div style={{ padding: 24, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--text-muted)' }}>
+    <div style={{ padding: 24, color: 'var(--text-muted)' }}>
       <div style={{ color: 'var(--text-warning)', fontWeight: 700, marginBottom: 8 }}>⚠ THIS PAGE FAILED TO RENDER</div>
       <div style={{ fontSize: 12, marginBottom: 12 }}>{error.message || 'Unexpected error'}</div>
       <button

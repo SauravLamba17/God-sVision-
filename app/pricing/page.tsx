@@ -9,18 +9,18 @@ export default function PricingPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'IBM Plex Mono, monospace',
     }}>
       <div style={{
         textAlign: 'center',
-        border: '1px solid var(--border-color)',
-        borderRadius: '6px',
+        border: 'var(--bw) solid var(--border)',
+        borderTop: 'var(--stripe) solid var(--stripe-color)',
+        borderRadius: 'var(--radius)',
         padding: '40px 48px',
-        background: 'var(--bg-panel)',
+        background: 'var(--surface)',
         maxWidth: '480px',
       }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-accent)', marginBottom: '8px' }}>
-          ⚡ GOD's VISION
+        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px' }}>
+          GOD&apos;s <span style={{ color: 'var(--accent-text)' }}>Vision</span>
         </div>
         <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '8px' }}>
           Currently FREE for all users
@@ -38,13 +38,13 @@ export default function PricingPage() {
         <Link href="/dashboard" style={{
           display: 'inline-block',
           padding: '10px 24px',
-          background: 'var(--text-accent)',
-          color: '#000',
+          background: 'var(--accent)',
+          color: 'var(--on-accent)',
           fontWeight: 700,
           fontSize: '11px',
           letterSpacing: '1px',
           textDecoration: 'none',
-          borderRadius: '3px',
+          borderRadius: 'var(--radius-inner)',
         }}>
           ← BACK TO TERMINAL
         </Link>

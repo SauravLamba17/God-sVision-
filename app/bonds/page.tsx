@@ -91,30 +91,28 @@ export default function BondsPage() {
   };
 
   const panelStyle: React.CSSProperties = {
-    background: 'var(--bg-panel)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '4px',
+    background: 'var(--surface)',
+    border: 'var(--bw) solid var(--border)',
+    borderRadius: 'var(--radius)',
     overflow: 'hidden',
   };
 
   const headerStyle: React.CSSProperties = {
-    background: 'var(--bg-header)',
-    borderBottom: '1px solid var(--border-color)',
-    padding: '8px 12px',
-    fontFamily: 'IBM Plex Mono, monospace',
-    fontSize: '11px',
-    fontWeight: 700,
-    color: 'var(--text-accent)',
-    letterSpacing: '0.5px',
+    borderBottom: 'var(--bw) solid var(--divider)',
+    padding: '10px 16px',
+    fontFamily: 'var(--font-sans)',
+    fontSize: 'var(--fs-header)',
+    fontWeight: 'var(--fw-bold)',
+    color: 'var(--text)',
   };
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '6px 14px',
     background: 'none',
     border: 'none',
-    borderBottom: active ? '2px solid var(--text-accent)' : '2px solid transparent',
-    color: active ? 'var(--text-accent)' : 'var(--text-muted)',
-    fontFamily: 'IBM Plex Mono, monospace',
+    borderBottom: active ? '3px solid var(--accent)' : '3px solid transparent',
+    color: active ? 'var(--text-accent)' : 'var(--text-2)',
+    fontFamily: 'var(--font-sans)',
     fontSize: '10px',
     fontWeight: 700,
     cursor: 'pointer',
@@ -136,7 +134,7 @@ export default function BondsPage() {
         marginBottom: '8px',
       }}>
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace',
+          fontFamily: 'var(--font-sans)',
           fontSize: '13px',
           fontWeight: 700,
           color: 'var(--text-accent)',
@@ -145,7 +143,7 @@ export default function BondsPage() {
           FIXED INCOME INTELLIGENCE
         </div>
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace',
+          fontFamily: 'var(--font-sans)',
           fontSize: '10px',
           color: 'var(--text-muted)',
         }}>
@@ -175,7 +173,7 @@ export default function BondsPage() {
           {/* Treasury yields table */}
           <div style={panelStyle}>
             <div style={headerStyle}>US TREASURY YIELDS</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                   {['MATURITY', 'YIELD %', 'CHG', 'CHG%'].map(h => (
@@ -214,7 +212,7 @@ export default function BondsPage() {
             <div style={headerStyle}>YIELD CURVE SHAPE</div>
             <div style={{ padding: '12px' }}>
               {yields.length > 0 && (
-                <svg viewBox="0 0 300 160" style={{ width: '100%' }}>
+                <svg viewBox="0 0 300 160" style={{ width: '100%', overflow: 'visible' }}>
                   {/* Grid lines */}
                   {[0,1,2,3,4].map(i => (
                     <line key={i} x1="40" y1={20 + i * 30} x2="290" y2={20 + i * 30}
@@ -248,11 +246,11 @@ export default function BondsPage() {
                             <g key={i}>
                               <circle cx={x} cy={yPos} r="4" fill="var(--text-accent)" />
                               <text x={x} y={yPos - 8} textAnchor="middle"
-                                fontSize="9" fill="var(--text-primary)" fontFamily="IBM Plex Mono">
+                                fontSize="9" fill="var(--text-primary)" fontFamily="var(--font-mono)">
                                 {y.yield.toFixed(2)}%
                               </text>
                               <text x={x} y="155" textAnchor="middle"
-                                fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
+                                fontSize="8" fill="var(--text-muted)" fontFamily="var(--font-mono)">
                                 {y.maturity}
                               </text>
                             </g>
@@ -264,7 +262,7 @@ export default function BondsPage() {
                 </svg>
               )}
               {yields.length > 0 && yields.every(y => y.yield === null) && (
-                <div style={{ padding: '10px 2px', fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
+                <div style={{ padding: '10px 2px', fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--text-muted)' }}>
                   Treasury yields unavailable - upstream quote feed did not respond.
                 </div>
               )}
@@ -276,10 +274,10 @@ export default function BondsPage() {
                 <div style={{
                   marginTop: '8px',
                   padding: '6px 10px',
-                  background: 'rgba(255,23,68,0.08)',
-                  border: '1px solid rgba(255,23,68,0.3)',
+                  background: 'var(--down-soft)',
+                  border: 'var(--bw) solid var(--down)',
                   borderRadius: '3px',
-                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontFamily: 'var(--font-sans)',
                   fontSize: '10px',
                   color: 'var(--text-negative)',
                 }}>
@@ -295,7 +293,7 @@ export default function BondsPage() {
       {activeTab === 'etfs' && (
         <div style={panelStyle}>
           <div style={headerStyle}>BOND ETFs — REAL-TIME</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                 {['SYMBOL', 'NAME', 'PRICE', 'CHG', 'CHG%', 'YIELD', 'VOLUME'].map(h => (
@@ -345,13 +343,13 @@ export default function BondsPage() {
               ...panelStyle,
               padding: '16px',
             }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px' }}>
                 {s.label}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '28px', fontWeight: 700, color: s.value === null ? 'var(--text-muted)' : s.value < 0 ? 'var(--text-negative)' : 'var(--text-primary)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 700, color: s.value === null ? 'var(--text-muted)' : s.value < 0 ? 'var(--text-negative)' : 'var(--text-primary)' }}>
                 {s.value === null ? DASH : pct(s.value, 2)}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 {s.value === null ? 'Unavailable — FRED not reachable' : `As of ${s.date} · Source: FRED`}
               </div>
               {/* No verdict without a real number: these lines previously
@@ -372,7 +370,7 @@ export default function BondsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '8px' }}>
           <div style={panelStyle}>
             <div style={headerStyle}>YIELD TO MATURITY CALCULATOR</div>
-            <div style={{ padding: '16px', fontFamily: 'IBM Plex Mono, monospace' }}>
+            <div style={{ padding: '16px', fontFamily: 'var(--font-sans)' }}>
               {[
                 { label: 'Face Value ($)', value: calcFaceValue, setter: setCalcFaceValue },
                 { label: 'Coupon Rate (%)', value: calcCouponRate, setter: setCalcCouponRate },
@@ -389,13 +387,13 @@ export default function BondsPage() {
                     onChange={e => field.setter(parseFloat(e.target.value) || 0)}
                     style={{
                       width: '100%',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-color)',
+                      background: 'var(--surface)',
+                      border: 'var(--bw) solid var(--border)',
                       color: 'var(--text-primary)',
                       padding: '8px 10px',
-                      fontFamily: 'IBM Plex Mono, monospace',
+                      fontFamily: 'var(--font-mono)',
                       fontSize: '13px',
-                      borderRadius: '3px',
+                      borderRadius: 'var(--radius-inner)',
                       outline: 'none',
                     }}
                   />
@@ -406,10 +404,10 @@ export default function BondsPage() {
                 style={{
                   width: '100%',
                   padding: '10px',
-                  background: 'var(--text-accent)',
+                  background: 'var(--accent)',
                   border: 'none',
-                  color: '#000',
-                  fontFamily: 'IBM Plex Mono, monospace',
+                  color: 'var(--on-accent)',
+                  fontFamily: 'var(--font-sans)',
                   fontSize: '11px',
                   fontWeight: 700,
                   letterSpacing: '1px',
@@ -426,13 +424,13 @@ export default function BondsPage() {
             <div style={{ padding: '24px', textAlign: 'center' }}>
               {calcYTM !== null ? (
                 <>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>
                     YIELD TO MATURITY
                   </div>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '48px', fontWeight: 700, color: calcYTM > calcCouponRate ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '48px', fontWeight: 700, color: calcYTM > calcCouponRate ? 'var(--text-positive)' : 'var(--text-negative)' }}>
                     {calcYTM}%
                   </div>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.8 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.8 }}>
                     <div>Coupon Rate: {calcCouponRate}%</div>
                     <div>Annual Coupon: ${(calcFaceValue * calcCouponRate / 100).toFixed(2)}</div>
                     <div>Price vs Par: {calcMarketPrice > calcFaceValue ? 'Trading at PREMIUM' : calcMarketPrice < calcFaceValue ? 'Trading at DISCOUNT' : 'Trading at PAR'}</div>
@@ -442,7 +440,7 @@ export default function BondsPage() {
                   </div>
                 </>
               ) : (
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--text-muted)' }}>
                   Enter bond details and click Calculate
                 </div>
               )}

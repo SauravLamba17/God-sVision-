@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { timeAgo } from '@/lib/utils'
 import { toDataStatus } from '@/lib/dataStatus'
 import { DataStatusBadge } from '@/components/ui/DataStatusBadge'
+import { tint } from '@/lib/context/ThemeContext'
 
 const CATEGORIES = ['All', 'Business', 'Tech', 'World', 'Science', 'Politics', 'Health', 'Sports', 'Energy', 'India']
 const REFRESH_INTERVAL = 300 // seconds — each refresh also POSTs to /api/news/sentiment (keyword estimate, no AI)
@@ -43,18 +44,18 @@ interface MarketMood {
 function MarketMoodBar({ mood }: { mood: MarketMood }) {
   const color = mood.dominantSentiment === 'BULLISH' ? 'var(--text-positive)' : mood.dominantSentiment === 'BEARISH' ? 'var(--text-negative)' : 'var(--text-warning)'
   return (
-    <div style={{ padding: '6px 12px', background: 'var(--bg-panel)', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 16 }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', flexShrink: 0 }} title="Keyword-based estimate from the latest headlines — not AI">MARKET MOOD · KEYWORD ESTIMATE:</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color, letterSpacing: '0.1em' }}>{mood.dominantSentiment}</span>
+    <div style={{ padding: '6px 12px', background: 'var(--bg-panel)', borderBottom: 'var(--bw) solid var(--divider)', display: 'flex', alignItems: 'center', gap: 16 }}>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', flexShrink: 0 }} title="Keyword-based estimate from the latest headlines — not AI">MARKET MOOD · KEYWORD ESTIMATE:</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '0.1em' }}>{mood.dominantSentiment}</span>
       <div style={{ flex: 1, height: 4, background: 'var(--border-color)', borderRadius: 2, display: 'flex', overflow: 'hidden' }}>
         <div style={{ width: `${mood.bullish}%`, background: 'var(--text-positive)', transition: 'width 0.6s ease' }} />
         <div style={{ width: `${mood.neutral}%`, background: 'var(--text-warning)', transition: 'width 0.6s ease' }} />
         <div style={{ width: `${mood.bearish}%`, background: 'var(--text-negative)', transition: 'width 0.6s ease' }} />
       </div>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-positive)', flexShrink: 0 }}>▲{mood.bullish}%</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-warning)', flexShrink: 0 }}>{mood.neutral}%</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-negative)', flexShrink: 0 }}>▼{mood.bearish}%</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>SCORE: {mood.score > 0 ? '+' : ''}{mood.score}</span>
+      <span className="gv-num" style={{ fontSize: 9, color: 'var(--text-positive)', flexShrink: 0 }}>▲{mood.bullish}%</span>
+      <span className="gv-num" style={{ fontSize: 9, color: 'var(--text-warning)', flexShrink: 0 }}>{mood.neutral}%</span>
+      <span className="gv-num" style={{ fontSize: 9, color: 'var(--text-negative)', flexShrink: 0 }}>▼{mood.bearish}%</span>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>SCORE: {mood.score > 0 ? '+' : ''}{mood.score}</span>
     </div>
   )
 }
@@ -174,50 +175,51 @@ export default function NewsPage() {
   return (
     <div className="flex h-full" style={{ background: 'var(--bg-terminal)' }}>
       {/* Left Sidebar */}
-      <div style={{ width: 168, flexShrink: 0, borderRight: '1px solid #1e293b', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: 168, flexShrink: 0, borderRight: 'var(--bw) solid var(--divider)', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column' }}>
         {/* Live status */}
-        <div style={{ padding: '8px 10px', borderBottom: '1px solid #1e293b' }}>
+        <div style={{ padding: '8px 10px', borderBottom: 'var(--bw) solid var(--divider)' }}>
           {/* Was a hardcoded green "LIVE FEED" whatever /api/news returned. */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-[10px] text-muted font-bold">NEWS FEED</span>
+            <span className="text-[10px] text-muted font-bold">NEWS FEED</span>
             {toDataStatus(feedSource) && <DataStatusBadge status={toDataStatus(feedSource)!} source="RSS feeds" asOf={meta?.lastUpdated} />}
           </div>
-          <div className="font-mono text-[9px] text-muted">
+          <div className="text-[9px] text-muted">
             {meta ? `${meta.sources} SOURCES` : '50+ SOURCES'}
           </div>
-          <div className="font-mono text-[9px] text-muted mt-0.5">
+          <div className="text-[9px] text-muted mt-0.5">
             REFRESH {countdownStr}
           </div>
           {lastFetched && (
-            <div className="font-mono text-[8px] text-muted mt-0.5 opacity-60">
+            <div className="text-[8px] text-muted mt-0.5 opacity-60">
               UPDATED {timeAgo(lastFetched.toISOString())}
             </div>
           )}
         </div>
 
         {/* Categories */}
-        <div style={{ padding: '6px 8px', borderBottom: '1px solid #1e293b' }}>
-          <div className="font-mono text-[9px] text-accent font-bold mb-2 tracking-widest">CATEGORY</div>
+        <div style={{ padding: '6px 8px', borderBottom: 'var(--bw) solid var(--divider)' }}>
+          <div className="text-[9px] text-accent font-bold mb-2 tracking-widest">CATEGORY</div>
           {CATEGORIES.map(cat => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
               className="w-full text-left flex items-center justify-between mb-px"
               style={{
-                fontFamily: 'IBM Plex Mono, monospace',
+                fontFamily: 'inherit',
                 fontSize: 10,
                 padding: '3px 6px',
-                background: category === cat ? 'rgba(56,189,248,0.15)' : 'transparent',
-                color: category === cat ? 'var(--text-accent)' : 'var(--text-secondary)',
-                border: category === cat ? '1px solid rgba(56,189,248,0.3)' : '1px solid transparent',
-                borderRadius: 2,
+                background: category === cat ? 'var(--accent)' : 'transparent',
+                color: category === cat ? 'var(--on-accent)' : 'var(--text-secondary)',
+                border: 'var(--bw) solid transparent',
+                fontWeight: category === cat ? 700 : 500,
+                borderRadius: 'var(--radius-inner)',
                 cursor: 'pointer',
                 transition: 'all 0.1s',
               }}
             >
               <span>{cat.toUpperCase()}</span>
               {(categoryCounts[cat] || 0) > 0 && (
-                <span style={{ fontSize: 8, color: category === cat ? 'var(--text-accent)' : 'var(--text-muted)' }}>
+                <span className="gv-num" style={{ fontSize: 8, color: category === cat ? 'var(--on-accent)' : 'var(--text-muted)' }}>
                   {categoryCounts[cat]}
                 </span>
               )}
@@ -227,14 +229,14 @@ export default function NewsPage() {
 
         {/* Top Active Sources */}
         <div style={{ flex: 1, padding: '6px 8px', overflowY: 'auto' }}>
-          <div className="font-mono text-[9px] text-accent font-bold mb-2 tracking-widest">TOP SOURCES</div>
+          <div className="text-[9px] text-accent font-bold mb-2 tracking-widest">TOP SOURCES</div>
           {topSources.map(([src, count]) => (
             <div key={src} className="flex items-center justify-between py-px">
               <div className="flex items-center gap-1.5">
                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', display: 'inline-block', flexShrink: 0 }} />
-                <span className="font-mono text-[9px] text-muted truncate" style={{ maxWidth: 100 }} title={src}>{src}</span>
+                <span className="text-[9px] text-muted truncate" style={{ maxWidth: 100 }} title={src}>{src}</span>
               </div>
-              <span className="font-mono text-[8px] text-muted opacity-60">{count}</span>
+              <span className="text-[8px] text-muted opacity-60">{count}</span>
             </div>
           ))}
         </div>
@@ -247,15 +249,15 @@ export default function NewsPage() {
         {/* Breaking Banner */}
         {hasBreaking && (
           <div
-            className="flex items-center justify-center font-mono text-[10px] text-negative font-bold animate-pulse flex-shrink-0"
-            style={{ padding: '4px 12px', background: 'rgba(239,68,68,0.12)', borderBottom: '1px solid rgba(239,68,68,0.4)' }}
+            className="flex items-center justify-center text-[10px] text-negative font-bold animate-pulse flex-shrink-0"
+            style={{ padding: '4px 12px', background: 'var(--down-soft)', borderBottom: 'var(--bw) solid var(--down)' }}
           >
             ⚠ BREAKING — NEW STORIES IN THE LAST 5 MINUTES
           </div>
         )}
 
         {/* Search + Status Bar */}
-        <div style={{ borderBottom: '1px solid #1e293b', padding: '5px 12px', background: 'var(--bg-panel)', flexShrink: 0 }} className="flex items-center gap-4">
+        <div style={{ borderBottom: 'var(--bw) solid var(--divider)', padding: '5px 12px', background: 'var(--bg-panel)', flexShrink: 0 }} className="flex items-center gap-4">
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -264,22 +266,22 @@ export default function NewsPage() {
             className="input-terminal"
             style={{ width: 280 }}
           />
-          <span className="font-mono text-[9px] text-muted">
+          <span className="text-[9px] text-muted">
             {filtered.length} ARTICLES
           </span>
-          <span className="font-mono text-[9px] text-muted">|</span>
-          <span className="font-mono text-[9px] text-muted">
+          <span className="text-[9px] text-muted">|</span>
+          <span className="text-[9px] text-muted">
             {meta?.sources || '—'} SOURCES
           </span>
-          <span className="font-mono text-[9px] text-muted">|</span>
+          <span className="text-[9px] text-muted">|</span>
           <div className="flex items-center gap-1.5">
             <span className="status-dot status-live" style={{ width: 5, height: 5 }} />
-            <span className="font-mono text-[9px] text-positive">REFRESHES IN {countdownStr}</span>
+            <span className="text-[9px] text-positive">REFRESHES IN {countdownStr}</span>
           </div>
           <button
             onClick={() => { fetchNews(); setCountdown(REFRESH_INTERVAL) }}
-            className="font-mono text-[9px] text-accent hover:text-primary transition-colors ml-auto"
-            style={{ border: '1px solid #1e293b', padding: '2px 8px', background: 'transparent', cursor: 'pointer' }}
+            className="text-[9px] text-accent hover:text-primary transition-colors ml-auto"
+            style={{ border: 'var(--bw) solid var(--divider)', padding: '2px 8px', background: 'transparent', cursor: 'pointer' }}
           >
             ↺ REFRESH NOW
           </button>
@@ -288,8 +290,8 @@ export default function NewsPage() {
         {/* Article Feed */}
         {loading ? (
           <div className="flex flex-col items-center justify-center flex-1 gap-2">
-            <span className="font-mono text-[11px] text-positive">CONNECTING TO NEWS NETWORKS<span className="blink-cursor" /></span>
-            <span className="font-mono text-[9px] text-muted">50+ RSS FEEDS • GOOGLE NEWS • HACKERNEWS • REDDIT</span>
+            <span className="text-[11px] text-positive">CONNECTING TO NEWS NETWORKS<span className="blink-cursor" /></span>
+            <span className="text-[9px] text-muted">50+ RSS FEEDS • GOOGLE NEWS • HACKERNEWS • REDDIT</span>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
@@ -306,18 +308,19 @@ export default function NewsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`block px-4 py-2.5 hover:bg-header transition-colors ${isFlashing ? 'cell-flash-green' : ''}`}
-                  style={{ borderBottom: '1px solid #0f1929' }}
+                  style={{ borderBottom: 'var(--bw) solid var(--divider)' }}
                 >
                   <div className="flex items-start gap-2.5">
                     {/* Keyword sentiment estimate */}
                     {aiSentiments.get(item.title) ? (
                       <span
                         title="Keyword-based estimate — not AI"
-                        className="font-mono text-[8px] px-1 py-px flex-shrink-0 mt-0.5"
+                        className="text-[8px] px-1 py-px flex-shrink-0 mt-0.5"
                         style={{
                           color: AI_COLORS[aiSentiments.get(item.title)!],
-                          border: `1px solid ${AI_COLORS[aiSentiments.get(item.title)!]}50`,
-                          background: `${AI_COLORS[aiSentiments.get(item.title)!]}10`,
+                          border: `var(--bw) solid ${AI_COLORS[aiSentiments.get(item.title)!]}`,
+                          background: tint(AI_COLORS[aiSentiments.get(item.title)!], 6),
+                          borderRadius: 4,
                           minWidth: 40,
                           textAlign: 'center',
                         }}
@@ -326,11 +329,12 @@ export default function NewsPage() {
                       </span>
                     ) : (
                       <span
-                        className="font-mono text-[8px] px-1 py-px flex-shrink-0 mt-0.5"
+                        className="text-[8px] px-1 py-px flex-shrink-0 mt-0.5"
                         style={{
                           color: SENTIMENT_COLORS[item.sentiment],
-                          border: `1px solid ${SENTIMENT_COLORS[item.sentiment]}50`,
-                          background: `${SENTIMENT_COLORS[item.sentiment]}10`,
+                          border: `var(--bw) solid ${SENTIMENT_COLORS[item.sentiment]}`,
+                          background: tint(SENTIMENT_COLORS[item.sentiment], 6),
+                          borderRadius: 4,
                           minWidth: 28,
                           textAlign: 'center',
                         }}
@@ -346,14 +350,14 @@ export default function NewsPage() {
                         </h3>
                         {/* NEW / BREAKING badges */}
                         {isVeryNew && (
-                          <span className="font-mono text-[8px] px-1.5 py-px flex-shrink-0 font-bold animate-pulse"
-                            style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: 'var(--text-negative)', borderRadius: 2 }}>
+                          <span className="text-[8px] px-1.5 py-px flex-shrink-0 font-bold animate-pulse"
+                            style={{ background: 'var(--down-soft)', border: 'var(--bw) solid var(--down)', color: 'var(--text-negative)', borderRadius: 4 }}>
                             BREAKING
                           </span>
                         )}
                         {!isVeryNew && isNew && (
-                          <span className="font-mono text-[8px] px-1.5 py-px flex-shrink-0 font-bold"
-                            style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e', color: 'var(--text-positive)', borderRadius: 2 }}>
+                          <span className="text-[8px] px-1.5 py-px flex-shrink-0 font-bold"
+                            style={{ background: 'var(--up-soft)', border: 'var(--bw) solid var(--up)', color: 'var(--text-positive)', borderRadius: 4 }}>
                             NEW
                           </span>
                         )}
@@ -364,11 +368,11 @@ export default function NewsPage() {
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-[10px] font-bold" style={{ color: 'var(--text-accent)' }}>{item.source}</span>
+                        <span className="text-[10px] font-bold" style={{ color: 'var(--text-accent)' }}>{item.source}</span>
                         <span className="text-muted text-[9px]">•</span>
-                        <span className="font-mono text-[9px]" style={{ color: 'var(--text-muted)' }}>{item.category.toUpperCase()}</span>
+                        <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{item.category.toUpperCase()}</span>
                         <span className="text-muted text-[9px]">•</span>
-                        <span className="font-mono text-[9px]" style={{ color: isVeryNew ? 'var(--text-negative)' : isNew ? 'var(--text-positive)' : 'var(--text-muted)' }}>
+                        <span className="text-[9px]" style={{ color: isVeryNew ? 'var(--text-negative)' : isNew ? 'var(--text-positive)' : 'var(--text-muted)' }}>
                           {timeAgo(item.publishedAt)}
                         </span>
                       </div>
@@ -379,7 +383,7 @@ export default function NewsPage() {
             })}
             {filtered.length === 0 && !loading && (
               <div className="flex items-center justify-center h-32">
-                <span className="font-mono text-[11px] text-muted">NO ARTICLES MATCH YOUR FILTER</span>
+                <span className="text-[11px] text-muted">NO ARTICLES MATCH YOUR FILTER</span>
               </div>
             )}
           </div>

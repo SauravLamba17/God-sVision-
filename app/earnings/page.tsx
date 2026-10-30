@@ -28,9 +28,9 @@ function daysFromNow(dateStr: string): number {
 function dateBadge(dateStr: string) {
   const d = daysFromNow(dateStr)
   if (d < 0)   return <span style={{ color: 'var(--text-muted)', fontSize: 9 }}>REPORTED</span>
-  if (d === 0) return <span style={{ color: 'var(--text-negative)', fontWeight: 700, fontSize: 9, padding: '1px 5px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 3 }}>TODAY</span>
-  if (d === 1) return <span style={{ color: 'var(--text-warning)', fontWeight: 700, fontSize: 9, padding: '1px 5px', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 3 }}>TOMORROW</span>
-  if (d <= 7)  return <span style={{ color: 'var(--text-accent)', fontSize: 9, padding: '1px 5px', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: 3 }}>IN {d}d</span>
+  if (d === 0) return <span style={{ color: 'var(--text-negative)', fontWeight: 700, fontSize: 9, padding: '1px 5px', border: 'var(--bw) solid var(--down)', borderRadius: 4 }}>TODAY</span>
+  if (d === 1) return <span style={{ color: 'var(--text-warning)', fontWeight: 700, fontSize: 9, padding: '1px 5px', background: 'var(--warning-soft)', border: 'var(--bw) solid var(--warning)', borderRadius: 4 }}>TOMORROW</span>
+  if (d <= 7)  return <span style={{ color: 'var(--text-accent)', fontSize: 9, padding: '1px 5px', background: 'var(--accent-soft)', border: 'var(--bw) solid var(--accent)', borderRadius: 4 }}>IN {d}d</span>
   return <span style={{ color: 'var(--text-muted)', fontSize: 9 }}>{dateStr}</span>
 }
 
@@ -86,7 +86,7 @@ export default function EarningsPage() {
         <PanelWrapper title="EARNINGS CALENDAR" loading={loading} source={source}>
           <div style={{ padding: '4px 0' }}>
             {sortedDates.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 11 }}>
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 11 }}>
                 No upcoming earnings found
               </div>
             )}
@@ -98,15 +98,15 @@ export default function EarningsPage() {
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     padding: '4px 10px',
-                    background: isToday ? 'rgba(239,68,68,0.08)' : 'rgba(13,21,38,0.6)',
-                    borderLeft: `2px solid ${isToday ? 'var(--text-negative)' : 'var(--border-color)'}`,
+                    background: isToday ? 'var(--down-soft)' : 'var(--surface-2)',
+                    borderLeft: `3px solid ${isToday ? 'var(--down)' : 'var(--accent)'}`,
                     marginBottom: 2,
                   }}>
-                    <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: isToday ? 'var(--text-negative)' : 'var(--text-accent)', letterSpacing: '0.06em' }}>
+                    <span className="gv-num" style={{ fontSize: 10, fontWeight: 700, color: isToday ? 'var(--text-negative)' : 'var(--text)' }}>
                       {date}
                     </span>
                     {dateBadge(date)}
-                    <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 'auto' }}>
                       {grouped[date].length} COMPANIES
                     </span>
                   </div>
@@ -145,17 +145,17 @@ export default function EarningsPage() {
 
       {/* Right: Earnings history detail */}
       <div style={{ width: 340, flexShrink: 0 }}>
-        <PanelWrapper title={detail ? `${detail.ticker} — EARNINGS HISTORY` : 'SELECT A TICKER'} loading={detailLoading} accentColor="#22c55e">
+        <PanelWrapper title={detail ? `${detail.ticker} — EARNINGS HISTORY` : 'SELECT A TICKER'} loading={detailLoading}>
           {!detail ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--text-muted)', fontSize: 10 }}>
               Click any row to see earnings history
             </div>
           ) : (
             <div>
               {detail.nextDate && (
-                <div style={{ padding: '8px 10px', background: 'rgba(34,197,94,0.06)', borderBottom: '1px solid #1e293b' }}>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>NEXT REPORT DATE</div>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 13, fontWeight: 700, color: 'var(--text-positive)', marginTop: 2 }}>
+                <div style={{ padding: '10px 16px', background: 'var(--surface-2)', borderBottom: 'var(--bw) solid var(--divider)' }}>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>NEXT REPORT DATE</div>
+                  <div className="gv-num" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>
                     {detail.nextDate} {detail.epsEst !== null && <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>· EPS EST ${detail.epsEst.toFixed(2)}</span>}
                   </div>
                 </div>
@@ -182,10 +182,10 @@ export default function EarningsPage() {
                         <td style={{ color: 'var(--text-secondary)' }}>
                           {h.estimate !== null ? `$${h.estimate.toFixed(2)}` : '—'}
                         </td>
-                        <td style={{ color: beat ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                        <td className={h.surprise !== null ? (beat ? 'positive' : 'negative') : undefined}>
                           {h.surprise !== null ? `${beat ? '+' : ''}$${h.surprise.toFixed(2)}` : '—'}
                         </td>
-                        <td style={{ color: beat ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
+                        <td className={h.surprisePct !== null ? (beat ? 'positive' : 'negative') : undefined} style={{ fontWeight: 600 }}>
                           {h.surprisePct !== null ? pct(h.surprisePct, 1) : '—'}
                         </td>
                       </tr>

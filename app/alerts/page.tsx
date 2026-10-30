@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { PushSubscribe } from '@/components/terminal/PushSubscribe'
 import { postJson } from '@/lib/utils'
+import { tint } from '@/lib/context/ThemeContext'
 
 interface PriceAlert { id: number; ticker: string; condition: string; targetPrice: number; triggered: boolean; active: boolean; createdAt: string; triggeredAt?: string }
 interface NewsAlert  { id: number; keyword: string; active: boolean; createdAt: string }
@@ -107,8 +108,8 @@ export default function AlertsPage() {
 
   return (
     <div style={{ padding: 8, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-header)', border: '1px solid #1e293b', borderLeft: '2px solid #f59e0b', padding: '6px 12px' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 12, fontWeight: 700, color: 'var(--text-warning)', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(245,158,11,0.4)' }}>
+      <div className="gv-card" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', flexWrap: 'wrap', overflow: 'visible', flexShrink: 0 }}>
+        <span style={{ fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text)' }}>
           PRICE ALERTS & NOTIFICATIONS
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
@@ -118,14 +119,14 @@ export default function AlertsPage() {
               { label: 'TRIGGERED', val: String(triggeredAlerts),    color: 'var(--text-warning)' },
               { label: 'TOTAL',     val: String(priceAlerts.length), color: 'var(--text-accent)' },
             ].map(s => (
-              <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: `${s.color}0a`, border: `1px solid ${s.color}25`, borderRadius: 4, padding: '2px 10px', minWidth: 50 }}>
-                <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 700, color: s.color }}>{s.val}</span>
-                <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 7, color: 'var(--text-muted)' }}>{s.label}</span>
+              <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: tint(s.color, 4), border: `var(--bw) solid ${s.color}`, borderRadius: 'var(--radius-inner)', padding: '2px 10px', minWidth: 50 }}>
+                <span className="gv-num" style={{ fontSize: 14, fontWeight: 700, color: s.color }}>{s.val}</span>
+                <span style={{ fontSize: 7, color: 'var(--text-muted)' }}>{s.label}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: notifPerm === 'granted' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${notifPerm === 'granted' ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 4 }}>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: notifPerm === 'granted' ? 'var(--text-positive)' : 'var(--text-warning)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: notifPerm === 'granted' ? 'var(--up-soft)' : 'var(--warning-soft)', border: `var(--bw) solid ${notifPerm === 'granted' ? 'var(--up)' : 'var(--warning)'}`, borderRadius: 'var(--radius-inner)' }}>
+            <span style={{ fontSize: 9, color: notifPerm === 'granted' ? 'var(--text-positive)' : 'var(--text-warning)' }}>
               {notifPerm === 'granted' ? '🔔 NOTIFICATIONS ON' : notifPerm === 'denied' ? '🔕 BLOCKED' : '🔔 NOTIFICATIONS OFF'}
             </span>
             {notifPerm !== 'granted' && notifPerm !== 'denied' && (
@@ -136,7 +137,7 @@ export default function AlertsPage() {
         </div>
       </div>
 
-      <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <span>● Price checks every 60 seconds — global AlertChecker running in background</span>
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           <span style={{ fontSize: 8, color: 'var(--text-muted)', alignSelf: 'center' }}>SOUND TEST:</span>
@@ -146,8 +147,7 @@ export default function AlertsPage() {
             { label: 'WARN', fn: () => import('@/lib/sounds').then(s => s.playWarningTone()) },
             { label: 'OPEN', fn: () => import('@/lib/sounds').then(s => s.playMarketOpen()) },
           ].map(b => (
-            <button key={b.label} onClick={b.fn}
-              style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, padding: '2px 7px', background: 'var(--bg-panel)', color: 'var(--text-accent)', border: '1px solid #1b2e1b', borderRadius: 2, cursor: 'pointer' }}>
+            <button key={b.label} type="button" onClick={b.fn} className="gv-tab" style={{ fontSize: 8, padding: '2px 7px' }}>
               {b.label}
             </button>
           ))}
@@ -155,63 +155,63 @@ export default function AlertsPage() {
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1, border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+        <div className="gv-card" style={{ flex: 1 }}>
           <div className="panel-header"><span className="panel-header-title">ADD PRICE ALERT</span></div>
           <form onSubmit={addPriceAlert} style={{ padding: '10px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             {[{ key:'ticker', label:'TICKER', placeholder:'AAPL', width:90 }, { key:'targetPrice', label:'PRICE ($)', placeholder:'150.00', width:100, type:'number' }].map(f => (
               <div key={f.key}>
-                <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>{f.label}</label>
+                <label style={{ fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>{f.label}</label>
                 <input value={form[f.key as keyof typeof form]} onChange={e => setForm(p => ({ ...p, [f.key]: f.key==='ticker' ? e.target.value.toUpperCase() : e.target.value }))}
                   placeholder={f.placeholder} aria-label={f.label} type={f.type||'text'} step={f.type==='number' ? '0.01' : undefined} className="input-terminal" style={{ width: f.width }} required />
               </div>
             ))}
             <div>
-              <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>CONDITION</label>
+              <label style={{ fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>CONDITION</label>
               <select value={form.condition} aria-label="Condition" onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} className="input-terminal" style={{ width: 100 }}>
                 <option value="above">ABOVE ▲</option>
                 <option value="below">BELOW ▼</option>
               </select>
             </div>
             <button type="submit" disabled={saving.price} className="btn-terminal" style={{ alignSelf:'flex-end' }}>{saving.price ? 'SAVING…' : '+ SET ALERT'}</button>
-            {formErr.price && <div role="alert" style={{ flexBasis:'100%', fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-negative)' }}>{formErr.price}</div>}
+            {formErr.price && <div role="alert" style={{ flexBasis:'100%', fontSize:10, color:'var(--text-negative)' }}>{formErr.price}</div>}
           </form>
         </div>
-        <div style={{ width: 300, flexShrink: 0, border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+        <div className="gv-card" style={{ width: 300, flexShrink: 0 }}>
           <div className="panel-header"><span className="panel-header-title">ADD NEWS KEYWORD</span></div>
           <form onSubmit={addNewsAlert} style={{ padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ flex:1 }}>
-              <label style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>KEYWORD</label>
+              <label style={{ fontSize:9, color:'var(--text-muted)', display:'block', marginBottom:3 }}>KEYWORD</label>
               <input value={form.keyword} onChange={e => setForm(f => ({ ...f, keyword: e.target.value }))} placeholder="Federal Reserve, NVDA..." aria-label="News keyword" className="input-terminal w-full" required />
             </div>
             <button type="submit" disabled={saving.news} className="btn-terminal" style={{ alignSelf:'flex-end' }}>{saving.news ? '…' : '+ ADD'}</button>
           </form>
-          {formErr.news && <div role="alert" style={{ padding:'0 12px 8px', fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-negative)' }}>{formErr.news}</div>}
+          {formErr.news && <div role="alert" style={{ padding:'0 12px 8px', fontSize:10, color:'var(--text-negative)' }}>{formErr.news}</div>}
         </div>
       </div>
 
-      <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+      <div className="gv-card">
         <div className="panel-header">
           <span className="panel-header-title">PRICE ALERTS ({priceAlerts.length})</span>
-          <span style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-positive)' }}>● MONITORING {activeAlerts} ACTIVE</span>
+          <span style={{ fontSize:9, color:'var(--text-positive)' }}>● MONITORING {activeAlerts} ACTIVE</span>
         </div>
         {loading ? (
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-accent)', padding:16 }}>LOADING<span className="blink-cursor" /></div>
+          <div style={{ fontSize:10, color:'var(--text-accent)', padding:16 }}>LOADING<span className="blink-cursor" /></div>
         ) : priceAlerts.length === 0 ? (
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:10, color:'var(--text-muted)', padding:24, textAlign:'center' }}>NO ALERTS — SET ONE ABOVE</div>
+          <div style={{ fontSize:10, color:'var(--text-muted)', padding:24, textAlign:'center' }}>NO ALERTS — SET ONE ABOVE</div>
         ) : (
           <table className="data-table">
             <thead><tr><th style={{ textAlign:'left' }}>TICKER</th><th>CONDITION</th><th>TARGET PRICE</th><th>STATUS</th><th>CREATED</th><th>TRIGGERED AT</th><th></th></tr></thead>
             <tbody>
               {priceAlerts.map(a => (
-                <tr key={a.id} style={{ background: triggered.includes(a.id) ? 'rgba(245,158,11,0.06)' : undefined }}>
+                <tr key={a.id} style={{ background: triggered.includes(a.id) ? 'var(--warning-soft)' : undefined }}>
                   <td style={{ textAlign:'left', color:'var(--text-accent)', fontWeight:700 }}>{a.ticker}</td>
                   <td style={{ color: a.condition==='above' ? 'var(--text-positive)' : 'var(--text-negative)' }}>{a.condition==='above' ? '▲ ABOVE' : '▼ BELOW'}</td>
                   <td style={{ fontWeight:600, color:'var(--text-primary)' }}>{formatPrice(a.targetPrice)}</td>
                   <td>
-                    <span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, fontWeight:700,
-                      background: a.triggered ? 'rgba(245,158,11,0.15)' : a.active ? 'rgba(34,197,94,0.15)' : 'rgba(71,85,105,0.15)',
+                    <span style={{ padding:'1px 6px', borderRadius:4, fontSize:9, fontWeight:700, fontFamily:'var(--font-sans)',
+                      background: a.triggered ? 'var(--warning-soft)' : a.active ? 'var(--up-soft)' : 'transparent',
                       color:      a.triggered ? 'var(--text-warning)' : a.active ? 'var(--text-positive)' : 'var(--text-muted)',
-                      border:`1px solid ${a.triggered ? 'rgba(245,158,11,0.4)' : a.active ? 'rgba(34,197,94,0.4)' : 'var(--border-color)'}`,
+                      border: 'var(--bw) solid currentColor',
                     }}>
                       {a.triggered ? '🔔 TRIGGERED' : a.active ? '● WATCHING' : '○ INACTIVE'}
                     </span>
@@ -227,7 +227,7 @@ export default function AlertsPage() {
       </div>
 
       {newsAlerts.length > 0 && (
-        <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+        <div className="gv-card">
           <div className="panel-header"><span className="panel-header-title">NEWS KEYWORD ALERTS ({newsAlerts.length})</span></div>
           <table className="data-table">
             <thead><tr><th style={{ textAlign:'left' }}>KEYWORD</th><th>STATUS</th><th>CREATED</th><th></th></tr></thead>
@@ -235,7 +235,7 @@ export default function AlertsPage() {
               {newsAlerts.map(a => (
                 <tr key={a.id}>
                   <td style={{ textAlign:'left', color:'var(--text-primary)', fontWeight:600 }}>{a.keyword}</td>
-                  <td><span style={{ padding:'2px 6px', borderRadius:3, fontSize:9, background:'rgba(34,197,94,0.15)', color:'var(--text-positive)', border:'1px solid rgba(34,197,94,0.4)' }}>● ACTIVE</span></td>
+                  <td><span style={{ padding:'1px 6px', borderRadius:4, fontSize:9, fontFamily:'var(--font-sans)', background:'var(--up-soft)', color:'var(--text-positive)', border:'var(--bw) solid currentColor' }}>● ACTIVE</span></td>
                   <td style={{ color:'var(--text-muted)', fontSize:9 }}>{new Date(a.createdAt).toLocaleDateString()}</td>
                   <td><button onClick={() => deleteAlert(a.id,'news')} aria-label={`Delete "${a.keyword}" alert`} title="Delete alert" style={{ background:'none', border:'none', color:'var(--text-negative)', cursor:'pointer', fontSize:12 }}>✕</button></td>
                 </tr>

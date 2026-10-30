@@ -21,9 +21,9 @@ function fmt(v: number | null, type: 'currency' | 'pct' | 'ratio' | 'shares' = '
 function StatRow({ label, value, type, good }: { label: string; value: number | null; type?: any; good?: boolean }) {
   const display = fmt(value, type)
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(30,41,59,0.5)' }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: display === '—' ? 'var(--text-muted)' : (good === true ? 'var(--text-positive)' : good === false ? 'var(--text-negative)' : 'var(--text-primary)') }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: 'var(--bw) solid var(--divider)' }}>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{label}</span>
+      <span className="gv-num" style={{ fontSize: 11, fontWeight: 600, color: display === '—' ? 'var(--text-muted)' : (good === true ? 'var(--text-positive)' : good === false ? 'var(--text-negative)' : 'var(--text-primary)') }}>
         {display}
       </span>
     </div>
@@ -35,7 +35,7 @@ const TABS = ['income', 'balance', 'cashflow', 'metrics'] as const
 type Tab = typeof TABS[number]
 
 function StatementTable({ data, type }: { data: any[]; type: Tab }) {
-  if (!data?.length) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono', fontSize: 10 }}>No data available</div>
+  if (!data?.length) return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 10 }}>No data available</div>
 
   const INCOME_ROWS = [
     { key: 'totalRevenue', label: 'Revenue' },
@@ -148,8 +148,8 @@ export default function FinancialsPage() {
   return (
     <div style={{ padding: 8, height: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: 'linear-gradient(90deg, #0d1526, #070e1b)', border: '1px solid #1e293b', borderLeft: '2px solid #22c55e', padding: '6px 12px' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color: 'var(--text-positive)', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(34,197,94,0.4)' }}>
+      <div className="gv-card" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 16px', flexShrink: 0, overflow: 'visible' }}>
+        <span style={{ fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text)' }}>
           FINANCIAL STATEMENTS
         </span>
         <form onSubmit={e => { e.preventDefault(); setTicker(input.toUpperCase()) }} style={{ display: 'flex', gap: 6 }}>
@@ -158,14 +158,14 @@ export default function FinancialsPage() {
         </form>
         <div style={{ display: 'flex', gap: 4 }}>
           {(['annual','quarterly'] as const).map(p => (
-            <button key={p} onClick={() => setPeriod(p)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 8px', border: '1px solid', borderRadius: 3, cursor: 'pointer', background: period === p ? 'rgba(34,197,94,0.1)' : 'transparent', color: period === p ? 'var(--text-positive)' : 'var(--text-muted)', borderColor: period === p ? 'var(--text-positive)' : 'var(--border-color)' }}>
+            <button key={p} type="button" className="gv-tab" aria-pressed={period === p} onClick={() => setPeriod(p)}>
               {p.toUpperCase()}
             </button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           {POPULAR.map(t => (
-            <button key={t} onClick={() => { setTicker(t); setInput(t) }} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, padding: '2px 6px', border: '1px solid #1e293b', borderRadius: 3, cursor: 'pointer', background: ticker === t ? 'rgba(56,189,248,0.1)' : 'transparent', color: ticker === t ? 'var(--text-accent)' : 'var(--text-muted)' }}>
+            <button key={t} type="button" className="gv-tab" aria-pressed={ticker === t} onClick={() => { setTicker(t); setInput(t) }} style={{ padding: '2px 8px' }}>
               {t}
             </button>
           ))}
@@ -176,8 +176,8 @@ export default function FinancialsPage() {
         {/* Left: key metrics */}
         {km && (
           <div style={{ width: 220, flexShrink: 0, overflowY: 'auto' }}>
-            <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #22c55e', background: 'var(--bg-panel)', padding: '10px 12px' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-positive)', letterSpacing: '0.08em', marginBottom: 8 }}>
+            <div className="gv-card" style={{ padding: '12px 16px' }}>
+              <div style={{ fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                 {ticker} — KEY METRICS
               </div>
               <StatRow label="Revenue"          value={km.revenue} />
@@ -211,15 +211,15 @@ export default function FinancialsPage() {
         {/* Right: statements */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: 2, borderBottom: '1px solid #1e293b' }}>
+          <div role="tablist" style={{ display: 'flex', gap: 2, borderBottom: 'var(--bw) solid var(--divider)' }}>
             {TABS.map(t => (
-              <button key={t} onClick={() => setTab(t)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, padding: '6px 14px', border: 'none', borderBottom: tab === t ? '2px solid #22c55e' : '2px solid transparent', cursor: 'pointer', background: 'transparent', color: tab === t ? 'var(--text-positive)' : 'var(--text-muted)', fontWeight: tab === t ? 600 : 400 }}>
+              <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} style={{ fontSize: 10, padding: '6px 14px', border: 'none', borderBottom: tab === t ? '3px solid var(--accent)' : '3px solid transparent', cursor: 'pointer', background: 'transparent', color: tab === t ? 'var(--text-accent)' : 'var(--text-2)', fontWeight: tab === t ? 700 : 500 }}>
                 {t.toUpperCase()}
               </button>
             ))}
           </div>
 
-          <PanelWrapper title={`${ticker} — ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} source={source} accentColor="#22c55e">
+          <PanelWrapper title={`${ticker} — ${tab.toUpperCase()} STATEMENT (${period.toUpperCase()})`} loading={loading} error={error} source={source}>
             {data && tab !== 'metrics' && <StatementTable data={data[tab]} type={tab} />}
             {data && tab === 'metrics' && km && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: 8 }}>
@@ -237,9 +237,9 @@ export default function FinancialsPage() {
                   { label: 'Net Margin',    value: km.profitMargin,   type: 'pct' as const },
                   { label: 'Op Margin',     value: km.operatingMargin, type: 'pct' as const },
                 ].map(m => (
-                  <div key={m.label} style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 4, padding: '8px 12px' }}>
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{m.label}</div>
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{fmt(m.value, m.type)}</div>
+                  <div key={m.label} style={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 12px' }}>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>{m.label}</div>
+                    <div className="gv-num" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{fmt(m.value, m.type)}</div>
                   </div>
                 ))}
               </div>

@@ -1,7 +1,7 @@
 'use client'
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
-import { magnitudeColor, timeAgo } from '@/lib/utils'
+import { magnitudeColor, magnitudeTextColor, timeAgo } from '@/lib/utils'
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
@@ -81,9 +81,9 @@ export default function MapPage() {
 
   const altColor = (alt: number | null) => {
     if (!alt) return 'var(--text-muted)'
-    if (alt > 30000) return '#2196f3'
+    if (alt > 30000) return 'var(--info)'
     if (alt > 15000) return 'var(--text-positive)'
-    return '#ffd600'
+    return 'var(--warning)'
   }
 
   if (!isMounted) return (
@@ -120,11 +120,11 @@ export default function MapPage() {
               eventHandlers={{ click: () => setSelectedQuake(q) }}
             >
               <Popup>
-                <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: '#c8e6c9', background: 'var(--bg-terminal)', padding: 6 }}>
+                <div style={{ fontSize: 11, color: 'var(--text)', padding: 6 }}>
                   <div style={{ color: 'var(--text-accent)', fontWeight: 700 }}>M{q.magnitude.toFixed(1)} EARTHQUAKE</div>
                   <div>{q.place}</div>
-                  <div style={{ color: '#546e7a' }}>Depth: {q.depth.toFixed(0)}km</div>
-                  <div style={{ color: '#546e7a' }}>{timeAgo(q.time)}</div>
+                  <div style={{ color: 'var(--muted)' }}>Depth: {q.depth.toFixed(0)}km</div>
+                  <div style={{ color: 'var(--muted)' }}>{timeAgo(q.time)}</div>
                   {q.tsunami === 1 && <div style={{ color: 'var(--text-negative)', fontWeight: 700 }}>⚠ TSUNAMI WARNING</div>}
                 </div>
               </Popup>
@@ -144,13 +144,13 @@ export default function MapPage() {
                 weight={1}
               >
                 <Popup>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: '#c8e6c9', background: 'var(--bg-terminal)', padding: 6 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text)', padding: 6 }}>
                     <div style={{ color: 'var(--text-accent)', fontWeight: 700 }}>{a.callsign || a.icao24}</div>
                     <div>{a.originCountry}</div>
-                    <div style={{ color: '#546e7a' }}>Alt: {a.altitude ? `${Math.round(a.altitude).toLocaleString()}ft` : 'N/A'}</div>
-                    <div style={{ color: '#546e7a' }}>Speed: {a.velocity ? `${Math.round(a.velocity)}kts` : 'N/A'}</div>
-                    <div style={{ color: '#546e7a' }}>Hdg: {a.heading ? `${Math.round(a.heading)}°` : 'N/A'}</div>
-                    {a.squawk && <div style={{ color: '#546e7a' }}>Squawk: {a.squawk}</div>}
+                    <div style={{ color: 'var(--muted)' }}>Alt: {a.altitude ? `${Math.round(a.altitude).toLocaleString()}ft` : 'N/A'}</div>
+                    <div style={{ color: 'var(--muted)' }}>Speed: {a.velocity ? `${Math.round(a.velocity)}kts` : 'N/A'}</div>
+                    <div style={{ color: 'var(--muted)' }}>Hdg: {a.heading ? `${Math.round(a.heading)}°` : 'N/A'}</div>
+                    {a.squawk && <div style={{ color: 'var(--muted)' }}>Squawk: {a.squawk}</div>}
                   </div>
                 </Popup>
               </CircleMarker>
@@ -161,7 +161,7 @@ export default function MapPage() {
         {/* Layer Controls */}
         <div style={{
           position: 'absolute', top: 10, right: 10, zIndex: 1000,
-          background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', padding: '8px 12px',
+          background: 'var(--surface)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 12px',
         }}>
           <div className="font-mono text-[10px] text-accent font-bold mb-2">MAP LAYERS</div>
           {[
@@ -198,10 +198,10 @@ export default function MapPage() {
         {/* Legend */}
         <div style={{
           position: 'absolute', bottom: 10, left: 10, zIndex: 1000,
-          background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', padding: '8px 12px',
+          background: 'var(--surface)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 12px',
         }}>
           <div className="font-mono text-[9px] text-accent mb-1">EARTHQUAKE MAGNITUDE</div>
-          {[['≥7.0', 'var(--text-negative)'], ['5.0-6.9', 'var(--text-accent)'], ['3.0-4.9', '#ffd600'], ['<3.0', '#546e7a']].map(([label, color]) => (
+          {[['≥7.0', 'var(--text-negative)'], ['5.0-6.9', 'var(--text-accent)'], ['3.0-4.9', 'var(--warning)'], ['<3.0', 'var(--muted)']].map(([label, color]) => (
             <div key={label} className="flex items-center gap-2 mb-0.5">
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: color as string, display: 'inline-block' }} />
               <span className="font-mono text-[9px] text-muted">{label}</span>
@@ -211,7 +211,7 @@ export default function MapPage() {
       </div>
 
       {/* Right Sidebar: Earthquake List */}
-      <div style={{ width: 260, flexShrink: 0, borderLeft: '1px solid #1b2e1b', background: 'var(--bg-terminal)', overflowY: 'auto' }}>
+      <div style={{ width: 260, flexShrink: 0, borderLeft: 'var(--bw) solid var(--border)', background: 'var(--surface)', overflowY: 'auto' }}>
         <div className="panel-header sticky top-0">
           <span className="panel-header-title">RECENT EARTHQUAKES</span>
         </div>
@@ -219,11 +219,11 @@ export default function MapPage() {
           <div
             key={q.id}
             className="px-2 py-1.5 cursor-pointer hover:bg-header"
-            style={{ borderBottom: '1px solid #0d1f0d' }}
+            style={{ borderBottom: 'var(--bw) solid var(--divider)' }}
             onClick={() => setSelectedQuake(q)}
           >
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[13px] font-bold" style={{ color: magnitudeColor(q.magnitude) }}>
+              <span className="font-mono text-[13px] font-bold" style={{ color: magnitudeTextColor(q.magnitude) }}>
                 M{q.magnitude.toFixed(1)}
               </span>
               <span className="font-mono text-[9px] text-muted">{timeAgo(q.time)}</span>

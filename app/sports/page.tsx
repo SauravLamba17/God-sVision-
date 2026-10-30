@@ -171,7 +171,7 @@ export default function SportsPage() {
           </PanelWrapper>
           <PanelWrapper source={source} title={`F1 ${f1Data.season} RECENT RACES`} loading={loading}>
             {f1Data.races.map((race, i) => (
-              <div key={race.session_key || i} className="px-2 py-2" style={{ borderBottom: '1px solid #0d1f0d' }}>
+              <div key={race.session_key || i} className="px-2 py-2" style={{ borderBottom: 'var(--bw) solid var(--divider)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-bold text-primary text-[11px]">{race.circuit_short_name}</div>
@@ -205,7 +205,7 @@ export default function SportsPage() {
                 const home = comps.find(c => c.homeAway === 'home')
                 const away = comps.find(c => c.homeAway === 'away')
                 return (
-                  <div key={game.id} style={{ border: '1px solid #1b2e1b', padding: '8px 12px' }}>
+                  <div key={game.id} style={{ border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', padding: '8px 12px' }}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="font-bold text-primary">{away?.team.abbreviation}</div>

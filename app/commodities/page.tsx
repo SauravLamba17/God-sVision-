@@ -71,7 +71,7 @@ export default function CommoditiesPage() {
         {['GOLD', 'WTI', 'SILVER', 'COPPER'].map(name => {
           const c = getByName(name)
           return (
-            <div key={name} style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)', padding: '10px 14px' }}>
+            <div key={name} className="gv-card" style={{ padding: 16 }}>
               <div className="font-mono text-[10px] text-accent font-bold">{COMMODITY_LABELS[name]}</div>
               <div className="font-mono text-[22px] text-primary font-bold leading-tight mt-1">
                 {c?.price ? formatCurrency(c.price) : 'N/A'}
@@ -129,7 +129,7 @@ export default function CommoditiesPage() {
       </div>
 
       {/* EIA Note */}
-      <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)', padding: 12 }}>
+      <div className="gv-card" style={{ padding: 16 }}>
         <div className="panel-header-title mb-2">EIA ENERGY DATA NOTE</div>
         <p className="font-mono text-[10px] text-muted">
           For detailed EIA petroleum inventory reports, natural gas storage, and weekly refinery data,

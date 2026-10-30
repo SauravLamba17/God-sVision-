@@ -5,13 +5,14 @@ import { FACTORS, MARKET_FACTORS, shockLabel, type FactorId, type Market } from 
 import { PRESETS, presetBlurb, presetTitle, type Preset, type PresetId, type PresetSize } from '@/lib/scenario/presets'
 import PRESET_SIZES from '@/data/scenario/preset-sizes.json'
 import type { Impact, PortfolioResult, ScenarioResult, SectorBar } from '@/lib/scenario/engine'
-import { pct } from '@/lib/format'
+import { arrow, pct } from '@/lib/format'
 
 // Scenario Engine: "what if oil rises 20%?" — historical estimates from the
 // precomputed sensitivity file (no AI, no live calls), shown as ranges.
 const P = (n: number) => pct(n, 1, '−')
+const PA = (n: number) => `${arrow(n, 1)}${P(n)}` // with ▲/▼ for the impact totals
 const color = (n: number | null) => (n == null ? 'var(--text-muted)' : n > 0 ? 'var(--text-positive)' : n < 0 ? 'var(--text-negative)' : 'var(--text-primary)')
-const box: React.CSSProperties = { border: '1px solid var(--border-color)', background: 'var(--bg-panel)', padding: '10px 12px', minWidth: 0 }
+const box: React.CSSProperties = { border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface)', padding: '12px 16px', minWidth: 0 }
 const head: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-accent)', marginBottom: 8 }
 const meta: React.CSSProperties = { fontSize: 10, color: 'var(--text-muted)' }
 const QUALITY = { strong: 'var(--text-positive)', moderate: 'var(--text-warning)', fair: 'var(--text-muted)' }
@@ -38,7 +39,7 @@ function Bars({ bars }: { bars: SectorBar[] }) {
             </>}
           </div>
           <span style={{ textAlign: 'right', color: color(b.total), whiteSpace: 'nowrap' }}>
-            {b.total == null ? <span style={meta}>no reliable link</span> : P(b.total)}
+            {b.total == null ? <span style={meta}>no reliable link</span> : PA(b.total)}
             {b.basis === 'median' && b.count && <span style={meta}> ({b.count.reliable}/{b.count.of})</span>}
           </span>
         </div>
@@ -54,7 +55,7 @@ function ImpactRow({ i }: { i: Impact }) {
       <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
         <span style={{ fontWeight: 700 }}>{i.name}</span>
         <span style={meta}>{i.symbol.replace(/\.NS$/, '')}</span>
-        <span style={{ marginLeft: 'auto', color: color(i.total), fontWeight: 700 }}>{P(i.total)}</span>
+        <span className="gv-num" style={{ marginLeft: 'auto', color: color(i.total), fontWeight: 700 }}>{PA(i.total)}</span>
         <span style={meta}>{P(i.low)} to {P(i.high)}</span>
       </div>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -113,7 +114,7 @@ export default function ScenariosPage() {
 
   const active = 'preset' in query ? query.preset : null
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace', background: 'var(--bg-terminal)', minHeight: '100%', color: 'var(--text-primary)', fontSize: 11 }}>
+    <div style={{ background: 'var(--bg-terminal)', minHeight: '100%', color: 'var(--text-primary)', fontSize: 11 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)' }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.1em' }}>SCENARIO ENGINE — {market === 'US' ? 'USA' : 'INDIA'}</div>
         <div style={{ ...meta, marginTop: 2 }}>
@@ -137,14 +138,14 @@ export default function ScenariosPage() {
         <div style={{ ...box, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={head}>CUSTOM SHOCK</span>
           <select value={factor} onChange={e => setFactor(e.target.value as FactorId)} aria-label="Factor"
-            style={{ background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontFamily: 'inherit', fontSize: 11, padding: '3px 4px' }}>
+            style={{ background: 'var(--surface)', color: 'var(--text-primary)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', fontFamily: 'inherit', fontSize: 11, padding: '3px 4px' }}>
             {MARKET_FACTORS[market].map(id => <option key={id} value={id}>{FACTORS[id].name}</option>)}
           </select>
           <input value={shock} onChange={e => setShock(e.target.value)} inputMode="decimal" aria-label={`Shock in ${f.unit === 'pct' ? 'percent' : f.unit === 'bp' ? 'basis points' : 'points'}`}
-            style={{ width: 80, background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontFamily: 'inherit', fontSize: 11, padding: '3px 6px' }} />
+            style={{ width: 80, background: 'var(--surface)', color: 'var(--text-primary)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '3px 6px' }} />
           <span style={meta}>{f.unit === 'pct' ? '%' : f.unit === 'bp' ? 'bp' : 'pts'} (±{f.maxShock})</span>
           <button disabled={!!shockError} onClick={() => setQuery({ factor, shock: shockNum })}
-            style={{ background: 'transparent', color: shockError ? 'var(--text-muted)' : 'var(--text-accent)', border: '1px solid currentColor', fontFamily: 'inherit', fontSize: 11, padding: '3px 10px', cursor: shockError ? 'not-allowed' : 'pointer' }}>RUN</button>
+            style={{ background: shockError ? 'transparent' : 'var(--accent)', color: shockError ? 'var(--text-muted)' : 'var(--on-accent)', border: `var(--bw) solid ${shockError ? 'var(--border)' : 'var(--accent)'}`, borderRadius: 'var(--radius-inner)', fontFamily: 'inherit', fontWeight: 700, fontSize: 11, padding: '3px 10px', cursor: shockError ? 'not-allowed' : 'pointer' }}>RUN</button>
           {shockError && <span style={{ ...meta, color: 'var(--text-warning)' }}>{shockError}</span>}
         </div>
 
@@ -213,7 +214,7 @@ export default function ScenariosPage() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={head}>STRESS MY PORTFOLIO</span>
                 <button onClick={stress} disabled={pLoading}
-                  style={{ background: 'transparent', color: 'var(--text-accent)', border: '1px solid currentColor', fontFamily: 'inherit', fontSize: 11, padding: '3px 10px', cursor: 'pointer' }}>
+                  className="gv-tab" style={{ fontSize: 11 }}>
                   {pLoading ? 'RUNNING…' : `RUN “${result.title}”`}
                 </button>
               </div>
@@ -225,7 +226,7 @@ export default function ScenariosPage() {
                   {portfolio.lines.map(l => (
                     <div key={l.symbol} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: 3 }}>
                       <span style={{ fontWeight: 700 }}>{l.name}</span>
-                      {l.impact && <><span style={{ color: color(l.impact.total) }}>{P(l.impact.total)}</span><span style={meta}>{P(l.impact.low)} to {P(l.impact.high)}</span></>}
+                      {l.impact && <><span className="gv-num" style={{ color: color(l.impact.total) }}>{PA(l.impact.total)}</span><span style={meta}>{P(l.impact.low)} to {P(l.impact.high)}</span></>}
                       <span style={{ ...meta, color: l.weightBasis === 'cost' ? 'var(--text-warning)' : 'var(--text-muted)' }}>{l.weightNote}</span>
                       {l.event && <>{chip(l.event.direction.toUpperCase(), l.event.direction === 'hurt' ? 'var(--text-negative)' : 'var(--text-positive)')}<span style={meta}>{l.event.reason}</span></>}
                     </div>

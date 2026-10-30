@@ -7,6 +7,8 @@ import {
   sharpeRatio, sortinoRatio, beta, maxDrawdown, valueAtRisk,
   dailyReturns, conditionalVaR, correlationMatrix, alignCloses,
 } from '@/lib/portfolio-analytics'
+import { tint } from '@/lib/context/ThemeContext'
+import { arrow } from '@/lib/format'
 
 interface Holding {
   id: number; ticker: string; name: string; quantity: number; buyPrice: number
@@ -19,14 +21,20 @@ interface Tx {
   date: string; fee: number; notes: string
 }
 
-const COLORS = ['var(--text-accent)','#a78bfa','var(--text-positive)','var(--text-warning)','var(--text-negative)','#fb923c','#06b6d4','#84cc16','#e879f9']
+// ▲/▼ with every gain/loss (also how high contrast tells them apart without colour).
+const withArrow = (v: number, text: string) => `${arrow(v)} ${text}`.trim()
+// positive/negative cells get their ▲/▼ from globals.css in high contrast.
+const dirClass = (v: number | undefined) => v === undefined ? undefined : v >= 0 ? 'positive' : 'negative'
+
+// Pie slices: theme tokens first, then fixed hues for the 6th+ holding (these are fills, not text).
+const COLORS = ['var(--accent)','var(--info)','var(--up)','var(--warning)','var(--down)','var(--text-2)','#06b6d4','#84cc16','#e879f9']
 
 function RiskBadge({ label, value, good, warn }: { label: string; value: string; good?: boolean; warn?: boolean }) {
   const color = good ? 'var(--text-positive)' : warn ? 'var(--text-warning)' : 'var(--text-secondary)'
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', background: `${color}08`, border: `1px solid ${color}25`, borderRadius: 4, minWidth: 80 }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 700, color }}>{value}</span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', textAlign: 'center' }}>{label}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 10px', background: tint(color, 5), border: `var(--bw) solid ${color}`, borderRadius: 'var(--radius-inner)', minWidth: 80 }}>
+      <span className="gv-num" style={{ fontSize: 14, fontWeight: 700, color }}>{value}</span>
+      <span style={{ fontSize: 8, color: 'var(--text-muted)', letterSpacing: '0.06em', textAlign: 'center' }}>{label}</span>
     </div>
   )
 }
@@ -191,28 +199,28 @@ export default function PortfolioPage() {
       {/* Left: Summary + Risk */}
       <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
         {/* P&L Summary */}
-        <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #22c55e', background: 'linear-gradient(135deg, #0a0f1e, #0d1526)', padding: '10px 12px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-positive)', letterSpacing: '0.08em', marginBottom: 8 }}>PORTFOLIO SUMMARY</div>
+        <div className="gv-card" style={{ padding: '12px 16px' }}>
+          <div style={{ fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>PORTFOLIO SUMMARY</div>
           {[
             { label: 'TOTAL VALUE',  value: money(totalValue), color: 'var(--text-primary)', big: true },
-            { label: 'TOTAL P&L',    value: money(totalPnL, true), color: totalPnL >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
-            { label: 'P&L %',        value: cur && costBasis > 0 ? formatPercent((totalPnL / costBasis) * 100) : '—', color: totalPnL >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
-            { label: 'DAY CHANGE',   value: money(dayChange, true), color: dayChange >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
+            { label: 'TOTAL P&L',    value: withArrow(totalPnL, money(totalPnL, true)), color: totalPnL >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
+            { label: 'P&L %',        value: cur && costBasis > 0 ? withArrow(totalPnL, formatPercent((totalPnL / costBasis) * 100)) : '—', color: totalPnL >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
+            { label: 'DAY CHANGE',   value: withArrow(dayChange, money(dayChange, true)), color: dayChange >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' },
             { label: 'POSITIONS',    value: priced.length < holdings.length ? `${holdings.length} (${priced.length} priced)` : String(holdings.length), color: 'var(--text-accent)' },
             { label: 'COST BASIS',   value: money(costBasis), color: 'var(--text-secondary)' },
           ].map(row => (
-            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(30,41,59,0.5)' }}>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{row.label}</span>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: row.big ? 14 : 12, fontWeight: 700, color: row.color }}>{row.value}</span>
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: 'var(--bw) solid var(--divider)' }}>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{row.label}</span>
+              <span className="gv-num" style={{ fontSize: row.big ? 14 : 12, fontWeight: 700, color: row.color }}>{row.value}</span>
             </div>
           ))}
-          {!cur && <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginTop: 6 }}>Holdings are in ₹ and $ — no currency conversion, so no combined totals. Each row shows its own currency.</div>}
+          {!cur && <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 6 }}>Holdings are in ₹ and $ — no currency conversion, so no combined totals. Each row shows its own currency.</div>}
         </div>
 
         {/* Risk Metrics */}
         {riskMetrics && (
-          <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #a78bfa', background: 'var(--bg-panel)', padding: '10px 12px' }}>
-            <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: '#a78bfa', letterSpacing: '0.08em', marginBottom: 8 }}>
+          <div className="gv-card" style={{ padding: '12px 16px' }}>
+            <div style={{ fontSize: 'var(--fs-header)', fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
               RISK ANALYTICS (1Y)
             </div>
             {riskMetrics.port ? (
@@ -224,7 +232,7 @@ export default function PortfolioPage() {
                 <RiskBadge label="CVAR 95%" value={`${(riskMetrics.port.cvar95 * 100).toFixed(2)}%`} />
               </div>
             ) : (
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginBottom: 10 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 10 }}>
                 {riskMetrics.mixed ? 'Portfolio-level metrics need one currency (holdings are in ₹ and $).'
                   : riskMetrics.missing.length ? `Portfolio-level metrics unavailable — no price history for ${riskMetrics.missing.join(', ')}.`
                   : 'Not enough shared price history for portfolio-level metrics.'}
@@ -232,15 +240,15 @@ export default function PortfolioPage() {
             )}
             {riskMetrics.betas.length > 0 && (
               <div>
-                <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.06em' }}>BETA vs SPY</div>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.06em' }}>BETA vs SPY</div>
                 {riskMetrics.betas.map((b: any) => (
-                  <div key={b.ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 0', borderBottom: '1px solid rgba(30,41,59,0.4)' }}>
-                    <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-accent)', fontWeight: 700 }}>{b.ticker}</span>
+                  <div key={b.ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 0', borderBottom: 'var(--bw) solid var(--divider)' }}>
+                    <span style={{ fontSize: 9, color: 'var(--text-accent)', fontWeight: 700 }}>{b.ticker}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 60, height: 3, background: 'var(--border-color)', borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{ width: `${Math.min(100, Math.abs(b.beta) * 50)}%`, height: '100%', background: b.beta > 1.5 ? 'var(--text-negative)' : b.beta > 0.8 ? 'var(--text-warning)' : 'var(--text-positive)', borderRadius: 2 }} />
                       </div>
-                      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: b.beta > 1.5 ? 'var(--text-negative)' : b.beta > 0.8 ? 'var(--text-warning)' : 'var(--text-positive)', fontWeight: 600, minWidth: 30, textAlign: 'right' }}>
+                      <span style={{ fontSize: 10, color: b.beta > 1.5 ? 'var(--text-negative)' : b.beta > 0.8 ? 'var(--text-warning)' : 'var(--text-positive)', fontWeight: 600, minWidth: 30, textAlign: 'right' }}>
                         {b.beta.toFixed(2)}
                       </span>
                     </div>
@@ -251,19 +259,19 @@ export default function PortfolioPage() {
           </div>
         )}
         {riskLoading && (
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: '#a78bfa', padding: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: 8 }}>
             COMPUTING RISK METRICS<span className="blink-cursor" />
           </div>
         )}
 
         {/* Correlation Matrix */}
         {riskMetrics?.corrMatrix && riskMetrics.corrMatrix.tickers.length >= 2 && (
-          <div style={{ border: '1px solid #1e293b', borderLeft: '2px solid #38bdf8', background: 'var(--bg-panel)', padding: '10px 12px' }}>
-            <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.08em', marginBottom: 8 }}>
+          <div className="gv-card" style={{ padding: '12px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '0.08em', marginBottom: 8 }}>
               CORRELATION MATRIX (1Y)
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', fontSize: 9, fontFamily: 'IBM Plex Mono' }}>
+              <table style={{ borderCollapse: 'collapse', fontSize: 9, fontFamily: 'var(--font-mono)' }}>
                 <thead>
                   <tr>
                     <td style={{ padding: '2px 4px', color: 'var(--text-muted)', minWidth: 36 }}></td>
@@ -278,23 +286,18 @@ export default function PortfolioPage() {
                       <td style={{ padding: '2px 4px', color: 'var(--text-accent)', fontWeight: 700 }}>{rowT}</td>
                       {riskMetrics.corrMatrix.matrix[i].map((c: number, j: number) => {
                         const isDiag = i === j
-                        const bg = isDiag ? '#38bdf820'
-                          : c >= 0.8  ? '#ef444430'
-                          : c >= 0.5  ? '#f59e0b25'
-                          : c >= 0.2  ? '#94a3b815'
-                          : c >= 0    ? '#22c55e15'
-                          : '#6366f120'
                         const color = isDiag ? 'var(--text-accent)'
                           : c >= 0.8  ? 'var(--text-negative)'
                           : c >= 0.5  ? 'var(--text-warning)'
                           : c >= 0.2  ? 'var(--text-secondary)'
                           : c >= 0    ? 'var(--text-positive)'
-                          : '#a78bfa'
+                          : 'var(--info)'
+                        const bg = tint(color, 8)
                         return (
                           <td key={j} title={`${rowT} vs ${riskMetrics.corrMatrix.tickers[j]}: ${c.toFixed(3)}`} style={{
                             padding: '2px 4px', textAlign: 'center', background: bg,
                             color, fontWeight: isDiag ? 700 : 500,
-                            border: '1px solid rgba(30,41,59,0.4)', borderRadius: 2,
+                            border: 'var(--bw) solid var(--divider)', borderRadius: 2,
                           }}>
                             {c.toFixed(2)}
                           </td>
@@ -310,11 +313,11 @@ export default function PortfolioPage() {
                   { range: '≥0.5', color: 'var(--text-warning)', label: 'Med' },
                   { range: '≥0.2', color: 'var(--text-secondary)', label: 'Low' },
                   { range: '≥0',   color: 'var(--text-positive)', label: '+Div' },
-                  { range: '<0',   color: '#a78bfa', label: 'Neg' },
+                  { range: '<0',   color: 'var(--info)', label: 'Neg' },
                 ].map(l => (
                   <div key={l.range} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 1, background: l.color + '40', border: `1px solid ${l.color}` }} />
-                    <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 7, color: 'var(--text-muted)' }}>{l.range} {l.label}</span>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: tint(l.color, 25), border: `1px solid ${l.color}` }} />
+                    <span style={{ fontSize: 7, color: 'var(--text-muted)' }}>{l.range} {l.label}</span>
                   </div>
                 ))}
               </div>
@@ -324,7 +327,7 @@ export default function PortfolioPage() {
 
         {/* Allocation Pie */}
         {pieData.length > 0 && cur && (
-          <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+          <div className="gv-card">
             <div className="panel-header">
               <span className="panel-header-title">ALLOCATION</span>
             </div>
@@ -336,17 +339,17 @@ export default function PortfolioPage() {
                   {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
                 <Tooltip formatter={(v: number) => formatCurrency(v, 2, cur)}
-                  contentStyle={{ background: 'var(--bg-panel)', border: '1px solid #1e293b', fontFamily: 'IBM Plex Mono', fontSize: 10 }} />
+                  contentStyle={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: 10 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         )}
 
         {/* Add Holding */}
-        <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">ADD POSITION</span>
-            <button onClick={() => setShowForm(s => !s)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={() => setShowForm(s => !s)} style={{ fontSize: 10, color: 'var(--text-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {showForm ? '▼' : '▶'}
             </button>
           </div>
@@ -360,7 +363,7 @@ export default function PortfolioPage() {
                 { key: 'buyDate', label: 'BUY DATE', placeholder: '', type: 'date' },
               ].map(f => (
                 <div key={f.key}>
-                  <label style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>{f.label}</label>
+                  <label style={{ fontSize: 9, color: 'var(--text-muted)' }}>{f.label}</label>
                   <input value={form[f.key as keyof typeof form]}
                     onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                     placeholder={f.placeholder} aria-label={f.label} type={f.type || 'text'}
@@ -368,7 +371,7 @@ export default function PortfolioPage() {
                     className="input-terminal w-full" style={{ marginTop: 2 }} required={f.key !== 'name'} />
                 </div>
               ))}
-              {formErr && <div role="alert" style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-negative)' }}>{formErr}</div>}
+              {formErr && <div role="alert" style={{ fontSize: 10, color: 'var(--text-negative)' }}>{formErr}</div>}
               <button type="submit" disabled={saving.pos} className="btn-terminal w-full">{saving.pos ? 'SAVING…' : '+ ADD POSITION'}</button>
             </form>
           )}
@@ -377,10 +380,10 @@ export default function PortfolioPage() {
 
       {/* Right: Holdings Table + Transactions */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <PanelWrapper title={`PORTFOLIO HOLDINGS — ${holdings.length} POSITIONS`} loading={loading} source="live" accentColor="#22c55e">
+        <PanelWrapper title={`PORTFOLIO HOLDINGS — ${holdings.length} POSITIONS`} loading={loading} source="live">
           {holdings.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)' }}>NO POSITIONS — ADD YOUR FIRST HOLDING</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>NO POSITIONS — ADD YOUR FIRST HOLDING</span>
               <button onClick={() => setShowForm(true)} className="btn-terminal">+ ADD POSITION</button>
             </div>
           ) : (
@@ -414,13 +417,13 @@ export default function PortfolioPage() {
                     <td style={{ color: 'var(--text-secondary)' }}>
                       {cur && totalValue > 0 && h.currentValue ? `${((h.currentValue / totalValue) * 100).toFixed(1)}%` : '—'}
                     </td>
-                    <td style={{ color: (h.pnl || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontWeight: 600 }}>
+                    <td className={dirClass(h.pnl)} style={{ fontWeight: 600 }}>
                       {h.pnl !== undefined ? `${h.pnl >= 0 ? '+' : '-'}${fmtFor(h.ticker, Math.abs(h.pnl))}` : '—'}
                     </td>
-                    <td style={{ color: (h.pnlPct || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                    <td className={dirClass(h.pnlPct)}>
                       {h.pnlPct !== undefined ? formatPercent(h.pnlPct) : '—'}
                     </td>
-                    <td style={{ color: (h.dayChange || 0) >= 0 ? 'var(--text-positive)' : 'var(--text-negative)' }}>
+                    <td className={dirClass(h.dayChange)}>
                       {h.dayChange !== undefined ? `${h.dayChange >= 0 ? '+' : '-'}${fmtFor(h.ticker, Math.abs(h.dayChange))}` : '—'}
                     </td>
                     <td>
@@ -435,36 +438,36 @@ export default function PortfolioPage() {
         </PanelWrapper>
 
         {/* Transaction History */}
-        <div style={{ border: '1px solid #1e293b', background: 'var(--bg-panel)' }}>
+        <div className="gv-card">
           <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px' }}>
             <span className="panel-header-title">TRANSACTION HISTORY ({txs.length})</span>
-            <button onClick={() => setShowTxForm(s => !s)} style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-accent)', background: 'none', border: '1px solid #1b2e1b', padding: '2px 8px', cursor: 'pointer', borderRadius: 2 }}>
+            <button onClick={() => setShowTxForm(s => !s)} className="gv-tab">
               {showTxForm ? '▼ CANCEL' : '+ LOG TRADE'}
             </button>
           </div>
           {showTxForm && (
-            <form onSubmit={addTx} style={{ padding: '8px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', borderBottom: '1px solid #1e293b' }}>
+            <form onSubmit={addTx} style={{ padding: '8px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', borderBottom: 'var(--bw) solid var(--border)' }}>
               {[{ k:'ticker', l:'TICKER', p:'AAPL', w:70 }, { k:'quantity', l:'QTY', p:'10', w:60, t:'number' }, { k:'price', l:'PRICE', p:'150', w:80, t:'number' }, { k:'date', l:'DATE', p:'', w:120, t:'date' }, { k:'fee', l:'FEE', p:'0', w:60, t:'number' }].map(f => (
                 <div key={f.k}>
-                  <label style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>{f.l}</label>
+                  <label style={{ fontSize: 8, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>{f.l}</label>
                   <input value={txForm[f.k as keyof typeof txForm]} onChange={e => setTxForm(p => ({ ...p, [f.k]: f.k === 'ticker' ? e.target.value.toUpperCase() : e.target.value }))}
                     placeholder={f.p} aria-label={f.l} type={f.t || 'text'} step={f.t === 'number' ? '0.0001' : undefined}
                     className="input-terminal" style={{ width: f.w }} required={f.k !== 'fee'} />
                 </div>
               ))}
               <div>
-                <label style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>TYPE</label>
+                <label style={{ fontSize: 8, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>TYPE</label>
                 <select value={txForm.type} aria-label="Trade type" onChange={e => setTxForm(p => ({ ...p, type: e.target.value }))} className="input-terminal">
                   <option value="BUY">BUY</option>
                   <option value="SELL">SELL</option>
                 </select>
               </div>
               <button type="submit" disabled={saving.tx} className="btn-terminal" style={{ alignSelf: 'flex-end' }}>{saving.tx ? 'SAVING…' : 'SAVE'}</button>
-              {txErr && <div role="alert" style={{ flexBasis: '100%', fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-negative)' }}>{txErr}</div>}
+              {txErr && <div role="alert" style={{ flexBasis: '100%', fontSize: 10, color: 'var(--text-negative)' }}>{txErr}</div>}
             </form>
           )}
           {txs.length === 0 ? (
-            <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)', padding: 16, textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', padding: 16, textAlign: 'center' }}>
               No transactions logged. Click + LOG TRADE to record.
             </div>
           ) : (
@@ -475,7 +478,7 @@ export default function PortfolioPage() {
                   <tr key={tx.id}>
                     <td style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: 9 }}>{new Date(tx.date).toLocaleDateString()}</td>
                     <td style={{ textAlign: 'left', color: 'var(--text-accent)', fontWeight: 700 }}>{tx.ticker}</td>
-                    <td><span style={{ fontSize: 9, fontWeight: 700, color: tx.type === 'BUY' ? 'var(--text-positive)' : 'var(--text-negative)', background: tx.type === 'BUY' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', padding: '1px 5px', borderRadius: 2 }}>{tx.type}</span></td>
+                    <td><span style={{ fontSize: 9, fontWeight: 700, color: tx.type === 'BUY' ? 'var(--text-positive)' : 'var(--text-negative)', background: tx.type === 'BUY' ? 'var(--up-soft)' : 'var(--down-soft)', border: 'var(--bw) solid currentColor', padding: '0 5px', borderRadius: 2 }}>{tx.type}</span></td>
                     <td>{tx.quantity}</td>
                     <td>{fmtFor(tx.ticker, tx.price)}</td>
                     <td style={{ fontWeight: 600 }}>{fmtFor(tx.ticker, tx.quantity * tx.price)}</td>

@@ -94,7 +94,7 @@ export default function ForexPage() {
                 <tr
                   key={p.pair}
                   onClick={() => setSelectedPair(p.pair)}
-                  style={{ cursor: 'pointer', background: selectedPair === p.pair ? '#0a140a' : 'transparent' }}
+                  style={{ cursor: 'pointer', background: selectedPair === p.pair ? 'var(--surface-2)' : 'transparent' }}
                 >
                   <td style={{ textAlign: 'left' }}>
                     <span className={`font-bold ${selectedPair === p.pair ? 'text-accent' : 'text-primary'}`}>{p.pair}</span>
@@ -182,7 +182,7 @@ export default function ForexPage() {
                 <span className="font-mono text-[11px] text-muted">INVEST RATE</span>
                 <span className="font-mono text-[13px] text-positive">{investRate !== null ? `${investRate.toFixed(2)}%` : '—'}</span>
               </div>
-              <div className="flex justify-between" style={{ borderTop: '1px solid #1b2e1b', paddingTop: 4 }}>
+              <div className="flex justify-between" style={{ borderTop: 'var(--bw) solid var(--divider)', paddingTop: 4 }}>
                 <span className="font-mono text-[11px] text-accent font-bold">CARRY RETURN</span>
                 <span className={`font-mono text-[15px] font-bold ${carryReturn === null ? 'text-muted' : carryReturn >= 0 ? 'text-positive' : 'text-negative'}`}>
                   {carryReturn === null ? '—' : pct(carryReturn, 2)}

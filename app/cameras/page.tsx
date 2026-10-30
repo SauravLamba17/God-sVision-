@@ -66,12 +66,14 @@ function LocalClock({ timezone }: { timezone: string }) {
 function VideoModal({ src, title, onClose }: { src: string; title: string; onClose: () => void }) {
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={onClose}
     >
       <button
+        type="button"
         onClick={onClose}
-        style={{ position: 'absolute', top: 20, right: 24, color: '#fff', fontSize: 24, background: 'none', border: 'none', cursor: 'pointer' }}
+        aria-label="Close video"
+        style={{ position: 'absolute', top: 20, right: 24, color: 'var(--text)', fontSize: 24, background: 'none', border: 'none', cursor: 'pointer' }}
       >
         ✕
       </button>
@@ -317,7 +319,7 @@ export default function CamerasPage() {
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {tflCameras.map(cam => (
-                <div key={cam.id} style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+                <div key={cam.id} className="gv-card">
                   <div className="panel-header">
                     <span className="panel-header-title text-[9px]">{cam.commonName}</span>
                     <LocalClock timezone="Europe/London" />

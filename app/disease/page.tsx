@@ -24,10 +24,10 @@ type SortKey = 'cases'|'active'|'todayCases'|'deaths'|'todayDeaths'|'casesPerOne
 
 function KpiCard({ label, value, sub, color='var(--text-primary)' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div style={{ border:'1px solid #1b2e1b', background:'var(--bg-terminal)', padding:'10px 14px', flex:1 }}>
-      <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', letterSpacing:'0.08em', marginBottom:4 }}>{label}</div>
-      <div style={{ fontFamily:'IBM Plex Mono', fontSize:18, fontWeight:700, color }}>{value}</div>
-      {sub && <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginTop:2 }}>{sub}</div>}
+    <div className="gv-card" style={{ padding:16, flex:1 }}>
+      <div className="gv-label" style={{ fontSize:9, marginBottom:4 }}>{label}</div>
+      <div className="gv-num" style={{ fontSize:18, fontWeight:700, color }}>{value}</div>
+      {sub && <div style={{ fontSize:9, color:'var(--text-muted)', marginTop:2 }}>{sub}</div>}
     </div>
   )
 }
@@ -175,14 +175,14 @@ export default function DiseasePage() {
       {/* Title */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:14, fontWeight:700, color:'var(--text-accent)', letterSpacing:'0.08em' }}>
+          <div style={{ fontSize:'var(--fs-lg)', fontWeight:700, color:'var(--text)' }}>
             GLOBAL HEALTH INTELLIGENCE
           </div>
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-warning)', marginTop:3, maxWidth:680, lineHeight:1.5 }}>
+          <div style={{ fontSize:9, color:'var(--text-warning)', marginTop:3, maxWidth:680, lineHeight:1.5 }}>
             Historical &amp; cumulative COVID-19 data — daily reporting has been discontinued by most
             countries since 2023, so per-day counts are structurally zero and are shown greyed out.
           </div>
-          <div style={{ fontFamily:'IBM Plex Mono', fontSize:9, color:'var(--text-muted)', marginTop:2 }}>
+          <div style={{ fontSize:9, color:'var(--text-muted)', marginTop:2 }}>
             Source: disease.sh (JHU/Worldometers archive) · cumulative totals only
           </div>
         </div>
@@ -196,13 +196,13 @@ export default function DiseasePage() {
       {/* KPI cards */}
       {global_ && (
         <div style={{ display:'flex', gap:8 }}>
-          <KpiCard label="TOTAL CASES WORLDWIDE" value={formatNumber(global_.cases)} sub="cumulative since 2020" color="#94a3b8" />
-          <KpiCard label="TOTAL DEATHS WORLDWIDE" value={formatNumber(global_.deaths)} sub="cumulative since 2020" color="#ef4444" />
+          <KpiCard label="TOTAL CASES WORLDWIDE" value={formatNumber(global_.cases)} sub="cumulative since 2020" color="var(--text)" />
+          <KpiCard label="TOTAL DEATHS WORLDWIDE" value={formatNumber(global_.deaths)} sub="cumulative since 2020" color="var(--down)" />
           <KpiCard
             label="GLOBAL CASE FATALITY RATE"
             value={global_.cases > 0 ? ((global_.deaths / global_.cases) * 100).toFixed(2) + '%' : '—'}
             sub="deaths ÷ confirmed cases"
-            color="#f59e0b"
+            color="var(--warning)"
           />
           <KpiCard label="COUNTRIES TRACKED" value={String(global_.affectedCountries ?? '—')} sub="reporting territories" color="var(--text-accent)" />
         </div>
@@ -268,13 +268,13 @@ export default function DiseasePage() {
               <div style={{ padding:8, height:'calc(100% - 30px)' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={history} margin={{ top:4, right:4, left:0, bottom:4 }}>
-                    <XAxis dataKey="date" tick={{ fontFamily:'IBM Plex Mono', fontSize:8, fill:'var(--text-muted)' }} tickFormatter={d => d.slice(5)} />
-                    <YAxis tick={{ fontFamily:'IBM Plex Mono', fontSize:8, fill:'var(--text-muted)' }} tickFormatter={v => formatNumber(v)} width={50} />
+                    <XAxis dataKey="date" tick={{ fontFamily:'var(--font-mono)', fontSize:8, fill:'var(--text-muted)' }} tickFormatter={d => d.slice(5)} />
+                    <YAxis tick={{ fontFamily:'var(--font-mono)', fontSize:8, fill:'var(--text-muted)' }} tickFormatter={v => formatNumber(v)} width={50} />
                     <Tooltip
                       formatter={(v: number) => [formatNumber(v), 'Cases']}
-                      contentStyle={{ background:'var(--bg-terminal)', border:'1px solid #1b2e1b', fontFamily:'IBM Plex Mono', fontSize:10 }}
+                      contentStyle={{ background:'var(--surface-2)', border:'var(--bw) solid var(--border)', borderRadius:'var(--radius-inner)', color:'var(--text)', fontFamily:'var(--font-mono)', fontSize:10 }}
                     />
-                    <Line type="monotone" dataKey="cases" stroke="#ef4444" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="cases" stroke="var(--down)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

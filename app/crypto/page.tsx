@@ -39,20 +39,20 @@ interface DeFiProtocol {
 }
 
 function FearGreedGauge({ value }: { value: number }) {
-  const getColor = (v: number) => v >= 75 ? 'var(--text-negative)' : v >= 55 ? 'var(--text-accent)' : v >= 45 ? '#ffd600' : v >= 25 ? 'var(--text-positive)' : '#2196f3'
+  const getColor = (v: number) => v >= 75 ? 'var(--text-negative)' : v >= 55 ? 'var(--text-accent)' : v >= 45 ? 'var(--warning)' : v >= 25 ? 'var(--text-positive)' : 'var(--info)'
   const getLabel = (v: number) => v >= 75 ? 'EXTREME GREED' : v >= 55 ? 'GREED' : v >= 45 ? 'NEUTRAL' : v >= 25 ? 'FEAR' : 'EXTREME FEAR'
   const rotation = (value / 100) * 180 - 90
   return (
     <div className="flex flex-col items-center py-3">
       <div className="relative" style={{ width: 120, height: 70 }}>
         <svg viewBox="0 0 120 65" width={120} height={65}>
-          <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#1b2e1b" strokeWidth="12" />
+          <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="var(--divider)" strokeWidth="12" />
           <path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke={getColor(value)} strokeWidth="12"
             strokeDasharray={`${(value / 100) * 157} 157`} />
           <line x1="60" y1="60" x2="60" y2="20"
             transform={`rotate(${rotation}, 60, 60)`}
-            stroke="#c8e6c9" strokeWidth="2" strokeLinecap="round" />
-          <circle cx="60" cy="60" r="4" fill="#c8e6c9" />
+            stroke="var(--text)" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="60" cy="60" r="4" fill="var(--text)" />
         </svg>
         <div className="absolute inset-0 flex items-end justify-center pb-1">
           <span className="font-mono text-[20px] font-bold" style={{ color: getColor(value) }}>{value}</span>
@@ -83,13 +83,13 @@ function CoinRow({
   const liveChangePct = binanceChangePct ?? coin.price_change_percentage_24h
   const flash = useFlash(livePrice)
 
-  const flashBg = flash === 'up' ? 'rgba(34,197,94,0.12)' : flash === 'down' ? 'rgba(239,68,68,0.12)' : 'transparent'
+  const flashBg = flash === 'up' ? 'var(--up-soft)' : flash === 'down' ? 'var(--down-soft)' : 'transparent'
   const flashColor = flash === 'up' ? 'var(--text-positive)' : flash === 'down' ? 'var(--text-negative)' : undefined
 
   return (
     <tr
       onClick={onSelect}
-      style={{ cursor: 'pointer', background: isSelected ? '#0a140a' : 'transparent' }}
+      style={{ cursor: 'pointer', background: isSelected ? 'var(--surface-2)' : 'transparent' }}
     >
       <td className="text-muted">{coin.market_cap_rank}</td>
       <td style={{ textAlign: 'left' }}>
@@ -248,14 +248,14 @@ export default function CryptoPage() {
           source={binanceTickers.size > 0 ? 'live' : coinsSource}
         >
           {/* Panel header with Binance status and AI button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: '1px solid #0d1f0d' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderBottom: 'var(--bw) solid var(--divider)' }}>
             {binanceTickers.size > 0 ? (
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-positive)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: 'var(--text-positive)', animation: 'pulseLive 1.5s ease-in-out infinite' }} />
                 BINANCE LIVE · {binanceTickers.size} PAIRS
               </span>
             ) : (
-              <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
+              <span className="gv-num" style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>
                 CONNECTING TO BINANCE...
               </span>
             )}
@@ -298,7 +298,7 @@ export default function CryptoPage() {
       {/* Center: Chart + Details */}
       <div className="flex-1 flex flex-col gap-2 min-w-0">
         {selectedCoin && (
-          <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+          <div className="gv-card">
             <div className="panel-header">
               <span className="panel-header-title">{selectedCoin.name} ({selectedCoin.symbol.toUpperCase()}) — 30D OHLC</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -318,7 +318,7 @@ export default function CryptoPage() {
 
         {/* Global Market */}
         {globalData && (
-          <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+          <div className="gv-card">
             <div className="panel-header">
               <span className="panel-header-title">GLOBAL CRYPTO MARKET</span>
             </div>
@@ -339,11 +339,11 @@ export default function CryptoPage() {
                 <ResponsiveContainer width={100} height={80}>
                   <PieChart>
                     <Pie data={dominanceData} cx={50} cy={40} innerRadius={25} outerRadius={40} dataKey="value" isAnimationActive={false}>
-                      <Cell fill="#ff6d00" />
-                      <Cell fill="#607d8b" />
-                      <Cell fill="#1b2e1b" />
+                      <Cell fill="var(--accent)" />
+                      <Cell fill="var(--info)" />
+                      <Cell fill="var(--muted)" />
                     </Pie>
-                    <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ background: 'var(--bg-terminal)', border: '1px solid #1b2e1b', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)' }} />
+                    <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ background: 'var(--surface-2)', border: 'var(--bw) solid var(--border)', borderRadius: 'var(--radius-inner)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-body)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -355,7 +355,7 @@ export default function CryptoPage() {
       {/* Right Sidebar */}
       <div style={{ width: 200, flexShrink: 0 }} className="space-y-2">
         {/* Fear & Greed */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">FEAR & GREED</span>
           </div>
@@ -363,7 +363,7 @@ export default function CryptoPage() {
         </div>
 
         {/* BTC Halving */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">NEXT BTC HALVING</span>
           </div>
@@ -378,12 +378,12 @@ export default function CryptoPage() {
         </div>
 
         {/* Trending */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">🔥 TRENDING</span>
           </div>
           {trending.map((t, i) => (
-            <div key={i} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: '1px solid #0d1f0d' }}>
+            <div key={i} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: 'var(--bw) solid var(--divider)' }}>
               <span className="font-mono text-[11px] text-muted">{i + 1}</span>
               <span className="font-bold text-[13px] text-accent">{t.item.symbol}</span>
               <span className="text-muted text-[11px]">{t.item.name.slice(0, 12)}</span>
@@ -392,12 +392,12 @@ export default function CryptoPage() {
         </div>
 
         {/* DeFi TVL */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">DEFI TVL</span>
           </div>
           {defi.map(d => (
-            <div key={d.name} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: '1px solid #0d1f0d' }}>
+            <div key={d.name} className="flex items-center justify-between px-2 py-1" style={{ borderBottom: 'var(--bw) solid var(--divider)' }}>
               <span className="font-bold text-[13px] text-accent">{d.symbol}</span>
               <span className="font-mono text-[13px] text-primary">${formatNumber(d.tvl)}</span>
             </div>

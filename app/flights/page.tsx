@@ -139,9 +139,9 @@ export default function FlightsPage() {
         {[
           { label: 'TRACKED', value: counts.total, color: 'var(--text-accent)' },
           { label: 'IN VIEW', value: visible.length, color: 'var(--text-primary)' },
-          { label: 'USA', value: counts.usa, color: '#2196f3' },
-          { label: 'EUROPE', value: counts.europe, color: '#00e676' },
-          { label: 'ASIA', value: counts.asia, color: '#ffd600' },
+          { label: 'USA', value: counts.usa, color: 'var(--info)' },
+          { label: 'EUROPE', value: counts.europe, color: 'var(--up)' },
+          { label: 'ASIA', value: counts.asia, color: 'var(--warning)' },
         ].map(stat => (
           <div key={stat.label} className="flex items-center gap-2">
             <span className="font-mono text-[10px] text-muted">{stat.label}</span>
@@ -222,9 +222,9 @@ export default function FlightsPage() {
                 <div style={{ position: 'absolute', inset: 0, zIndex: 500, pointerEvents: 'none' }} className="flex items-center justify-center">
                   <div
                     style={{
-                      fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: 'var(--text-muted)',
-                      background: 'rgba(0,0,0,0.75)', border: '1px solid var(--border-color)',
-                      borderRadius: 4, padding: '10px 16px', textAlign: 'center',
+                      fontSize: 12, color: 'var(--text-muted)',
+                      background: 'var(--surface)', border: 'var(--bw) solid var(--border)',
+                      borderRadius: 'var(--radius-inner)', padding: '10px 16px', textAlign: 'center',
                     }}
                   >
                     No aircraft data available right now — this may be temporary
@@ -243,9 +243,9 @@ export default function FlightsPage() {
                 <div
                   style={{
                     position: 'absolute', left: 10, bottom: 10, zIndex: 1000,
-                    background: 'var(--bg-panel)', border: '1px solid var(--border-medium)',
-                    borderRadius: 4, padding: '8px 10px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                    background: 'var(--surface)', border: 'var(--bw) solid var(--border)',
+                    borderRadius: 'var(--radius-inner)', padding: '8px 10px',
+                    boxShadow: 'var(--shadow)',
                   }}
                 >
                   <button
@@ -288,7 +288,9 @@ export default function FlightsPage() {
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-bold" style={{ color: band.color }}>
+                  {/* Theme text colour + a swatch of the map's altitude colour (marker hues are tuned for the map, not text). */}
+                  <span className="font-mono text-[11px] font-bold" style={{ color: 'var(--text)' }}>
+                    <span aria-hidden="true" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: band.color, marginRight: 5 }} />
                     {a.callsign || a.icao24.toUpperCase()}
                   </span>
                   <span className="font-mono text-[9px] text-muted">
@@ -314,7 +316,6 @@ function Banner({ tone, children }: { tone: 'warning' | 'muted'; children: React
   return (
     <div
       style={{
-        fontFamily: 'IBM Plex Mono, monospace',
         fontSize: 9,
         color: tone === 'warning' ? 'var(--text-warning)' : 'var(--text-muted)',
         padding: '4px 12px',

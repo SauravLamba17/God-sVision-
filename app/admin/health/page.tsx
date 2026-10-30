@@ -75,8 +75,8 @@ export default async function HealthPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-terminal)', color: 'var(--text-primary)', fontFamily: 'IBM Plex Mono, monospace', padding: 12, fontSize: 11 }}>
-      <h1 style={{ fontSize: 14, color: 'var(--text-accent)', letterSpacing: '0.08em', margin: '0 0 4px' }}>DATA HEALTH</h1>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-terminal)', color: 'var(--text-primary)', padding: 12, fontSize: 11 }}>
+      <h1 style={{ fontSize: 'var(--fs-lg)', color: 'var(--text)', margin: '0 0 4px' }}>DATA HEALTH</h1>
       <p style={{ color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.6, maxWidth: 900 }}>
         Feed results are recorded passively from calls the app already makes. This view merges <b>this instance</b> (live, started {ago(instanceStartedAt)})
         with <b>{instances.length} other instance{instances.length === 1 ? '' : 's'}</b> that reported in the last hour

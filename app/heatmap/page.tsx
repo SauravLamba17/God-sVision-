@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { formatPercent } from '@/lib/utils'
-import { pct as pctFmt } from '@/lib/format'
+import { arrow, pct as pctFmt } from '@/lib/format'
 
 interface SectorData {
   name: string; etf: string; weight: number
@@ -9,26 +9,19 @@ interface SectorData {
   stocks: { symbol: string; price: number; changePct: number }[]
 }
 
+// Same stepped scale as the Nifty heatmap: every fill keeps white text at ≥5:1
+// (the old continuous scale went bright green under white text, and near zero
+// put dark theme text on a dark tile). Tiles use .gv-heat, so high contrast
+// swaps them for outlined up/down tiles.
 function heatColor(pct: number): string {
-  const clamp = Math.max(-5, Math.min(5, pct))
-  if (clamp >= 0) {
-    const intensity = clamp / 5
-    const r = Math.round(10 + 20 * intensity)
-    const g = Math.round(40 + 160 * intensity)
-    const b = Math.round(20 + 30 * intensity)
-    return `rgb(${r},${g},${b})`
-  } else {
-    const intensity = Math.abs(clamp) / 5
-    const r = Math.round(40 + 180 * intensity)
-    const g = Math.round(10 + 20 * intensity)
-    const b = Math.round(10 + 30 * intensity)
-    return `rgb(${r},${g},${b})`
-  }
+  if (pct > 3)  return 'var(--heat-up-3)'
+  if (pct > 1)  return 'var(--heat-up-2)'
+  if (pct >= 0) return 'var(--heat-up-1)'
+  if (pct > -1) return 'var(--heat-down-1)'
+  if (pct > -3) return 'var(--heat-down-2)'
+  return 'var(--heat-down-3)'
 }
-
-function textColor(pct: number): string {
-  return Math.abs(pct) > 1 ? '#ffffff' : 'var(--text-primary)'
-}
+const heatProps = (pct: number) => ({ className: 'gv-heat', 'data-dir': pct >= 0 ? 'up' : 'down' })
 
 export default function HeatmapPage() {
   const [sectors, setSectors] = useState<SectorData[]>([])
@@ -59,29 +52,21 @@ export default function HeatmapPage() {
   return (
     <div style={{ padding: 8, height: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Header */}
-      <div style={{
+      <div className="gv-card" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: 'linear-gradient(90deg, #0d1526 0%, #070e1b 100%)',
-        border: '1px solid #1e293b', borderLeft: '2px solid #38bdf8',
-        padding: '6px 12px',
+        padding: '10px 16px', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 600, color: 'var(--text-accent)', letterSpacing: '0.08em', textShadow: '0 0 12px rgba(56,189,248,0.4)' }}>
+          <span style={{ fontSize: 'var(--fs-header)', fontWeight: 'var(--fw-bold)', color: 'var(--text)' }}>
             S&P 500 SECTOR HEATMAP
           </span>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+          <span className="gv-num" style={{ fontSize: 9, color: 'var(--text-muted)' }}>
             {lastUpdate ? `UPDATED ${lastUpdate}` : ''}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div role="group" aria-label="View" className="gv-seg">
           {(['sectors', 'stocks'] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} style={{
-              fontFamily: 'IBM Plex Mono', fontSize: 9, letterSpacing: '0.06em',
-              padding: '3px 10px', border: '1px solid', cursor: 'pointer', textTransform: 'uppercase',
-              background: view === v ? 'var(--text-accent)' : 'transparent',
-              color:      view === v ? 'var(--bg-terminal)' : 'var(--text-accent)',
-              borderColor: 'var(--text-accent)',
-            }}>
+            <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} style={{ textTransform: 'uppercase' }}>
               {v}
             </button>
           ))}
@@ -90,14 +75,14 @@ export default function HeatmapPage() {
 
       {/* Legend */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 4 }}>
-        <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>SCALE:</span>
-        {[-5,-3,-1,0,1,3,5].map(v => (
-          <div key={v} style={{
-            width: 28, height: 16, background: heatColor(v), borderRadius: 2,
+        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>SCALE:</span>
+        {[-5,-2,-0.5,0.5,2,5].map(v => (
+          <div key={v} {...heatProps(v)} style={{
+            ['--heat-bg' as string]: heatColor(v), borderRadius: 4, padding: '0 6px', minHeight: 16,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 7, color: '#fff', fontWeight: 600 }}>
-              {v > 0 ? `+${v}` : v}%
+            <span className="gv-num" style={{ fontSize: 9, fontWeight: 600 }}>
+              {v > 3 ? '>+3' : v > 1 ? '+1…3' : v >= 0 ? '0…+1' : v > -1 ? '0…−1' : v > -3 ? '−1…3' : '<−3'}%
             </span>
           </div>
         ))}
@@ -105,7 +90,7 @@ export default function HeatmapPage() {
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-accent)' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             LOADING HEATMAP<span className="blink-cursor" />
           </span>
         </div>
@@ -123,11 +108,10 @@ export default function HeatmapPage() {
             const pct = sector.etfData?.changePct || 0
             const cols = Math.max(2, Math.round((sector.weight / 100) * 12))
             return (
-              <div key={sector.name} style={{
+              <div key={sector.name} {...heatProps(pct)} style={{
                 gridColumn: `span ${cols}`,
-                background: heatColor(pct),
-                border: '1px solid rgba(0,0,0,0.3)',
-                borderRadius: 4,
+                ['--heat-bg' as string]: heatColor(pct),
+                borderRadius: 'var(--radius-inner)',
                 padding: 8,
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                 cursor: 'default',
@@ -139,19 +123,19 @@ export default function HeatmapPage() {
               onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
               >
                 <div>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: textColor(pct), letterSpacing: '0.06em' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em' }}>
                     {sector.name}
                   </div>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: `${textColor(pct)}80`, marginTop: 2 }}>
-                    {sector.etf} · {sector.weight}%
+                  <div style={{ fontSize: 9, marginTop: 2 }}>
+                    {sector.etf} · <span className="gv-num">{sector.weight}%</span>
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 16, fontWeight: 700, color: textColor(pct), lineHeight: 1 }}>
-                    {pctFmt(pct, 2)}
+                  <div className="gv-num" style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>
+                    {arrow(pct)}{pctFmt(pct, 2)}
                   </div>
                   {sector.etfData && (
-                    <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: `${textColor(pct)}80`, marginTop: 2 }}>
+                    <div className="gv-num" style={{ fontSize: 9, marginTop: 2 }}>
                       ${sector.etfData.price?.toFixed(2)}
                     </div>
                   )}
@@ -160,14 +144,14 @@ export default function HeatmapPage() {
                 <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginTop: 4 }}>
                   {sector.stocks.slice(0, cols > 3 ? 5 : 3).map(stock => (
                     <div key={stock.symbol} style={{
-                      background: 'rgba(0,0,0,0.25)',
-                      borderRadius: 2, padding: '1px 4px',
-                      fontFamily: 'IBM Plex Mono', fontSize: 8,
+                      border: '1px solid currentColor',
+                      borderRadius: 4, padding: '1px 4px',
+                      fontSize: 8,
                     }}>
-                      <span style={{ color: textColor(pct), fontWeight: 700 }}>{stock.symbol}</span>
+                      <span style={{ fontWeight: 700 }}>{stock.symbol}</span>
                       {stock.changePct !== undefined && (
-                        <span style={{ color: stock.changePct >= 0 ? '#86efac' : '#fca5a5', marginLeft: 3 }}>
-                          {pctFmt(stock.changePct ?? 0, 1)}
+                        <span className="gv-num" style={{ marginLeft: 3 }}>
+                          {arrow(stock.changePct ?? 0, 1)}{pctFmt(stock.changePct ?? 0, 1)}
                         </span>
                       )}
                     </div>
@@ -188,10 +172,9 @@ export default function HeatmapPage() {
           alignContent: 'start',
         }}>
           {sortedStocks.map(stock => (
-            <div key={stock.symbol} style={{
-              background: heatColor(stock.changePct || 0),
-              border: '1px solid rgba(0,0,0,0.3)',
-              borderRadius: 3, padding: '6px 8px',
+            <div key={stock.symbol} {...heatProps(stock.changePct || 0)} style={{
+              ['--heat-bg' as string]: heatColor(stock.changePct || 0),
+              borderRadius: 'var(--radius-inner)', padding: '6px 8px',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               cursor: 'default', minHeight: 60,
               transition: 'filter 0.15s',
@@ -199,13 +182,13 @@ export default function HeatmapPage() {
             onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.3)')}
             onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
             >
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, fontWeight: 700, color: textColor(stock.changePct || 0) }}>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>
                 {stock.symbol}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 11, fontWeight: 700, color: textColor(stock.changePct || 0), marginTop: 3 }}>
-                {pctFmt(stock.changePct || 0, 2)}
+              <div className="gv-num" style={{ fontSize: 11, fontWeight: 700, marginTop: 3 }}>
+                {arrow(stock.changePct || 0)}{pctFmt(stock.changePct || 0, 2)}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 8, color: `${textColor(stock.changePct || 0)}70`, marginTop: 2 }}>
+              <div style={{ fontSize: 8, marginTop: 2 }}>
                 {stock.sector.slice(0, 8)}
               </div>
             </div>

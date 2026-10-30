@@ -1,16 +1,18 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { GLOSSARY, GlossaryEntry } from '@/lib/glossary'
+import { tint } from '@/lib/context/ThemeContext'
 
 const CATEGORIES = ['ALL', 'BASIC', 'TECHNICAL', 'OPTIONS', 'MACRO', 'INDIA', 'CRYPTO'] as const
 
+// Category accents are theme tokens (each meets AA/AAA as text in every look).
 const CAT_COLOR: Record<string, string> = {
-  BASIC: 'var(--text-accent)',
-  TECHNICAL: '#a78bfa',
-  OPTIONS: '#fb923c',
-  MACRO: '#34d399',
-  INDIA: '#FF9933',
-  CRYPTO: 'var(--text-warning)',
+  BASIC: 'var(--text-2)',
+  TECHNICAL: 'var(--info)',
+  OPTIONS: 'var(--warning)',
+  MACRO: 'var(--up)',
+  INDIA: 'var(--accent-text)',
+  CRYPTO: 'var(--down)',
 }
 
 export default function GlossaryPage() {
@@ -37,15 +39,14 @@ export default function GlossaryPage() {
 
   return (
     <div style={{
-      fontFamily: 'IBM Plex Mono',
       padding: '12px 16px',
       minHeight: '100%',
-      background: 'var(--bg-terminal, #020817)',
-      color: 'var(--text-primary, #e2e8f0)',
+      background: 'var(--bg-terminal)',
+      color: 'var(--text-primary)',
     }}>
       {/* Header */}
       <div style={{
-        borderBottom: '1px solid var(--border-dim, #1e293b)',
+        borderBottom: 'var(--bw) solid var(--divider)',
         paddingBottom: 10,
         marginBottom: 12,
         display: 'flex',
@@ -55,14 +56,14 @@ export default function GlossaryPage() {
         gap: 8,
       }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-accent, #38bdf8)', letterSpacing: '0.08em' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
             📚 FINANCIAL GLOSSARY
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted, #475569)', marginTop: 3 }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
             Showing {entries.length} of {total} terms — hover any ℹ icon in the terminal for instant definitions
           </div>
         </div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted, #475569)', textAlign: 'right' }}>
+        <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'right' }}>
           GOD's Vision · Financial Education
         </div>
       </div>
@@ -73,19 +74,8 @@ export default function GlossaryPage() {
         onChange={e => setSearch(e.target.value)}
         placeholder="Search any term... (e.g. RSI, P/E, options, SEBI)"
         aria-label="Search glossary"
-        style={{
-          width: '100%',
-          background: 'var(--bg-input, #0d1526)',
-          border: '1px solid var(--border-dim, #1e293b)',
-          color: 'var(--text-primary, #e2e8f0)',
-          fontFamily: 'IBM Plex Mono',
-          fontSize: 12,
-          padding: '8px 12px',
-          borderRadius: 4,
-          outline: 'none',
-          marginBottom: 10,
-          boxSizing: 'border-box',
-        }}
+        className="input-terminal"
+        style={{ fontSize: 12, padding: '8px 12px', marginBottom: 10 }}
       />
 
       {/* Category Tabs */}
@@ -93,25 +83,11 @@ export default function GlossaryPage() {
         {CATEGORIES.map(cat => (
           <button
             key={cat}
+            type="button"
+            className="gv-tab"
+            aria-pressed={category === cat}
             onClick={() => setCategory(cat)}
-            style={{
-              fontFamily: 'IBM Plex Mono',
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              padding: '3px 10px',
-              borderRadius: 3,
-              border: category === cat
-                ? `1px solid ${CAT_COLOR[cat] || 'var(--text-accent)'}`
-                : '1px solid var(--border-dim, #1e293b)',
-              background: category === cat
-                ? `${CAT_COLOR[cat] || 'var(--text-accent)'}18`
-                : 'transparent',
-              color: category === cat
-                ? (CAT_COLOR[cat] || 'var(--text-accent)')
-                : 'var(--text-muted, #475569)',
-              cursor: 'pointer',
-            }}
+            style={{ fontSize: 9 }}
           >
             {cat}
           </button>
@@ -119,7 +95,7 @@ export default function GlossaryPage() {
       </div>
 
       {/* Results count */}
-      <div style={{ fontSize: 9, color: 'var(--text-muted, #475569)', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 10 }}>
         {entries.length === 0 ? 'No terms match your search.' : `Showing ${entries.length} term${entries.length !== 1 ? 's' : ''}`}
       </div>
 
@@ -137,10 +113,10 @@ export default function GlossaryPage() {
               key={key}
               onClick={() => setExpanded(isExpanded ? null : key)}
               style={{
-                border: `1px solid var(--border-dim, #1e293b)`,
+                border: 'var(--bw) solid var(--border)',
                 borderLeft: `3px solid ${catColor}`,
-                background: 'var(--bg-panel, #0a0f1e)',
-                borderRadius: 3,
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-inner)',
                 padding: '10px 12px',
                 cursor: 'pointer',
                 transition: 'border-color 0.12s',
@@ -159,19 +135,19 @@ export default function GlossaryPage() {
                       fontWeight: 700,
                       padding: '1px 5px',
                       borderRadius: 2,
-                      background: `${catColor}14`,
+                      background: tint(catColor, 8),
                       color: catColor,
-                      border: `1px solid ${catColor}30`,
+                      border: `1px solid ${catColor}`,
                       letterSpacing: '0.08em',
                     }}>{entry.category}</span>
                   </div>
                   <div style={{
                     fontSize: 11,
-                    color: 'var(--text-primary, #e2e8f0)',
+                    color: 'var(--text-primary)',
                     lineHeight: 1.5,
                   }}>{entry.simpleDefinition}</div>
                 </div>
-                <span style={{ fontSize: 9, color: 'var(--text-muted, #475569)', flexShrink: 0 }}>
+                <span style={{ fontSize: 9, color: 'var(--text-muted)', flexShrink: 0 }}>
                   {isExpanded ? '▲' : '▼'}
                 </span>
               </div>
@@ -180,18 +156,18 @@ export default function GlossaryPage() {
                 <div style={{
                   marginTop: 8,
                   paddingTop: 8,
-                  borderTop: '1px solid var(--border-dim, #1e293b)',
+                  borderTop: 'var(--bw) solid var(--divider)',
                 }}>
                   <div style={{
                     fontSize: 11,
-                    color: 'var(--text-secondary, #94a3b8)',
+                    color: 'var(--text-secondary)',
                     lineHeight: 1.6,
                     marginBottom: 8,
                   }}>{entry.detailedDefinition}</div>
                   <div style={{
                     fontSize: 10,
-                    color: 'var(--text-muted, #475569)',
-                    background: 'var(--bg-header, #0d1526)',
+                    color: 'var(--text-muted)',
+                    background: 'var(--surface-2)',
                     padding: '6px 8px',
                     borderRadius: 2,
                     lineHeight: 1.5,
@@ -210,7 +186,7 @@ export default function GlossaryPage() {
         <div style={{
           textAlign: 'center',
           padding: '40px 20px',
-          color: 'var(--text-muted, #475569)',
+          color: 'var(--text-muted)',
           fontSize: 12,
         }}>
           No terms found for &quot;{search}&quot;. Try a different search.
@@ -221,9 +197,9 @@ export default function GlossaryPage() {
       <div style={{
         marginTop: 20,
         padding: '10px 0',
-        borderTop: '1px solid var(--border-dim, #1e293b)',
+        borderTop: 'var(--bw) solid var(--divider)',
         fontSize: 9,
-        color: 'var(--text-muted, #475569)',
+        color: 'var(--text-muted)',
         textAlign: 'center',
         lineHeight: 1.6,
       }}>

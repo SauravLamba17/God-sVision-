@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { pct } from '@/lib/format';
+import { arrow, pct } from '@/lib/format';
 import { getCurrencyForTicker } from '@/lib/utils';
 
 const STRATEGIES = [
@@ -49,37 +49,35 @@ export default function BacktestPage() {
   };
 
   const panel: React.CSSProperties = {
-    background: 'var(--bg-panel)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '4px',
+    background: 'var(--surface)',
+    border: 'var(--bw) solid var(--border)',
+    borderRadius: 'var(--radius)',
     overflow: 'hidden',
   };
   const header: React.CSSProperties = {
-    background: 'var(--bg-header)',
-    borderBottom: '1px solid var(--border-color)',
-    padding: '8px 12px',
-    fontFamily: 'IBM Plex Mono, monospace',
-    fontSize: '11px',
+    borderBottom: 'var(--bw) solid var(--divider)',
+    padding: '10px 16px',
+    fontFamily: 'var(--font-sans)',
+    fontSize: 'var(--fs-header)',
     fontWeight: 700,
-    color: 'var(--text-accent)',
-    letterSpacing: '0.5px',
+    color: 'var(--text)',
   };
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border-color)',
+    background: 'var(--surface)',
+    border: 'var(--bw) solid var(--border)',
     color: 'var(--text-primary)',
     padding: '7px 10px',
-    fontFamily: 'IBM Plex Mono, monospace',
+    fontFamily: 'var(--font-mono)',
     fontSize: '12px',
-    borderRadius: '3px',
+    borderRadius: 'var(--radius-inner)',
     outline: 'none',
     marginTop: '4px',
   };
   const labelStyle: React.CSSProperties = {
     fontSize: '10px',
     color: 'var(--text-muted)',
-    fontFamily: 'IBM Plex Mono, monospace',
+    fontFamily: 'var(--font-sans)',
     letterSpacing: '0.5px',
     display: 'block',
     marginTop: '10px',
@@ -87,7 +85,7 @@ export default function BacktestPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-terminal)', padding: '8px', color: 'var(--text-primary)' }}>
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '13px', fontWeight: 700, color: 'var(--text-accent)', letterSpacing: '1px', marginBottom: '10px' }}>
+      <div style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--text)', marginBottom: '10px' }}>
         BACKTESTING ENGINE
       </div>
 
@@ -145,10 +143,10 @@ export default function BacktestPage() {
               width: '100%',
               marginTop: '16px',
               padding: '10px',
-              background: loading ? 'var(--bg-hover)' : 'var(--text-accent)',
+              background: loading ? 'var(--surface-2)' : 'var(--accent)',
               border: 'none',
-              color: loading ? 'var(--text-muted)' : '#000',
-              fontFamily: 'IBM Plex Mono, monospace',
+              color: loading ? 'var(--text-muted)' : 'var(--on-accent)',
+              fontFamily: 'var(--font-sans)',
               fontSize: '11px',
               fontWeight: 700,
               letterSpacing: '1px',
@@ -159,7 +157,7 @@ export default function BacktestPage() {
             </button>
 
             {error && (
-              <div style={{ marginTop: '8px', color: 'var(--text-negative)', fontSize: '11px', fontFamily: 'IBM Plex Mono, monospace' }}>
+              <div style={{ marginTop: '8px', color: 'var(--text-negative)', fontSize: '11px', fontFamily: 'var(--font-sans)' }}>
                 Error: {error}
               </div>
             )}
@@ -170,7 +168,7 @@ export default function BacktestPage() {
         <div>
           {!result && !loading && (
             <div style={{ ...panel, padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--text-muted)' }}>
                 Configure a strategy and click RUN BACKTEST
               </div>
             </div>
@@ -178,7 +176,7 @@ export default function BacktestPage() {
 
           {loading && (
             <div style={{ ...panel, padding: '40px', textAlign: 'center' }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '12px', color: 'var(--text-accent)' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--text-accent)' }}>
                 Running backtest...
               </div>
             </div>
@@ -201,15 +199,15 @@ export default function BacktestPage() {
                     { label: 'WIN/LOSS', value: `${result.winningTrades}W / ${result.losingTrades}L`, pos: result.winningTrades > result.losingTrades },
                   ].map(m => (
                     <div key={m.label} style={{
-                      background: 'var(--bg-header)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '3px',
+                      background: 'var(--surface-2)',
+                      border: 'var(--bw) solid var(--border)',
+                      borderRadius: 'var(--radius-inner)',
                       padding: '8px 10px',
                     }}>
-                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '0.5px', marginBottom: '3px' }}>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.5px', marginBottom: '3px' }}>
                         {m.label}
                       </div>
-                      <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: m.pos ? 'var(--text-positive)' : m.label === 'MAX DRAWDOWN' ? 'var(--text-negative)' : 'var(--text-primary)' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: m.pos ? 'var(--text-positive)' : m.label === 'MAX DRAWDOWN' ? 'var(--text-negative)' : 'var(--text-primary)' }}>
                         {m.value}
                       </div>
                     </div>
@@ -218,26 +216,26 @@ export default function BacktestPage() {
 
                 {/* Strategy vs buy-hold comparison */}
                 <div style={{ padding: '0 12px 12px' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', marginBottom: '6px' }}>
                     STRATEGY vs BUY & HOLD
                   </div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px', fontFamily: 'IBM Plex Mono, monospace' }}>Strategy</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px', fontFamily: 'var(--font-sans)' }}>Strategy</div>
                       <div style={{ height: '8px', background: 'var(--bg-hover)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.min(Math.abs(result.totalReturnPct), 100)}%`, background: result.totalReturnPct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', borderRadius: '2px' }} />
                       </div>
-                      <div style={{ fontSize: '10px', color: result.totalReturnPct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontFamily: 'IBM Plex Mono, monospace', marginTop: '2px' }}>
-                        {pct(result.totalReturnPct, 2)}
+                      <div style={{ fontSize: '10px', color: result.totalReturnPct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                        {arrow(result.totalReturnPct)}{pct(result.totalReturnPct, 2)}
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px', fontFamily: 'IBM Plex Mono, monospace' }}>Buy & Hold</div>
+                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px', fontFamily: 'var(--font-sans)' }}>Buy & Hold</div>
                       <div style={{ height: '8px', background: 'var(--bg-hover)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.min(Math.abs(result.buyHoldReturn), 100)}%`, background: result.buyHoldReturn >= 0 ? 'var(--text-info)' : 'var(--text-negative)', borderRadius: '2px' }} />
                       </div>
-                      <div style={{ fontSize: '10px', color: result.buyHoldReturn >= 0 ? 'var(--text-info)' : 'var(--text-negative)', fontFamily: 'IBM Plex Mono, monospace', marginTop: '2px' }}>
-                        {pct(result.buyHoldReturn, 2)}
+                      <div style={{ fontSize: '10px', color: result.buyHoldReturn >= 0 ? 'var(--text-info)' : 'var(--text-negative)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                        {arrow(result.buyHoldReturn)}{pct(result.buyHoldReturn, 2)}
                       </div>
                     </div>
                   </div>
@@ -265,8 +263,8 @@ export default function BacktestPage() {
                       <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%' }}>
                         <defs>
                           <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={isPositive ? '#00e676' : '#ff1744'} stopOpacity="0.3" />
-                            <stop offset="100%" stopColor={isPositive ? '#00e676' : '#ff1744'} stopOpacity="0" />
+                            <stop offset="0%" stopColor={isPositive ? 'var(--up)' : 'var(--down)'} stopOpacity="0.3" />
+                            <stop offset="100%" stopColor={isPositive ? 'var(--up)' : 'var(--down)'} stopOpacity="0" />
                           </linearGradient>
                         </defs>
                         {[0, 0.25, 0.5, 0.75, 1].map(t => (
@@ -275,15 +273,15 @@ export default function BacktestPage() {
                         ))}
                         <polyline points={pts.join(' ')}
                           fill="none"
-                          stroke={isPositive ? '#00e676' : '#ff1744'}
-                          strokeWidth="1.5" />
-                        <text x="2" y="12" fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
+                          stroke={isPositive ? 'var(--up)' : 'var(--down)'}
+                          style={{ strokeWidth: 'var(--chart-line)' }} />
+                        <text x="2" y="12" fontSize="8" fill="var(--text-muted)" fontFamily="var(--font-mono)">
                           {cur}{max.toLocaleString()}
                         </text>
-                        <text x="2" y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
+                        <text x="2" y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="var(--font-mono)">
                           {cur}{min.toLocaleString()}
                         </text>
-                        <text x={w - 50} y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="IBM Plex Mono">
+                        <text x={w - 50} y={h - 2} fontSize="8" fill="var(--text-muted)" fontFamily="var(--font-mono)">
                           {result.endDate.slice(0, 7)}
                         </text>
                       </svg>
@@ -296,7 +294,7 @@ export default function BacktestPage() {
               <div style={{ ...panel, gridColumn: '1 / -1' }}>
                 <div style={header}>TRADE LOG ({result.trades.length} trades)</div>
                 <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, background: 'var(--bg-header)' }}>
                         {['TYPE', 'DATE', 'PRICE', 'SHARES', 'VALUE'].map(h => (

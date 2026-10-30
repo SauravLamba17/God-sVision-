@@ -74,7 +74,7 @@ export default function MacroPage() {
         <MacroPanel />
 
         {/* Yield Curve */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <YieldCurve />
         </div>
 
@@ -83,7 +83,7 @@ export default function MacroPage() {
           <PanelWrapper title="FED BALANCE SHEET (WALCL)" source={fedSource}>
             <LineChartComponent
               data={fedBalance.map(d => ({ date: d.date?.slice(0, 7) || '', value: d.value || 0 }))}
-              color="#ff6d00"
+              color="var(--accent-text)"
               height={160}
               formatValue={(v) => `$${v.toFixed(1)}T`}
             />
@@ -94,7 +94,7 @@ export default function MacroPage() {
       {/* Right Column */}
       <div style={{ width: 300, flexShrink: 0 }} className="space-y-2">
         {/* Recession Indicator */}
-        <div style={{ border: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+        <div className="gv-card">
           <div className="panel-header">
             <span className="panel-header-title">RECESSION PROBABILITY</span>
           </div>
