@@ -32,7 +32,7 @@ export default function SoundControl({ showTestButtons = false }: { showTestButt
         title={muted ? 'Sound muted — click to enable' : 'Sound on — click to mute'}
         style={{
           background:'none', border:'none', cursor:'pointer',
-          fontFamily:'IBM Plex Mono', fontSize:14,
+          fontSize:14,
           color: muted ? 'var(--text-muted)' : 'var(--text-accent)',
           transition:'color 0.15s', padding:'0 2px',
         }}
@@ -46,7 +46,7 @@ export default function SoundControl({ showTestButtons = false }: { showTestButt
 }
 
 const testBtn: React.CSSProperties = {
-  fontFamily:'IBM Plex Mono', fontSize:9, cursor:'pointer',
-  background:'rgba(255,109,0,0.1)', border:'1px solid #ff6d0040',
-  color:'var(--text-accent)', padding:'2px 8px', borderRadius:2,
+  fontFamily:'inherit', fontSize:9, cursor:'pointer',
+  background:'var(--surface)', border:'var(--bw) solid var(--border)',
+  color:'var(--text-accent)', padding:'2px 8px', borderRadius:'var(--radius-inner)',
 }

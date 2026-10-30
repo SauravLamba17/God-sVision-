@@ -50,7 +50,7 @@ export function PushSubscribe() {
       color: subscribed ? 'var(--text-positive)' : 'var(--text-secondary)',
       padding: '6px 14px', fontSize: '10px', fontWeight: 700,
       borderRadius: '3px', cursor: subscribed ? 'default' : 'pointer',
-      fontFamily: 'IBM Plex Mono, monospace',
+      fontFamily: 'inherit',
     }}>
       {subscribed ? '✓ PUSH ENABLED' : '🔔 ENABLE PUSH ALERTS'}
     </button>

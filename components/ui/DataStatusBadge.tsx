@@ -6,9 +6,9 @@ import type { DataStatus } from '@/lib/dataStatus'
 const STYLE: Record<DataStatus, { label: string; color: string; meaning: string }> = {
   'live':             { label: 'LIVE',        color: 'var(--text-positive)', meaning: 'Live from the provider' },
   'delayed':          { label: 'DELAYED',     color: 'var(--text-warning)',  meaning: 'Delayed by the provider' },
-  'cached':           { label: 'CACHED',      color: '#38bdf8',              meaning: 'Served from cache within its refresh window' },
+  'cached':           { label: 'CACHED',      color: 'var(--info)',          meaning: 'Served from cache within its refresh window' },
   'stale':            { label: 'STALE',       color: 'var(--text-warning)',  meaning: 'Older than its refresh window — the provider is failing' },
-  'estimate':         { label: 'ESTIMATE',    color: '#a78bfa',              meaning: 'Model- or rule-derived, not observed data' },
+  'estimate':         { label: 'ESTIMATE',    color: 'var(--accent-text)',   meaning: 'Model- or rule-derived, not observed data' },
   'static-reference': { label: 'REFERENCE',   color: 'var(--text-muted)',    meaning: 'Static reference values, not a live feed' },
   'unavailable':      { label: 'UNAVAILABLE', color: 'var(--text-negative)', meaning: 'No data available right now' },
 }
@@ -28,7 +28,7 @@ export function DataStatusBadge({ status, asOf, source }: { status: DataStatus; 
       aria-label={`Data status: ${s.label}. ${title}`}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-badge)', fontWeight: 700,
+        fontSize: 'var(--fs-badge)', fontWeight: 700,
         letterSpacing: '0.06em', color: s.color, cursor: 'help', whiteSpace: 'nowrap',
       }}
     >

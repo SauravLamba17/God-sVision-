@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
-const mono = 'IBM Plex Mono, monospace';
+const font = 'var(--font-sans), system-ui, sans-serif';
 
 export default function UserMenu() {
   const { data: session, status } = useSession();
@@ -49,7 +49,7 @@ export default function UserMenu() {
       <Link href="/auth/signin" style={{
         display: 'flex', alignItems: 'center', gap: 4, padding: '2px 10px',
         background: 'transparent', border: '1px solid var(--border-color)',
-        color: 'var(--text-muted)', fontFamily: mono, fontSize: 'var(--fs-meta)',
+        color: 'var(--text-muted)', fontFamily: font, fontSize: 'var(--fs-meta)',
         letterSpacing: '0.06em', textDecoration: 'none', borderRadius: 2,
         transition: 'all 0.15s',
       }}
@@ -64,10 +64,11 @@ export default function UserMenu() {
   const dropdown = open && mounted && createPortal(
     <div ref={menuRef} style={{
       position: 'fixed', top: pos.top, right: pos.right,
-      width: 200, background: 'var(--bg-panel)',
-      border: '1px solid var(--border-color)', borderTop: '2px solid var(--text-accent)',
-      zIndex: 9999, fontFamily: mono,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+      width: 200, background: 'var(--surface)',
+      border: 'var(--bw) solid var(--border)', borderTop: 'var(--stripe) solid var(--stripe-color)',
+      borderRadius: 'var(--radius-inner)', overflow: 'hidden',
+      zIndex: 9999, fontFamily: font,
+      boxShadow: 'var(--shadow)',
     }}>
       {/* User info */}
       <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-dim)' }}>
@@ -99,7 +100,7 @@ export default function UserMenu() {
       <button onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }} style={{
         display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left',
         fontSize: 'var(--fs-body)', color: 'var(--text-muted)', background: 'none', border: 'none',
-        cursor: 'pointer', fontFamily: mono, letterSpacing: '0.06em', transition: 'all 0.1s',
+        cursor: 'pointer', fontFamily: font, letterSpacing: '0.06em', transition: 'all 0.1s',
       }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-negative)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -121,7 +122,7 @@ export default function UserMenu() {
           background: 'var(--bg-hover)',
           border: '1px solid var(--border-color)',
           color: 'var(--text-muted)',
-          fontFamily: mono, fontSize: 'var(--fs-meta)', fontWeight: 700,
+          fontFamily: font, fontSize: 'var(--fs-meta)', fontWeight: 700,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           letterSpacing: 0, flexShrink: 0,
         }}

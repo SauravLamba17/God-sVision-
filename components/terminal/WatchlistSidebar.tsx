@@ -88,7 +88,7 @@ export default function WatchlistSidebar() {
           transform: 'translateY(-50%)',
           zIndex: 50,
           background: 'var(--bg-panel)',
-          border: '1px solid #1b2e1b',
+          border: 'var(--bw) solid var(--border)',
           borderRight: 'none',
           borderRadius: '4px 0 0 4px',
           width: 22,
@@ -109,20 +109,19 @@ export default function WatchlistSidebar() {
       <div style={{
         position: 'fixed',
         right: open ? 0 : -SIDEBAR_WIDTH,
-        top: 100,
+        top: 'calc(44px + var(--stripe) + var(--nav-h, 56px))',
         bottom: 26,
         width: SIDEBAR_WIDTH,
         background: 'var(--bg-panel)',
-        borderLeft: '1px solid #1b2e1b',
+        borderLeft: 'var(--bw) solid var(--border)',
         zIndex: 40,
         display: 'flex',
         flexDirection: 'column',
         transition: 'right 0.25s ease',
-        fontFamily: 'IBM Plex Mono',
         overflow: 'hidden',
       }}>
         {/* Header */}
-        <div style={{ padding: '8px 10px', borderBottom: '1px solid #1b2e1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '8px 10px', borderBottom: 'var(--bw) solid var(--divider)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-warning)', fontWeight: 700, letterSpacing: '0.1em' }}>★ WATCHLIST</span>
           <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>{items.length} items · W to close</span>
         </div>
@@ -132,7 +131,7 @@ export default function WatchlistSidebar() {
           {items.map(item => {
             const isPos = (item.changePct ?? 0) >= 0
             return (
-              <div key={item.id} style={{ padding: '6px 10px', borderBottom: '1px solid #0d1526', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div key={item.id} style={{ padding: '6px 10px', borderBottom: 'var(--bw) solid var(--divider)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>{item.ticker}</div>
                   <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
@@ -164,7 +163,7 @@ export default function WatchlistSidebar() {
 
         {/* Add ticker */}
         {adding ? (
-          <div style={{ padding: '6px 8px', borderTop: '1px solid #1b2e1b', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          <div style={{ padding: '6px 8px', borderTop: 'var(--bw) solid var(--divider)', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             <input
               ref={inputRef}
               value={newTicker}
@@ -173,15 +172,15 @@ export default function WatchlistSidebar() {
               placeholder="TICKER"
               aria-label="Ticker to add"
               autoFocus
-              style={{ flex: 1, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', background: 'var(--bg-terminal)', color: 'var(--text-primary)', border: '1px solid #1b2e1b', padding: '3px 6px', outline: 'none' }}
+              className="input-terminal" style={{ flex: 1, width: 'auto', fontSize: 'var(--fs-body)', padding: '3px 6px' }}
             />
-            <button onClick={addTicker} disabled={saving} style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', background: 'var(--border-color)', color: 'var(--text-positive)', border: 'none', padding: '3px 8px', cursor: 'pointer' }}>{saving ? '…' : 'ADD'}</button>
+            <button type="button" onClick={addTicker} disabled={saving} style={{ fontSize: 'var(--fs-meta)', fontWeight: 700, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 'var(--radius-inner)', padding: '3px 8px', cursor: 'pointer' }}>{saving ? '…' : 'ADD'}</button>
             {addErr && <div role="alert" style={{ flexBasis: '100%', fontSize: 'var(--fs-meta)', color: 'var(--text-negative)' }}>{addErr}</div>}
           </div>
         ) : (
           <button
             onClick={() => setAdding(true)}
-            style={{ padding: '6px', borderTop: '1px solid #1b2e1b', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', width: '100%' }}
+            style={{ padding: '6px', borderTop: 'var(--bw) solid var(--divider)', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 'var(--fs-body)', width: '100%' }}
           >
             + ADD TICKER
           </button>
@@ -189,7 +188,7 @@ export default function WatchlistSidebar() {
 
         {/* Portfolio value footer */}
         {items.length > 0 && (
-          <div style={{ padding: '6px 10px', borderTop: '1px solid #1b2e1b', background: 'var(--bg-terminal)' }}>
+          <div style={{ padding: '6px 10px', borderTop: 'var(--bw) solid var(--divider)', background: 'var(--bg-terminal)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)' }}>TOTAL PRICES</span>
               <span style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-primary)', fontWeight: 700 }}>${totalValue.toFixed(2)}</span>

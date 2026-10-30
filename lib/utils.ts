@@ -127,6 +127,14 @@ export function magnitudeColor(mag: number): string {
   return '#546e7a'
 }
 
+/** Theme-token colour for magnitude TEXT (meets contrast in every look); magnitudeColor stays for map markers. */
+export function magnitudeTextColor(mag: number): string {
+  if (mag >= 7) return 'var(--down)'
+  if (mag >= 5) return 'var(--accent-text)'
+  if (mag >= 3) return 'var(--warning)'
+  return 'var(--muted)'
+}
+
 export function altitudeColor(altitude: number): string {
   if (altitude > 30000) return '#2196f3'
   if (altitude > 15000) return '#00e676'

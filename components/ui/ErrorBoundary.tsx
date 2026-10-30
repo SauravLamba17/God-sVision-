@@ -30,19 +30,18 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return this.props.fallback ?? (
         <div style={{
-          padding: '12px',
-          background: 'var(--bg-panel, #050a05)',
-          border: '1px solid #5e1a1a',
-          borderRadius: '3px',
-          fontFamily: 'IBM Plex Mono, monospace',
+          padding: '12px 16px',
+          background: 'var(--surface)',
+          border: 'var(--bw) solid var(--down)',
+          borderRadius: 'var(--radius)',
           fontSize: '10px',
-          color: '#ff5252',
+          color: 'var(--down)',
           minHeight: 40,
         }}>
           <div style={{ fontWeight: 700, marginBottom: '4px' }}>
             ⚠ {this.props.name ?? 'Panel'} Error
           </div>
-          <div style={{ color: 'var(--text-muted, #607d8b)', fontSize: '9px' }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '9px' }}>
             {this.state.error?.message ?? 'Something went wrong'}
           </div>
           <button
@@ -50,13 +49,13 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{
               marginTop: '8px',
               background: 'transparent',
-              border: '1px solid #5e1a1a',
-              color: '#ff5252',
+              border: 'var(--bw) solid var(--down)',
+              color: 'var(--down)',
               padding: '2px 8px',
               fontSize: '9px',
               cursor: 'pointer',
-              fontFamily: 'IBM Plex Mono, monospace',
-              borderRadius: '2px',
+              fontFamily: 'inherit',
+              borderRadius: 'var(--radius-inner)',
             }}
           >
             RETRY

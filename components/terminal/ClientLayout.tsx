@@ -34,7 +34,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <main
         style={{
           position: 'fixed',
-          top: 100,
+          top: 'calc(44px + var(--stripe) + var(--nav-h, 56px))', // TopBar 44 + saffron stripe + NavBar (measured; wraps)
           left: 0,
           // Clear the fixed 22px ★ watchlist handle on the right edge — it sat
           // on top of the last table column (e.g. the alert delete ✕ buttons).

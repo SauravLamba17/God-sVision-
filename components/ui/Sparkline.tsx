@@ -41,7 +41,8 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
     return { linePath: d, fillPath: fillD, lastPoint: points[points.length - 1] };
   }, [data, width, height]);
 
-  const color = isPositive ? '#00e676' : '#ff1744';
+  // Tokens via style (not SVG attributes), so a theme/contrast switch re-colours instantly.
+  const color = isPositive ? 'var(--up)' : 'var(--down)';
   const gradientId = useId();
 
   // Loading skeleton — subtle pulsing bar, doesn't break layout
@@ -71,7 +72,7 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <line
           x1="3" y1={height / 2} x2={width - 3} y2={height / 2}
-          stroke={color} strokeWidth="1.5" strokeOpacity="0.35"
+          style={{ stroke: color, strokeWidth: 'var(--chart-line)' }} strokeOpacity="0.5"
           strokeDasharray="2,2"
         />
       </svg>
@@ -82,8 +83,8 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+          <stop offset="0%" style={{ stopColor: color, stopOpacity: 'var(--spark-fill)' }} />
+          <stop offset="100%" style={{ stopColor: color }} stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -94,8 +95,7 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
       <path
         d={pathData.linePath}
         fill="none"
-        stroke={color}
-        strokeWidth="1.6"
+        style={{ stroke: color, strokeWidth: 'var(--chart-line)' }}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -105,7 +105,7 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
         cx={pathData.lastPoint.x}
         cy={pathData.lastPoint.y}
         r="2.5"
-        fill={color}
+        style={{ fill: color }}
       >
         <animate
           attributeName="opacity"
@@ -119,7 +119,7 @@ export function Sparkline({ data, isPositive, width = 70, height = 32, loading }
         cy={pathData.lastPoint.y}
         r="4.5"
         fill="none"
-        stroke={color}
+        style={{ stroke: color }}
         strokeWidth="1"
         strokeOpacity="0.4"
       />

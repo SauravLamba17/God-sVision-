@@ -35,7 +35,7 @@ function PanelSlot({ config, index, onModuleChange }: {
         borderBottom: `1px solid ${linked ? 'var(--text-accent)' : 'var(--border-accent)'}`,
         flexShrink: 0, height: 24,
       }}>
-        <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '1px', fontFamily: 'IBM Plex Mono, monospace' }}>
+        <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '1px', fontFamily: 'inherit' }}>
           P{index + 1}
         </span>
         <select
@@ -44,7 +44,7 @@ function PanelSlot({ config, index, onModuleChange }: {
           style={{
             background: 'var(--bg-input)', color: 'var(--text-accent)',
             border: '1px solid var(--border-dim)', borderRadius: 2,
-            fontSize: 9, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace',
+            fontSize: 9, fontWeight: 700, fontFamily: 'inherit',
             padding: '1px 4px', cursor: 'pointer', outline: 'none',
             letterSpacing: '0.5px',
           }}
@@ -60,11 +60,11 @@ function PanelSlot({ config, index, onModuleChange }: {
             onClick={() => togglePanelLink(config.id)}
             title={linked ? 'Unlink panel from active ticker' : 'Link panel to active ticker'}
             style={{
-              background: linked ? 'rgba(255,109,0,0.15)' : 'transparent',
-              border: `1px solid ${linked ? 'var(--text-accent)' : 'var(--border-dim)'}`,
-              borderRadius: 2, padding: '0 4px', height: 16,
-              fontFamily: 'IBM Plex Mono, monospace', fontSize: 8,
-              color: linked ? 'var(--text-accent)' : 'var(--text-muted)',
+              background: linked ? 'var(--accent)' : 'transparent',
+              border: `1px solid ${linked ? 'var(--accent)' : 'var(--border-dim)'}`,
+              borderRadius: 4, padding: '0 4px', height: 16,
+              fontFamily: 'inherit', fontSize: 8,
+              color: linked ? 'var(--on-accent)' : 'var(--text-muted)',
               cursor: 'pointer', lineHeight: 1,
             }}
           >
@@ -82,7 +82,7 @@ function PanelSlot({ config, index, onModuleChange }: {
       <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
         {ModuleComponent
           ? <ModuleComponent compact={true} ticker={effectiveTicker} />
-          : <div style={{ padding: 8, color: 'var(--text-muted)', fontSize: 10, fontFamily: 'IBM Plex Mono, monospace' }}>Unknown module: {config.moduleId}</div>
+          : <div style={{ padding: 8, color: 'var(--text-muted)', fontSize: 10, fontFamily: 'inherit' }}>Unknown module: {config.moduleId}</div>
         }
       </div>
     </div>
@@ -140,7 +140,7 @@ export default function SplitLayout({ onExit }: { onExit: () => void }) {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      top: 100,
+      top: 'calc(44px + var(--stripe) + var(--nav-h, 56px))',
       bottom: 26,
       zIndex: 500,
       background: 'var(--bg-terminal)',
@@ -153,7 +153,7 @@ export default function SplitLayout({ onExit }: { onExit: () => void }) {
         borderBottom: '1px solid var(--border-accent)',
         flexShrink: 0, height: 26,
       }}>
-        <span style={{ fontSize: 9, color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '2px', fontFamily: 'IBM Plex Mono, monospace' }}>
+        <span style={{ fontSize: 9, color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '2px', fontFamily: 'inherit' }}>
           ⊞ SPLIT VIEW — ⧉ link panels to active ticker · Drag dividers to resize
         </span>
         <button
@@ -162,7 +162,7 @@ export default function SplitLayout({ onExit }: { onExit: () => void }) {
             background: 'var(--bg-hover)', border: '1px solid var(--border-accent)',
             color: 'var(--text-accent)', padding: '2px 10px', borderRadius: 2,
             cursor: 'pointer', fontSize: 9, fontWeight: 700,
-            fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '0.05em',
+            fontFamily: 'inherit', letterSpacing: '0.05em',
           }}
         >
           ✕ EXIT SPLIT

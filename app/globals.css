@@ -1,5 +1,6 @@
 @charset "UTF-8";
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+/* Fonts come from next/font in app/layout.tsx (self-hosted, no runtime requests):
+   --font-sans Plus Jakarta Sans (UI), --font-mono JetBrains Mono (numbers). */
 @import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
@@ -7,94 +8,185 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════
-   CSS VARIABLES — Dark Space Theme
+   SAFFRON COMMAND DESIGN TOKENS — the one source of truth
+   <html data-theme="dark|light" data-contrast="normal|high">, set before first
+   paint by the script in app/layout.tsx and switched by ThemeContext.
+     dark + normal = Saffron Dark     light + normal = Saffron Light
+     dark + high   = Pure Black       light + high   = Pure White
+   Components use these tokens (or the legacy names below, which alias them).
 ═══════════════════════════════════════════ */
+:root, [data-theme="dark"] {
+  --bg:          #121212;
+  --surface:     #1B1B1B;
+  --surface-2:   #222222;
+  --border:      #2C2C2C;
+  --divider:     #242424;
+  --text:        #F2F2F2;
+  --text-2:      #CFCFCF;
+  --muted:       #B5B5B5;
+  --accent:      #FF9933;   /* fills, stripes, active buttons */
+  --on-accent:   #121212;   /* text on an accent fill */
+  --accent-text: #FF9933;   /* saffron text and links */
+  --up:          #2EBD85;
+  --down:        #F6685E;
+  --warning:     #F5B841;
+  --info:        #6CB6FF;
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  --bg:          #FAFAF7;
+  --surface:     #FFFFFF;
+  --surface-2:   #FFF6EC;
+  --border:      #E4E2DC;
+  --divider:     #EFEDE8;
+  --text:        #161616;
+  --text-2:      #3A3A3A;
+  --muted:       #5E5E5E;
+  --accent:      #FF9933;
+  --on-accent:   #161616;
+  --accent-text: #A35200;
+  --up:          #137A4B;
+  --down:        #C0362C;
+  --warning:     #8A5A00;
+  --info:        #0B5CAD;
+  color-scheme: light;
+}
+[data-theme="dark"][data-contrast="high"] {
+  --bg: #000000; --surface: #000000; --surface-2: #000000;
+  --border: #FFFFFF; --divider: #FFFFFF;
+  --text: #FFFFFF; --text-2: #FFFFFF; --muted: #FFFFFF;
+  --accent: #FF9933; --on-accent: #000000; --accent-text: #FFB766;
+  --up: #5CFFA8; --down: #FF8A8A; --warning: #FFD166; --info: #9CD3FF;
+}
+[data-theme="light"][data-contrast="high"] {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #FFFFFF;
+  --border: #000000; --divider: #000000;
+  --text: #000000; --text-2: #000000; --muted: #000000;
+  --accent: #8A3B00; --on-accent: #FFFFFF; --accent-text: #8A3B00;
+  --up: #00602F; --down: #A30000; --warning: #6B4500; --info: #003D80;
+}
+
+/* Shape, weight and tint tokens (normal, then high contrast). */
 :root {
-  /* India saffron for text; the light theme darkens it (below) for contrast. */
-  --saffron:        #FF9933;
-  /* === TERMINAL BACKGROUNDS === */
-  --bg-terminal:    #000000;
-  --bg-panel:       #050a05;
-  --bg-header:      #0a140a;
-  --bg-hover:       #0f1f0f;
-  --bg-row-hover:   #0f1f0f;
-  --bg-input:       #0a140a;
-  --bg-card:        #050a05;
-  --bg-tooltip:     #0a140a;
-  --bg-overlay:     rgba(0,0,0,0.88);
-  --bg-stripe:      #030803;
-  --bg-card:        #050a05;
-  --bg-badge-buy:   #003300;
-  --bg-badge-sell:  #330000;
-  --bg-badge-hold:  #332200;
-  --bg-buy:         rgba(0,230,118,0.12);
-  --bg-sell:        rgba(255,23,68,0.12);
-  --bg-hold:        rgba(255,152,0,0.12);
-  --bg-live:        rgba(0,230,118,0.10);
-  --bg-warn:        rgba(255,152,0,0.12);
+  --bw:           1px;      /* border width */
+  --stripe:       4px;      /* saffron stripe on top of the header */
+  --stripe-color: #FF9933;
+  --radius:       12px;     /* cards */
+  --radius-inner: 10px;     /* items inside cards */
+  --fw-normal:    400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --chart-line:   1.6px;
+  --spark-fill:   0.3;      /* sparkline area tint */
+  --tint-k:       1;        /* multiplier for tint() backgrounds; 0 in high contrast */
+  --accent-soft:  color-mix(in srgb, var(--accent) 14%, transparent);
+  /* 8%: up/down/warning text on its own tint stays ≥4.5:1 in both normal looks. */
+  --up-soft:      color-mix(in srgb, var(--up) 8%, transparent);
+  --down-soft:    color-mix(in srgb, var(--down) 8%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 8%, transparent);
+  --overlay:      color-mix(in srgb, var(--bg) 88%, transparent);
+  --shadow:       0 8px 32px rgba(0,0,0,0.35);
+}
+[data-contrast="high"] {
+  --bw:           2px;
+  --stripe:       6px;
+  --radius:       10px;
+  --radius-inner: 8px;
+  --fw-normal:    500;      /* one step bolder */
+  --fw-medium:    600;
+  --fw-semibold:  700;
+  --fw-bold:      800;
+  --chart-line:   3px;
+  --spark-fill:   0;
+  --tint-k:       0;
+  --accent-soft:  transparent;   /* no translucent tints or overlays */
+  --up-soft:      transparent;
+  --down-soft:    transparent;
+  --warning-soft: transparent;
+  --overlay:      var(--bg);
+  --shadow:       none;
+}
 
-  /* === TEXT COLORS === */
-  --text-primary:   #c8e6c9;
-  --text-secondary: #88aa88;
-  --text-muted:     #607d8b;
-  --text-accent:    #ff6d00;
-  --text-gold:      #f59e0b;
-  --text-positive:  #00e676;
-  --text-negative:  #ff1744;
-  --text-neutral:   #88aa88;
-  --text-warning:   #ff9800;
-  --text-info:      #40c4ff;
-  --text-disabled:  #455a64;
-  --text-buy:       #00e676;
-  --text-sell:      #ff1744;
-  --text-hold:      #ff9800;
+/* Legacy names used across the app, now aliases of the tokens above. */
+:root {
+  --saffron:        var(--accent-text);
+  --bg-terminal:    var(--bg);
+  --bg-panel:       var(--surface);
+  --bg-card:        var(--surface);
+  --bg-header:      var(--surface-2);
+  --bg-hover:       var(--surface-2);
+  --bg-row-hover:   var(--surface-2);
+  --bg-input:       var(--surface-2);
+  --bg-tooltip:     var(--surface-2);
+  --bg-stripe:      var(--surface-2);
+  --bg-overlay:     var(--overlay);
+  --overlay-bg:     var(--overlay);
+  --bg-badge-buy:   var(--up-soft);
+  --bg-badge-sell:  var(--down-soft);
+  --bg-badge-hold:  var(--warning-soft);
+  --bg-buy:         var(--up-soft);
+  --bg-live:        var(--up-soft);
+  --bg-sell:        var(--down-soft);
+  --bg-hold:        var(--warning-soft);
+  --bg-warn:        var(--warning-soft);
 
-  /* === BORDER COLORS === */
-  --border-dim:     #1b2e1b;
-  --border-color:   #1b2e1b;
-  --border-subtle:  #0f1a0f;
-  --border-medium:  #2e5a2e;
-  --border-bright:  #2e5a2e;
-  --border-terminal:#1b2e1b;
-  --border-accent:  #ff6d00;
-  --border-panel:   #1b2e1b;
+  --text-primary:   var(--text);
+  --text-secondary: var(--text-2);
+  --text-neutral:   var(--text-2);
+  --text-muted:     var(--muted);
+  --text-disabled:  var(--muted);
+  --text-accent:    var(--accent-text);
+  --text-gold:      var(--warning);
+  --text-warning:   var(--warning);
+  --text-hold:      var(--warning);
+  --text-info:      var(--info);
+  --text-positive:  var(--up);
+  --text-buy:       var(--up);
+  --text-negative:  var(--down);
+  --text-sell:      var(--down);
 
-  /* === SCROLLBARS === */
-  --scrollbar-track:#0a140a;
-  --scrollbar-thumb:#1b2e1b;
-  --scrollbar-hover:#2e5a2e;
-  --sb-track:       #0a140a;
-  --sb-thumb:       #1b2e1b;
-  --sb-hover:       #2e5a2e;
+  --border-dim:     var(--border);
+  --border-color:   var(--border);
+  --border-medium:  var(--border);
+  --border-bright:  var(--border);
+  --border-terminal:var(--border);
+  --border-panel:   var(--border);
+  --border-subtle:  var(--divider);
+  --border-accent:  var(--accent);
 
-  /* === TOOLTIP === */
-  --tooltip-bg:     #0a140a;
-  --tooltip-border: #ff6d00;
+  --scrollbar-track:var(--bg);
+  --scrollbar-thumb:var(--border);
+  --scrollbar-hover:var(--muted);
+  --sb-track:       var(--bg);
+  --sb-thumb:       var(--border);
+  --sb-hover:       var(--muted);
 
-  /* === BADGE STYLES === */
-  --badge-buy-bg:   #003300;
-  --badge-buy-text: #00e676;
-  --badge-sell-bg:  #330000;
-  --badge-sell-text:#ff1744;
+  --tooltip-bg:     var(--surface-2);
+  --tooltip-border: var(--accent);
+  --badge-buy-bg:   var(--up-soft);
+  --badge-buy-text: var(--up);
+  --badge-sell-bg:  var(--down-soft);
+  --badge-sell-text:var(--down);
 
-  /* === CHART COLORS === */
-  --chart-bg:       #050a05;
-  --chart-grid:     #1b2e1b;
-  --chart-text:     #607d8b;
-  --chart-up:       #00e676;
-  --chart-down:     #ff1744;
-  --chart-sma20:    #40c4ff;
-  --chart-sma50:    #ff6d00;
-  --chart-volume:   rgba(255,109,0,0.3);
+  --chart-bg:       var(--surface);
+  --chart-grid:     var(--divider);
+  --chart-text:     var(--muted);
+  --chart-up:       var(--up);
+  --chart-down:     var(--down);
+  --chart-sma20:    var(--info);
+  --chart-sma50:    var(--accent-text);
+  --chart-volume:   var(--accent-soft);
 
-  /* === GLOW EFFECTS === */
-  --overlay-bg:     rgba(0,0,0,0.88);
-  --glow-accent:    rgba(255,109,0,0.12);
-  --glow-cyan:      rgba(64,196,255,0.12);
-  --glow-green:     rgba(0,230,118,0.12);
-  --glow-red:       rgba(255,23,68,0.12);
-  --glow-gold:      rgba(245,158,11,0.12);
+  /* Saffron Command is flat: the old glows are off. */
+  --glow-accent:    transparent;
+  --glow-cyan:      transparent;
+  --glow-green:     transparent;
+  --glow-red:       transparent;
+  --glow-gold:      transparent;
+}
 
+:root {
   /* === TYPE SCALE ===
      Readability floor for the terminal UI. These are MINIMUMS — the dashboard
      was previously running 88% of its text at <=10px (bulk at 8-9px), which is
@@ -117,91 +209,138 @@
   --fs-lg:          15px;
   --fs-display:     20px;
 }
-
-/* ═══════════════════════════════════════════
-   LIGHT THEME OVERRIDES
-═══════════════════════════════════════════ */
-[data-theme="light"] {
-  --bg-terminal:    #f0f4f0;
-  --bg-panel:       #ffffff;
-  --bg-header:      #e8ede8;
-  --bg-hover:       #f0f4f0;
-  --bg-row-hover:   #f0f4f0;
-  --bg-input:       #ffffff;
-  --bg-card:        #ffffff;
-  --bg-overlay:     rgba(230,240,230,0.92);
-  --bg-stripe:      #f5f8f5;
-  --bg-live:        rgba(0,102,0,0.08);
-  --text-primary:   #111111;
-  --text-secondary: #444444;
-  --text-muted:     #777777;
-  --text-accent:    #cc4400;
-  --text-positive:  #006600;
-  --text-negative:  #cc0000;
-  --text-warning:   #aa5500;
-  --text-info:      #0044aa;
-  --text-disabled:  #aaaaaa;
-  --border-dim:     #d0d8d0;
-  --border-color:   #d0d8d0;
-  --border-subtle:  #e8ede8;
-  --border-medium:  #aabbaa;
-  --border-bright:  #aabbaa;
-  --border-accent:  #cc4400;
-  --scrollbar-track:#eeeeee;
-  --scrollbar-thumb:#cccccc;
-  --scrollbar-hover:#aaaaaa;
-  --sb-track:       #eeeeee;
-  --sb-thumb:       #cccccc;
-  --sb-hover:       #aaaaaa;
-  --chart-bg:       #ffffff;
-  --chart-grid:     #eeeeee;
-  --chart-text:     #666666;
-  --chart-up:       #006600;
-  --chart-down:     #cc0000;
-  --glow-accent:    rgba(204,68,0,0.08);
-  --glow-green:     rgba(0,102,0,0.08);
-  --glow-red:       rgba(204,0,0,0.08);
-}
-/* Tailwind's text-primary is a fixed near-white (#e2e8f0), invisible on the light
-   background (65 files use it); follow the theme here. Dark themes keep their look. */
-[data-theme="light"] .text-primary { color: var(--text-primary); }
-/* #FF9933 is ~1.9:1 on the light backgrounds; same hue, ≥4.7:1 on #fff / #f0f4f0 / #e8ede8. */
-[data-theme="light"] { --saffron: #A35200; }
-
-/* ═══════════════════════════════════════════
-   HIGH CONTRAST DARK THEME
-═══════════════════════════════════════════ */
-[data-theme="dark-contrast"] {
-  --bg-terminal:    #000000;
-  --bg-panel:       #0a0a0a;
-  --bg-header:      #000000;
-  --bg-hover:       #1a1a1a;
-  --bg-row-hover:   #1a1a1a;
-  --text-primary:   #ffffff;
-  --text-secondary: #dddddd;
-  --text-muted:     #aaaaaa;
-  --text-accent:    #ff8c00;
-  --text-positive:  #00ff41;
-  --text-negative:  #ff3333;
-  --border-dim:     #444444;
-  --border-color:   #444444;
-  --border-subtle:  #222222;
-  --border-medium:  #666666;
-  --border-bright:  #666666;
-  --border-accent:  #ff8c00;
-  --chart-grid:     #333333;
-  --chart-text:     #aaaaaa;
-  --chart-up:       #00ff41;
-  --chart-down:     #ff3333;
+/* High contrast: body text 16px, labels at least 14px. */
+[data-contrast="high"] {
+  --fs-badge:       14px;
+  --fs-meta:        14px;
+  --fs-body:        16px;
+  --fs-header:      16px;
+  --fs-lg:          17px;
+  --fs-display:     22px;
 }
 
 /* ═══════════════════════════════════════════
-   INDIA MODE ACCENT
+   HIGH CONTRAST RULES (data-contrast="high")
 ═══════════════════════════════════════════ */
-[data-mode="india"] {
-  --text-accent:    #FF9933;
-  --border-accent:  #FF9933;
+/* !important: many links set textDecoration: 'none' inline. */
+[data-contrast="high"] a { text-decoration: underline !important; text-underline-offset: 5px; }
+[data-contrast="high"] [aria-current="page"] { text-decoration: underline !important; text-decoration-thickness: 3px !important; text-underline-offset: 5px; }
+[data-contrast="high"] *,
+[data-contrast="high"] *::before,
+[data-contrast="high"] *::after { box-shadow: none !important; text-shadow: none !important; backdrop-filter: none !important; }
+
+/* Fixed Tailwind pixel sizes follow the type tokens in high contrast (labels ≥14px, body 16px). */
+[data-contrast="high"] :is(.text-\[7px\], .text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\], .text-xs) { font-size: var(--fs-meta) !important; }
+[data-contrast="high"] :is(.text-\[12px\], .text-\[13px\], .text-sm) { font-size: var(--fs-body) !important; }
+[data-contrast="high"] :is(.text-\[14px\], .text-\[15px\]) { font-size: var(--fs-lg) !important; }
+/* …and so do inline pixel sizes (style={{ fontSize: 9 }} etc.). */
+[data-contrast="high"] :is([style*="font-size: 6px"], [style*="font-size: 7px"], [style*="font-size: 8px"], [style*="font-size: 9px"], [style*="font-size: 10px"], [style*="font-size: 11px"]) { font-size: var(--fs-meta) !important; }
+[data-contrast="high"] :is([style*="font-size: 12px"], [style*="font-size: 13px"]) { font-size: var(--fs-body) !important; }
+
+/* Chart lines at least 3px in high contrast (every recharts line/area on every page). */
+[data-contrast="high"] :is(.recharts-line-curve, .recharts-area-curve) { stroke-width: 3px !important; }
+[data-contrast="high"] .recharts-area-area { fill-opacity: 0 !important; }
+
+/* Visible focus ring on every interactive element, in every look (many
+   buttons use `all: unset`, hence !important). */
+:focus-visible { outline: 2px solid var(--accent-text) !important; outline-offset: 2px; }
+[data-contrast="high"] :focus-visible { outline-width: 3px !important; }
+
+/* Fonts: any old inline 'IBM Plex Mono' / 'Inter' left (e.g. in the Analyst panel and
+   deep dive, whose markup stays as is) renders in the UI font; values there are tagged gv-num. */
+[style*="IBM Plex Mono"], [style*="font-family: Inter"] { font-family: var(--font-sans), system-ui, sans-serif !important; }
+
+/* ═══════════════════════════════════════════
+   SHARED COMPONENT CLASSES
+═══════════════════════════════════════════ */
+.gv-card {
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-width: 0;
+  /* Never squeezed shorter than its content by a flex column (overflow:hidden would cut it);
+     the column scrolls instead. An inline flex: 1 still overrides this. */
+  flex-shrink: 0;
 }
+.gv-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 16px;
+  border-bottom: var(--bw) solid var(--divider);
+  font-size: var(--fs-header); font-weight: var(--fw-bold); color: var(--text);
+}
+.gv-num { font-family: var(--font-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.gv-label { font-size: var(--fs-meta); font-weight: var(--fw-semibold); color: var(--muted); letter-spacing: 0.04em; }
+.gv-tab {
+  font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-semibold);
+  padding: 4px 12px; border-radius: var(--radius-inner); cursor: pointer;
+  background: transparent; color: var(--text-2); border: var(--bw) solid var(--border);
+}
+.gv-tab[aria-pressed="true"], .gv-tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.gv-row:hover { background: var(--surface-2); }
+.gv-icon-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: var(--fs-body); padding: 0 4px; border-radius: 6px; }
+.gv-icon-btn:hover { color: var(--accent-text); }
+
+/* Compact data tables inside cards (dashboard movers / crypto). */
+.gv-movers { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+.gv-movers th { font-size: var(--fs-meta); font-weight: var(--fw-semibold); color: var(--muted); letter-spacing: 0.04em; padding: 8px 8px 6px; border-bottom: var(--bw) solid var(--divider); white-space: nowrap; }
+.gv-movers td { padding: 6px 8px 2px; }
+.gv-movers th:first-child, .gv-movers td:first-child { padding-left: 16px; }
+.gv-movers th:last-child, .gv-movers td:last-child { padding-right: 16px; }
+.gv-movers tr.gv-why-row td { padding: 0 16px 6px; border-bottom: var(--bw) solid var(--divider); }
+.gv-movers tbody tr:last-child td { border-bottom: 0; }
+
+/* High contrast: on the index cards the "why" text gets its own full-width line
+   under the badge + time and wraps to two lines instead of truncating. */
+[data-contrast="high"] .gv-why-card { flex-wrap: wrap !important; row-gap: 2px; }
+[data-contrast="high"] .gv-why-clamp {
+  order: 3; flex-basis: 100% !important;
+  white-space: normal !important;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Heatmap tiles: saturated fill + white text normally (each fill ≥5:1 with #FFF, all looks);
+   outlined up/down tiles in high contrast. */
+:root {
+  --heat-up-3: #14532d; --heat-up-2: #15803d; --heat-up-1: #166534;
+  --heat-down-1: #7f1d1d; --heat-down-2: #991b1b; --heat-down-3: #450a0a;
+}
+.gv-heat { background: var(--heat-bg); color: #FFFFFF; border: var(--bw) solid transparent; }
+[data-contrast="high"] .gv-heat { background: var(--surface); border-color: currentColor; }
+[data-contrast="high"] .gv-heat[data-dir="up"] { color: var(--up); }
+[data-contrast="high"] .gv-heat[data-dir="down"] { color: var(--down); }
+[data-contrast="high"] .gv-heat-swatch { display: none !important; }
+
+/* Segmented toggle (USA/India, Dark/Light) and single toggle (High contrast):
+   active = accent fill + on-accent text. */
+.gv-seg { display: inline-flex; border: var(--bw) solid var(--border); border-radius: var(--radius-inner); overflow: hidden; background: var(--surface); }
+.gv-seg > button, .gv-seg-single {
+  font-family: var(--font-sans), system-ui, sans-serif; font-size: var(--fs-meta); font-weight: var(--fw-semibold);
+  padding: 3px 10px; border: 0; background: transparent; color: var(--text-2); cursor: pointer; white-space: nowrap; line-height: 1.4;
+}
+.gv-seg > button + button { border-left: var(--bw) solid var(--border); }
+.gv-seg-single { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; border: var(--bw) solid var(--border); border-radius: var(--radius-inner); background: var(--surface); }
+.gv-seg > button[aria-pressed="true"], .gv-seg-single[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.gv-seg > button:not([aria-pressed="true"]):hover, .gv-seg-single:not([aria-pressed="true"]):hover { color: var(--accent-text); }
+
+/* Below 1280px the top bar drops the UTC clock and the toggle words (icons keep
+   their aria-label), and the status bar drops its version/port, so nothing is pushed off-screen. */
+@media (max-width: 1279px) {
+  .gv-hide-narrow { display: none !important; }
+  /* Large high-contrast text: the movers' company column gives way (name stays in the ticker's tooltip). */
+  [data-contrast="high"] .gv-col-company { display: none; }
+}
+
+/* Nav links: active = saffron text + 3px saffron underline bar. */
+.gv-nav {
+  display: flex; align-items: center; gap: 5px; height: 34px; padding: 0 7px;
+  font-family: var(--font-sans), system-ui, sans-serif; font-size: var(--fs-body); font-weight: var(--fw-medium);
+  color: var(--text-2); text-decoration: none; white-space: nowrap; letter-spacing: 0.02em;
+  border-bottom: 3px solid transparent; border-top: 3px solid transparent;
+}
+.gv-nav:hover { color: var(--accent-text); }
+.gv-nav[aria-current="page"] { color: var(--accent-text); font-weight: var(--fw-bold); border-bottom-color: var(--accent); }
+.gv-nav-sm { height: 22px; padding: 0 6px; font-size: var(--fs-meta); border-width: 0 0 2px; }
 
 /* ═══════════════════════════════════════════
    RESET & BASE
@@ -209,10 +348,12 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  background-color: var(--bg-terminal) !important;
-  color: var(--text-primary) !important;
-  font-family: 'Inter', system-ui, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  font-family: var(--font-sans), system-ui, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
   font-size: var(--fs-body);
+  font-weight: var(--fw-normal);
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
   max-width: 100vw;
   height: 100%;
@@ -276,33 +417,6 @@ canvas { transition: none !important; }
 .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
-/* Subtle grid overlay for the terminal feel */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--glow-accent, rgba(255,109,0,0.02)) 1px, transparent 1px),
-    linear-gradient(90deg, var(--glow-accent, rgba(255,109,0,0.02)) 1px, transparent 1px);
-  background-size: 32px 32px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Radial glow at top center */
-body::after {
-  content: '';
-  position: fixed;
-  top: -200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 800px;
-  height: 400px;
-  background: radial-gradient(ellipse, var(--glow-accent, rgba(255,109,0,0.06)) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* Not `main`: the terminal's <main> (ClientLayout) is position:fixed with
    top:100 + bottom:26. Adding height:100% over-constrains it, and CSS resolves
    that by ignoring `bottom` — <main> became a full viewport tall starting 100px
@@ -325,7 +439,7 @@ body::after {
 /* ═══════════════════════════════════════════
    TYPOGRAPHY
 ═══════════════════════════════════════════ */
-.font-mono { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+.font-mono { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ═══════════════════════════════════════════
    PRICE FLASH ANIMATIONS
@@ -334,11 +448,11 @@ body::after {
 .cell-flash-red   { animation: flashRed  0.4s ease-out; }
 
 @keyframes flashGreen {
-  0%   { background-color: rgba(34, 197, 94, 0.3); }
+  0%   { background-color: var(--up-soft); }
   100% { background-color: transparent; }
 }
 @keyframes flashRed {
-  0%   { background-color: rgba(239, 68, 68, 0.3); }
+  0%   { background-color: var(--down-soft); }
   100% { background-color: transparent; }
 }
 
@@ -373,38 +487,36 @@ body::after {
    PANEL WRAPPER
 ═══════════════════════════════════════════ */
 .panel-header {
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-dim);
-  padding: 5px 10px;
+  background: var(--surface);
+  border-bottom: var(--bw) solid var(--divider);
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .panel-header-title {
-  color: var(--text-accent);
-  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-header);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-shadow: 0 0 12px var(--glow-accent);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
 }
 
 .panel-header-time {
   color: var(--text-muted);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: var(--fs-meta);
-  letter-spacing: 0.05em;
 }
 
 /* ═══════════════════════════════════════════
-   DATA TABLE
+   DATA TABLE — labels in the UI font, values (every cell but the first) in mono
 ═══════════════════════════════════════════ */
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: var(--fs-body);
   /* Pinned so the larger body size buys legibility, not row height — this is a
      dense terminal table, and the rows should stay tight. */
@@ -412,33 +524,35 @@ body::after {
 }
 
 .data-table th {
-  background: var(--bg-header);
-  color: var(--text-accent);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-meta);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 5px 6px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  padding: 8px 8px 6px;
   text-align: right;
-  border-bottom: 1px solid var(--border-medium);
+  border-bottom: var(--bw) solid var(--divider);
   white-space: nowrap;
 }
 
 .data-table th:first-child { text-align: left; }
 
 .data-table td {
-  padding: 3px 6px;
-  border-bottom: 1px solid var(--border-dim);
-  color: var(--text-primary);
+  padding: 5px 8px;
+  border-bottom: var(--bw) solid var(--divider);
+  color: var(--text);
   text-align: right;
   white-space: nowrap;
   transition: background 0.1s;
 }
 
-.data-table td:first-child { text-align: left; }
+.data-table td:first-child { text-align: left; font-family: var(--font-sans), system-ui, sans-serif; }
+/* Left-aligned cells hold names/labels, not values. */
+.data-table td[style*="text-align: left"] { font-family: var(--font-sans), system-ui, sans-serif; }
 
 .data-table tr:nth-child(even) td {
-  background: var(--bg-stripe);
+  background: transparent;
 }
 
 .data-table tr:hover td {
@@ -451,6 +565,10 @@ body::after {
 ═══════════════════════════════════════════ */
 .positive { color: var(--text-positive); }
 .negative { color: var(--text-negative); }
+/* High contrast: direction is shown as a symbol too, not by colour alone. These two classes
+   are only used on change cells, none of which print their own arrow. */
+[data-contrast="high"] .positive::before { content: '▲ '; }
+[data-contrast="high"] .negative::before { content: '▼ '; }
 .neutral  { color: var(--text-neutral); }
 .accent   { color: var(--text-accent); }
 .gold     { color: var(--text-gold); }
@@ -469,21 +587,18 @@ body::after {
 
 .status-live {
   background-color: var(--text-positive);
-  box-shadow: 0 0 6px rgba(34,197,94,0.6);
   animation: pulseLive 2s ease-in-out infinite;
 }
 .status-delayed {
   background-color: var(--text-gold);
-  box-shadow: 0 0 6px rgba(245,158,11,0.6);
 }
 .status-down {
   background-color: var(--text-negative);
-  box-shadow: 0 0 6px rgba(239,68,68,0.6);
 }
 
 @keyframes pulseLive {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
-  50%       { opacity: 0.7; box-shadow: 0 0 12px rgba(34,197,94,0.9); }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
 }
 
 /* ═══════════════════════════════════════════
@@ -491,29 +606,30 @@ body::after {
 ═══════════════════════════════════════════ */
 .leaflet-container {
   background: var(--bg-terminal) !important;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--fs-meta);
 }
 
 .leaflet-popup-content-wrapper {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-medium);
-  color: var(--text-primary);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  border-radius: 4px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 0 1px rgba(56,189,248,0.1);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--fs-meta);
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow);
 }
 
-.leaflet-popup-tip { background: var(--bg-panel); }
+.leaflet-popup-tip { background: var(--surface); }
 
 /* Leaflet tooltips default to a white box — match the terminal panels so the
    hover card on /flights reads like every other popup in the app. */
 .leaflet-tooltip {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-medium);
-  color: var(--text-primary);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow);
   padding: 6px 8px;
 }
 .leaflet-tooltip-top::before { border-top-color: var(--border-medium); }
@@ -524,10 +640,10 @@ body::after {
 /* Esri's tile licence requires visible attribution, so the control is on — kept
    small and dark so it reads as a footnote rather than a white browser chip. */
 .leaflet-control-attribution {
-  background: rgba(0, 0, 0, 0.55) !important;
+  background: var(--surface) !important;
   color: var(--text-muted) !important;
-  font-family: 'IBM Plex Mono', monospace !important;
-  font-size: 8px !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  font-size: 10px !important;
   padding: 1px 5px !important;
 }
 .leaflet-control-attribution a { color: var(--text-muted) !important; }
@@ -573,64 +689,61 @@ body::after {
 }
 
 .modal-content {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-medium);
-  border-top: 2px solid var(--text-accent);
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  border-top: var(--stripe) solid var(--stripe-color);
+  border-radius: var(--radius);
   padding: 20px;
   min-width: 420px;
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(56,189,248,0.1);
+  box-shadow: var(--shadow);
 }
 
 /* ═══════════════════════════════════════════
    FORM INPUTS
 ═══════════════════════════════════════════ */
 .input-terminal {
-  background: var(--bg-terminal);
-  border: 1px solid var(--border-dim);
-  color: var(--text-primary);
-  font-family: 'IBM Plex Mono', monospace;
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-body);
   padding: 6px 10px;
   outline: none;
   width: 100%;
-  border-radius: 2px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  border-radius: var(--radius-inner);
+  transition: border-color 0.15s;
 }
 
 .input-terminal:focus {
-  border-color: var(--text-accent);
-  box-shadow: 0 0 0 2px rgba(56,189,248,0.1);
+  border-color: var(--accent);
 }
 
 .btn-terminal {
-  background: var(--bg-header);
-  border: 1px solid var(--border-medium);
-  color: var(--text-primary);
-  font-family: 'IBM Plex Mono', monospace;
+  background: var(--surface);
+  border: var(--bw) solid var(--border);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
   padding: 5px 14px;
   cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  border-radius: 2px;
+  border-radius: var(--radius-inner);
   transition: all 0.15s;
 }
 
 .btn-terminal:hover {
-  background: var(--bg-hover);
-  border-color: var(--text-accent);
-  color: var(--text-accent);
-  box-shadow: 0 0 12px var(--glow-accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
 }
 
 .btn-terminal.active,
 .btn-terminal:focus {
-  background: var(--text-accent);
-  color: var(--bg-terminal);
-  border-color: var(--text-accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
 }
 
 /* ═══════════════════════════════════════════
@@ -674,7 +787,7 @@ body::after {
 ═══════════════════════════════════════════ */
 .error-state {
   color: var(--text-gold);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-body);
   padding: 12px;
   text-align: center;
@@ -685,42 +798,34 @@ body::after {
    METRIC CARD HOVER
 ═══════════════════════════════════════════ */
 .metric-card {
-  border: 1px solid var(--border-dim);
-  border-left: 3px solid var(--text-accent);
-  background: var(--bg-panel);
-  padding: 12px 14px;
+  border: var(--bw) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .metric-card:hover {
-  border-color: var(--border-medium);
-  box-shadow: 0 0 20px var(--glow-accent);
-}
-
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(ellipse at top left, var(--glow-accent) 0%, transparent 60%);
-  pointer-events: none;
+  border-color: var(--accent);
 }
 
 /* ═══════════════════════════════════════════
-   GLOW BADGE
+   STATUS BADGES
 ═══════════════════════════════════════════ */
 .badge-live {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(34,197,94,0.1);
-  border: 1px solid rgba(34,197,94,0.3);
-  color: #22c55e;
-  font-family: 'IBM Plex Mono', monospace;
+  background: var(--up-soft);
+  border: var(--bw) solid var(--up);
+  color: var(--up);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-badge);
+  font-weight: var(--fw-bold);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: 4px;
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
@@ -729,13 +834,14 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(245,158,11,0.1);
-  border: 1px solid rgba(245,158,11,0.3);
-  color: #f59e0b;
-  font-family: 'IBM Plex Mono', monospace;
+  background: var(--warning-soft);
+  border: var(--bw) solid var(--warning);
+  color: var(--warning);
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: var(--fs-badge);
+  font-weight: var(--fw-bold);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: 4px;
   letter-spacing: 0.06em;
 }
 
@@ -771,16 +877,6 @@ body::after {
   border-radius: 2px;
   animation: skeleton-pulse 1.5s ease infinite;
 }
-
-/* ═══════════════════════════════════════════
-   THEME-AWARE COMPONENT OVERRIDES
-═══════════════════════════════════════════ */
-[data-theme="light"] .panel-header-title { text-shadow: none; }
-[data-theme="light"] .data-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
-[data-theme="light"] .leaflet-container { background: #f0f4f0 !important; }
-[data-theme="light"] .modal-content { box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
-[data-theme="light"] body::before { display: none; }
-[data-theme="light"] body::after  { display: none; }
 
 @keyframes sparkPulse {
   0%, 100% { opacity: 0.25; }

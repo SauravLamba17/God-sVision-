@@ -1,13 +1,11 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { useMode } from '@/lib/context/ModeContext'
 
 const SplitLayout          = dynamic(() => import('./SplitLayout'),          { ssr: false })
 const ModeToggle           = dynamic(() => import('./ModeToggle'),           { ssr: false })
-const ThemeSwitcher        = dynamic(() => import('./ThemeSwitcher'),        { ssr: false })
 const BeginnerModeToggle   = dynamic(() => import('./BeginnerModeToggle'),   { ssr: false })
 
 const NAV_F_ITEMS = [
@@ -49,9 +47,19 @@ const NAV_EXTRA = [
 export default function NavBar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const { isIndia } = useMode()
   const [splitMode, setSplitMode] = useState(false)
   const [showSplit, setShowSplit] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
+
+  // The nav rows wrap, so their height varies with width, text size and contrast;
+  // publish it for <main>, the split view and the watchlist (top: … var(--nav-h)).
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--nav-h', `${el.offsetHeight}px`))
+    ro.observe(el)
+    return () => { ro.disconnect(); document.documentElement.style.removeProperty('--nav-h') }
+  }, [])
 
   // Restore layout mode from localStorage
   useEffect(() => {
@@ -101,107 +109,56 @@ export default function NavBar() {
     return () => window.removeEventListener('keydown', handler)
   }, [router, splitMode])
 
-  const activeAccent = isIndia ? 'var(--saffron)' : 'var(--text-accent)'
-  const activeAccentBg = isIndia ? 'rgba(255,153,51,0.08)' : 'rgba(255,109,0,0.08)'
-
-  const navItemStyle = (isActive: boolean) => ({
-    display: 'flex', alignItems: 'center', gap: 5,
-    height: 34, padding: '0 5px',
-    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: isActive ? 600 : 400,
-    textDecoration: 'none', whiteSpace: 'nowrap' as const,
-    color: isActive ? activeAccent : 'var(--text-muted)',
-    background: isActive ? activeAccentBg : 'transparent',
-    borderBottom: isActive ? `2px solid ${activeAccent}` : '2px solid transparent',
-    transition: 'all 0.15s',
-    letterSpacing: '0.06em',
-    cursor: 'pointer',
-  })
-
-  const extraItemStyle = (isActive: boolean) => ({
-    display: 'flex', alignItems: 'center',
-    height: 20, padding: '0 6px',
-    fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', fontWeight: isActive ? 600 : 400,
-    textDecoration: 'none', whiteSpace: 'nowrap' as const,
-    color: isActive ? 'var(--text-accent)' : 'var(--text-muted)',
-    background: isActive ? 'rgba(255,109,0,0.08)' : 'transparent',
-    border: isActive ? '1px solid rgba(255,109,0,0.3)' : '1px solid transparent',
-    borderRadius: 2,
-    transition: 'all 0.15s',
-    letterSpacing: '0.04em',
-    cursor: 'pointer',
-  })
-
   return (
     <>
-      <nav style={{
-        position: 'fixed', top: 44, left: 0, right: 0, zIndex: 40,
-        background: 'var(--bg-header)',
-        borderBottom: '1px solid var(--border-dim)',
+      <nav ref={navRef} style={{
+        position: 'fixed', top: 'calc(44px + var(--stripe))', left: 0, right: 0, zIndex: 40,
+        background: 'var(--surface)',
+        borderBottom: 'var(--bw) solid var(--border)',
         display: 'flex', flexDirection: 'column',
       }}>
-        {/* Row 1: F-key navigation */}
+        {/* Row 1: F-key navigation. Rows wrap (never scroll), so every link stays visible
+            at any width or text size; the page below follows the measured height (--nav-h). */}
         <div style={{
-          height: 34, display: 'flex', alignItems: 'center',
-          overflowX: 'auto', overflowY: 'hidden',
-          borderBottom: '1px solid var(--border-dim)',
+          minHeight: 34, display: 'flex', alignItems: 'center', flexWrap: 'wrap',
+          borderBottom: 'var(--bw) solid var(--divider)',
           padding: '0 4px',
-        }} className="scrollbar-none">
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
             {NAV_F_ITEMS.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
               return (
-                <Link key={item.key} href={item.href} style={navItemStyle(isActive)}
-                  onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)' } }}
-                  onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)' } }}
-                >
-                  <span className="gv-fkey" style={{ fontSize: 'var(--fs-meta)', color: isActive ? (isIndia ? 'rgba(255,153,51,0.31)' : 'rgba(255,109,0,0.31)') : 'var(--border-bright)', fontWeight: 400 }}>{item.key}</span>
-                  <span style={{ fontSize: 'var(--fs-body)', letterSpacing: '0.06em' }}>{item.label}</span>
+                <Link key={item.key} href={item.href} className="gv-nav" aria-current={isActive ? 'page' : undefined}>
+                  <span className="gv-fkey gv-num" style={{ fontSize: 'var(--fs-meta)', color: 'var(--muted)' }}>{item.key}</span>
+                  <span>{item.label}</span>
                 </Link>
               )
             })}
           </div>
 
           {/* Right controls */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, paddingRight: 8, flexShrink: 0 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, padding: '4px 8px 4px 0' }}>
             {/* India/USA Mode Toggle */}
             <ModeToggle />
-
-            {/* Divider */}
-            <span style={{ width: 1, height: 20, background: 'var(--border-color)', display: 'inline-block' }} />
-
-            {/* Theme Switcher */}
-            <ThemeSwitcher />
 
             {/* Beginner Mode Toggle */}
             <BeginnerModeToggle />
 
-            {/* Divider */}
-            <span style={{ width: 1, height: 20, background: 'var(--border-color)', display: 'inline-block' }} />
-
             {/* Single/Split toggle */}
             <button
+              type="button"
+              className="gv-seg-single"
+              aria-pressed={splitMode}
               onClick={toggleSplit}
               title="Ctrl+Shift+S — Toggle Split View"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: splitMode ? 'rgba(255,109,0,0.12)' : 'transparent',
-                border: `1px solid ${splitMode ? 'var(--text-accent)' : 'var(--border-color)'}`,
-                borderRadius: 3, padding: '2px 8px',
-                fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: splitMode ? 'var(--text-accent)' : 'var(--text-muted)',
-                cursor: 'pointer', letterSpacing: '0.06em',
-              }}
             >
-              {splitMode ? '⊞' : '⊡'} {splitMode ? 'SPLIT' : 'SINGLE'}
+              {splitMode ? '⊞ SPLIT' : '⊡ SINGLE'}
             </button>
 
             {/* GOD MODE */}
-            <Link href="/godmode" style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              background: 'rgba(255,109,0,0.9)',
-              border: '1px solid #ff6d00',
-              borderRadius: 3, padding: '2px 10px',
-              fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', fontWeight: 700, color: '#000',
-              textDecoration: 'none', letterSpacing: '0.08em',
+            <Link href="/godmode" className="gv-seg-single" style={{
+              background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--on-accent)',
+              fontWeight: 'var(--fw-bold)', textDecoration: 'none',
             }}>
               ⚡ GOD
             </Link>
@@ -210,17 +167,13 @@ export default function NavBar() {
 
         {/* Row 2: Extra modules (smaller) */}
         <div style={{
-          height: 22, display: 'flex', alignItems: 'center',
-          overflowX: 'auto', overflowY: 'hidden',
+          minHeight: 22, display: 'flex', alignItems: 'center', flexWrap: 'wrap',
           padding: '0 8px', gap: 3,
-        }} className="scrollbar-none">
+        }}>
           {NAV_EXTRA.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
             return (
-              <Link key={item.href} href={item.href} style={extraItemStyle(isActive)}
-                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-color)' } }}
-                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'transparent' } }}
-              >
+              <Link key={item.href} href={item.href} className="gv-nav gv-nav-sm" aria-current={isActive ? 'page' : undefined}>
                 {item.label}
               </Link>
             )

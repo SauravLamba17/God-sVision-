@@ -21,34 +21,35 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
   const marketStatus  = isIndia ? getIndianMarketStatus() : getMarketStatus()
   const exchange      = isIndia ? 'NSE/BSE' : 'NYSE/NASDAQ'
   const statusDot     = marketStatus === 'OPEN' ? '● OPEN' : '○ CLOSED'
-  const statusColor   = marketStatus === 'OPEN' ? (isIndia ? '#FF9933' : 'var(--text-positive)') : 'var(--text-negative)'
-  const accentColor   = isIndia ? '#FF9933' : 'var(--text-accent)'
+  const statusColor   = marketStatus === 'OPEN' ? 'var(--up)' : 'var(--down)'
+  const accentColor   = 'var(--accent-text)'
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(2,8,23,0.88)',
+      background: 'var(--overlay)',
       opacity: visible ? 1 : 0,
       transition: 'opacity 0.3s ease',
       pointerEvents: 'none',
     }}>
       <div style={{
-        border: `1px solid ${accentColor}`,
-        background: 'linear-gradient(180deg, #060d1a 0%, #020817 100%)',
+        border: 'var(--bw) solid var(--border)',
+        borderTop: 'var(--stripe) solid var(--stripe-color)',
+        background: 'var(--surface)',
         padding: '24px 36px',
-        borderRadius: 6,
-        fontFamily: 'IBM Plex Mono',
+        borderRadius: 'var(--radius)',
+        fontFamily: 'var(--font-sans)',
         minWidth: 320,
-        boxShadow: `0 0 40px ${accentColor}30`,
+        boxShadow: 'var(--shadow)',
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: accentColor, letterSpacing: '0.1em', marginBottom: 16 }}>
+        <div style={{ fontSize: 'var(--fs-header)', fontWeight: 'var(--fw-bold)', color: accentColor, letterSpacing: '0.06em', marginBottom: 16 }}>
           {isIndia ? '🇮🇳 SWITCHING TO INDIA MODE' : '🇺🇸 SWITCHING TO USA MODE'}
         </div>
         {isIndia && (
           <>
             <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)', marginBottom: 6 }}>
-              1 USD = <span style={{ color: '#FF9933', fontWeight: 700 }}>₹{rate?.toFixed(2) ?? '—'}</span>
+              1 USD = <span className="gv-num" style={{ color: 'var(--accent-text)', fontWeight: 'var(--fw-bold)' }}>₹{rate?.toFixed(2) ?? '—'}</span>
             </div>
             <div style={{ fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', marginBottom: 12 }}>Exchange rate updated · {istTime} IST</div>
           </>
@@ -59,14 +60,13 @@ function ModeOverlay({ mode, rate, onDone }: { mode: 'USA' | 'INDIA'; rate: numb
         <div style={{ fontSize: 'var(--fs-body)', color: 'var(--text-muted)' }}>
           {isIndia ? `IST Time: ${istTime}` : `ET Time: ${etTime}`}
         </div>
-        <div style={{ marginTop: 16, height: 2, background: `linear-gradient(90deg, ${accentColor} 0%, transparent 100%)`, borderRadius: 1 }} />
       </div>
     </div>
   )
 }
 
 export default function ModeToggle() {
-  const { mode, toggleMode, isIndia, exchangeRate } = useMode()
+  const { mode, toggleMode, exchangeRate } = useMode()
   const [showOverlay, setShowOverlay] = useState(false)
   const [overlayMode, setOverlayMode] = useState<'USA' | 'INDIA'>('INDIA')
 
@@ -89,41 +89,13 @@ export default function ModeToggle() {
     toggleMode()
   }
 
-  const borderColor = isIndia ? '#FF9933' : 'var(--border-color)'
-  const bg          = isIndia ? 'rgba(255,153,51,0.08)' : 'var(--bg-input)'
-  const textActive  = isIndia ? '#FF9933'  : 'var(--text-accent)'
-  const textSecond  = 'var(--text-muted)'
-
+  // Segmented USA | India: active = accent fill + on-accent text.
   return (
     <>
-      <button
-        onClick={handleToggle}
-        title="Ctrl+Shift+I — Toggle India/USA Mode"
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: bg,
-          border: `1px solid ${borderColor}`,
-          borderRadius: 3, padding: '3px 10px',
-          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700,
-          cursor: 'pointer', letterSpacing: '0.04em',
-          transition: 'all 200ms ease',
-          boxShadow: isIndia ? `0 0 12px rgba(255,153,51,0.25)` : 'none',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = textActive; e.currentTarget.style.boxShadow = `0 0 12px ${textActive}30` }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = isIndia ? '0 0 12px rgba(255,153,51,0.25)' : 'none' }}
-      >
-        {isIndia ? (
-          <>
-            <span style={{ color: isIndia ? 'var(--saffron)' : textActive }}>🇮🇳 INDIA MODE</span>
-            <span style={{ color: textSecond, fontSize: 'var(--fs-meta)' }}>→ 🇺🇸 USA</span>
-          </>
-        ) : (
-          <>
-            <span style={{ color: 'var(--text-primary)' }}>🇺🇸 USA MODE</span>
-            <span style={{ color: isIndia ? 'var(--saffron)' : textActive, fontSize: 'var(--fs-meta)' }}>→ 🇮🇳 INDIA</span>
-          </>
-        )}
-      </button>
+      <div role="group" aria-label="Market mode" className="gv-seg" title="Ctrl+Shift+I — Toggle India/USA Mode">
+        <button type="button" aria-pressed={mode === 'USA'} onClick={() => { if (mode !== 'USA') handleToggle() }}>🇺🇸 USA</button>
+        <button type="button" aria-pressed={mode === 'INDIA'} onClick={() => { if (mode !== 'INDIA') handleToggle() }}>🇮🇳 India</button>
+      </div>
 
       {showOverlay && (
         <ModeOverlay

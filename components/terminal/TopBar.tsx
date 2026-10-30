@@ -7,6 +7,7 @@ import TickerTape from './TickerTape'
 import dynamic from 'next/dynamic'
 const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false })
 const UserMenu   = dynamic(() => import('./UserMenu'),   { ssr: false })
+const ThemeToggles = dynamic(() => import('./ThemeToggles'), { ssr: false })
 
 function useMarketBell() {
   const lastFiredRef = useRef('')
@@ -51,16 +52,16 @@ function LiveClock({ tz, label }: { tz: string; label: string }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      background: 'var(--bg-header)',
-      border: '1px solid var(--border-color)',
-      borderRadius: 3,
-      padding: '2px 8px',
+      background: 'var(--surface-2)',
+      border: 'var(--bw) solid var(--border)',
+      borderRadius: 'var(--radius-inner)',
+      padding: '1px 8px',
       minWidth: 70,
     }}>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', color: 'var(--text-muted)', letterSpacing: '0.12em' }}>
+      <span className="gv-label" style={{ lineHeight: 1.2 }}>
         {label}
       </span>
-      <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', letterSpacing: '0.05em', lineHeight: 1.2 }}>
+      <span className="gv-num" style={{ fontSize: 'var(--fs-body)', color: 'var(--text)', lineHeight: 1.2 }}>
         {time || '--:--:--'}
       </span>
     </div>
@@ -79,12 +80,12 @@ function MarketStatusBadge() {
     return () => clearInterval(id)
   }, [isIndia])
 
-  const config: Record<StatusType, { color: string; bg: string; border: string; label: string }> = {
-    'OPEN':        { color: 'var(--text-positive)',  bg: 'var(--bg-live)',               border: 'rgba(0,230,118,0.35)',     label: isIndia ? 'NSE OPEN' : 'OPEN' },
-    'CLOSED':      { color: 'var(--text-negative)',  bg: 'rgba(255,23,68,0.08)',          border: 'rgba(255,23,68,0.3)',       label: 'CLOSED' },
-    'PRE-MARKET':  { color: 'var(--text-warning)',   bg: 'rgba(255,152,0,0.08)',          border: 'rgba(255,152,0,0.3)',       label: 'PRE-MKT' },
-    'PRE-OPEN':    { color: 'var(--text-warning)',   bg: 'rgba(255,152,0,0.08)',          border: 'rgba(255,152,0,0.3)',       label: 'PRE-OPEN' },
-    'AFTER-HOURS': { color: 'var(--text-warning)',   bg: 'rgba(255,152,0,0.08)',          border: 'rgba(255,152,0,0.3)',       label: 'AFT-HRS' },
+  const config: Record<StatusType, { color: string; bg: string; label: string }> = {
+    'OPEN':        { color: 'var(--up)',      bg: 'var(--up-soft)',      label: isIndia ? 'NSE OPEN' : 'OPEN' },
+    'CLOSED':      { color: 'var(--down)',    bg: 'var(--down-soft)',    label: 'CLOSED' },
+    'PRE-MARKET':  { color: 'var(--warning)', bg: 'var(--warning-soft)', label: 'PRE-MKT' },
+    'PRE-OPEN':    { color: 'var(--warning)', bg: 'var(--warning-soft)', label: 'PRE-OPEN' },
+    'AFTER-HOURS': { color: 'var(--warning)', bg: 'var(--warning-soft)', label: 'AFT-HRS' },
   }
   const c = config[status] ?? config['CLOSED']
   const isOpen = status === 'OPEN'
@@ -92,15 +93,15 @@ function MarketStatusBadge() {
   return (
     <div style={{
       background: c.bg,
-      border: `1px solid ${c.border}`,
+      border: `var(--bw) solid ${c.color}`,
       borderRadius: 20,
       padding: '2px 10px',
       display: 'flex', alignItems: 'center', gap: 5,
     }}>
       {isOpen && <span className="live-dot" style={{ width: 5, height: 5 }} />}
       <span style={{
-        fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)', fontWeight: 700,
-        color: c.color, letterSpacing: '0.08em',
+        fontFamily: 'var(--font-sans)', fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-bold)',
+        color: c.color, letterSpacing: '0.06em', whiteSpace: 'nowrap',
       }}>
         {c.label}
       </span>
@@ -115,33 +116,32 @@ export default function TopBar() {
   return (
     <header style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      height: 44,
-      background: 'var(--bg-terminal)',
-      borderBottom: '1px solid var(--border-color)',
+      height: 'calc(44px + var(--stripe))',
+      background: 'var(--surface)',
+      borderTop: 'var(--stripe) solid var(--stripe-color)',
+      borderBottom: 'var(--bw) solid var(--border)',
       display: 'flex', alignItems: 'center',
     }}>
       {/* Brand */}
-      <div style={{ flexShrink: 0, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8, borderRight: '1px solid var(--border-color)', height: '100%' }}>
-        <span style={{ fontSize: 16, lineHeight: 1 }}>⚡</span>
+      <div style={{ flexShrink: 0, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 8, borderRight: 'var(--bw) solid var(--border)', height: '100%' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{
-              fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: 13,
-              color: 'var(--text-accent)',
-              letterSpacing: '0.1em', whiteSpace: 'nowrap', lineHeight: 1,
+              fontFamily: 'var(--font-sans)', fontWeight: 'var(--fw-bold)', fontSize: 17,
+              color: 'var(--text)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', lineHeight: 1,
             }}>
-              GOD'S VISION
+              GOD&apos;s <span style={{ color: 'var(--accent-text)' }}>Vision</span>
             </span>
             <span style={{ fontSize: 13 }}>{isIndia ? '🇮🇳' : '🇺🇸'}</span>
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)', letterSpacing: '0.15em', marginTop: 1, color: 'var(--text-muted)' }}>
+          <div className="gv-label" style={{ fontSize: 10, marginTop: 2 }}>
             {isIndia ? 'INDIA MARKETS' : 'FINANCIAL INTELLIGENCE'}
           </div>
         </div>
       </div>
 
       {/* Global Search */}
-      <div style={{ flexShrink: 0, padding: '0 10px', borderRight: '1px solid var(--border-color)', height: '100%', display: 'flex', alignItems: 'center' }}>
+      <div style={{ flexShrink: 0, padding: '0 10px', borderRight: 'var(--bw) solid var(--border)', height: '100%', display: 'flex', alignItems: 'center' }}>
         <SearchBar />
       </div>
 
@@ -151,23 +151,22 @@ export default function TopBar() {
       </div>
 
       {/* Clocks + Status */}
-      <div style={{ flexShrink: 0, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, borderLeft: '1px solid var(--border-color)', height: '100%' }}>
+      <div style={{ flexShrink: 0, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, borderLeft: 'var(--bw) solid var(--border)', height: '100%' }}>
         {isIndia ? (
           <>
             <LiveClock tz="Asia/Kolkata"      label="IST" />
             <LiveClock tz="America/New_York"  label="ET" />
-            <LiveClock tz="UTC"               label="UTC" />
+            <span className="gv-hide-narrow"><LiveClock tz="UTC" label="UTC" /></span>
           </>
         ) : (
           <>
             <LiveClock tz="America/New_York"  label="ET" />
-            <LiveClock tz="UTC"               label="UTC" />
+            <span className="gv-hide-narrow"><LiveClock tz="UTC" label="UTC" /></span>
             <LiveClock tz="Asia/Kolkata"      label="IST" />
           </>
         )}
-        <div style={{ width: 1, height: 28, background: 'var(--border-color)' }} />
         <MarketStatusBadge />
-        <div style={{ width: 1, height: 28, background: 'var(--border-color)' }} />
+        <ThemeToggles />
         <UserMenu />
       </div>
     </header>

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLinkedPanel } from '@/lib/context/LinkedPanelContext';
 
-const mono = 'IBM Plex Mono, monospace';
+const mono = 'var(--font-mono), ui-monospace, monospace'; // the broadcast shows a ticker symbol
 
 export default function TickerBroadcast() {
   const { activeTicker } = useLinkedPanel();
@@ -31,8 +31,9 @@ export default function TickerBroadcast() {
       position: 'fixed', top: 72, left: '50%',
       transform: 'translateX(-50%)',
       zIndex: 9000, pointerEvents: 'none',
-      background: 'var(--bg-panel)',
-      border: '1px solid var(--text-accent)',
+      background: 'var(--surface)',
+      border: 'var(--bw) solid var(--accent)',
+      borderRadius: 'var(--radius-inner)',
       padding: '4px 14px',
       fontFamily: mono, fontSize: 'var(--fs-body)', fontWeight: 700,
       color: 'var(--text-accent)', letterSpacing: '0.1em',

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Fuse from 'fuse.js'
+import { tint } from '@/lib/context/ThemeContext'
 
 type Category = 'PAGE' | 'STOCK' | 'CRYPTO' | 'FOREX' | 'ETF'
 
@@ -116,9 +117,9 @@ const ALL_ITEMS: SearchItem[] = [...PAGES, ...STOCKS, ...ETFS, ...CRYPTO, ...FOR
 const CATEGORY_COLOR: Record<Category, string> = {
   PAGE:   'var(--text-accent)',
   STOCK:  'var(--text-positive)',
-  ETF:    '#a78bfa',
+  ETF:    'var(--info)',
   CRYPTO: 'var(--text-warning)',
-  FOREX:  '#fb923c',
+  FOREX:  'var(--text-2)',
 }
 
 const fuseOptions = {
@@ -210,7 +211,7 @@ export default function CommandPalette() {
       aria-label="Command palette"
       style={{
         position: 'fixed', inset: 0, zIndex: 500,
-        background: 'rgba(0,0,0,0.88)',
+        background: 'var(--overlay)',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         paddingTop: '12vh',
       }}
@@ -219,18 +220,20 @@ export default function CommandPalette() {
       <div style={{
         width: '100%',
         maxWidth: 760,
-        border: '1px solid #1e293b',
-        borderTop: '2px solid #f59e0b',
-        background: 'var(--bg-terminal)',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,158,11,0.08)',
+        border: 'var(--bw) solid var(--border)',
+        borderTop: 'var(--stripe) solid var(--stripe-color)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+        background: 'var(--surface)',
+        boxShadow: 'var(--shadow)',
       }}>
         {/* Search input */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 14px',
-          borderBottom: '1px solid #1e293b',
+          borderBottom: 'var(--bw) solid var(--divider)',
         }}>
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 14, color: 'var(--text-warning)', opacity: 0.7 }}>
+          <span style={{ fontSize: 14, color: 'var(--text-warning)', opacity: 0.7 }}>
             &gt;_
           </span>
           <input
@@ -248,12 +251,12 @@ export default function CommandPalette() {
             placeholder="Search tickers, coins, pairs, pages…"
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
-              fontFamily: 'IBM Plex Mono', fontSize: 14, fontWeight: 500,
+              fontSize: 14, fontWeight: 500,
               color: 'var(--text-warning)',
               caretColor: 'var(--text-warning)',
             }}
           />
-          <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
             ESC
           </span>
         </div>
@@ -267,7 +270,7 @@ export default function CommandPalette() {
           style={{ maxHeight: 360, overflowY: 'auto' }}
         >
           {results.length === 0 ? (
-            <div role="status" aria-live="polite" style={{ padding: '20px 14px', fontFamily: 'IBM Plex Mono', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
+            <div role="status" aria-live="polite" style={{ padding: '20px 14px', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
               NO RESULTS FOR &quot;{query}&quot;
             </div>
           ) : (
@@ -286,17 +289,17 @@ export default function CommandPalette() {
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '9px 14px',
                   cursor: 'pointer',
-                  background: i === selected ? 'rgba(245,158,11,0.06)' : 'transparent',
-                  borderLeft: i === selected ? '2px solid #f59e0b' : '2px solid transparent',
+                  background: i === selected ? 'var(--surface-2)' : 'transparent',
+                  borderLeft: i === selected ? '3px solid var(--accent)' : '3px solid transparent',
                   transition: 'background 0.1s',
                 }}
               >
                 {/* Category badge */}
                 <span style={{
-                  fontFamily: 'IBM Plex Mono', fontSize: 8, fontWeight: 700,
+                  fontSize: 8, fontWeight: 700,
                   color: CATEGORY_COLOR[item.category],
-                  background: `${CATEGORY_COLOR[item.category]}15`,
-                  border: `1px solid ${CATEGORY_COLOR[item.category]}30`,
+                  background: tint(CATEGORY_COLOR[item.category], 8),
+                  border: `var(--bw) solid ${CATEGORY_COLOR[item.category]}`,
                   borderRadius: 2,
                   padding: '1px 5px',
                   letterSpacing: '0.08em',
@@ -308,7 +311,7 @@ export default function CommandPalette() {
 
                 {/* Label */}
                 <span style={{
-                  fontFamily: 'IBM Plex Mono', fontSize: 12, fontWeight: 600,
+                  fontSize: 12, fontWeight: 600,
                   color: i === selected ? 'var(--text-warning)' : 'var(--text-primary)',
                   minWidth: 80,
                 }}>
@@ -316,7 +319,7 @@ export default function CommandPalette() {
                 </span>
 
                 {/* Sublabel */}
-                <span style={{ fontFamily: 'IBM Plex Mono', fontSize: 10, color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                   {item.sublabel}
                 </span>
 
@@ -331,10 +334,10 @@ export default function CommandPalette() {
 
         {/* Footer */}
         <div style={{
-          borderTop: '1px solid #1e293b',
+          borderTop: 'var(--bw) solid var(--divider)',
           padding: '6px 14px',
           display: 'flex', gap: 16,
-          fontFamily: 'IBM Plex Mono', fontSize: 9, color: 'var(--text-muted)',
+          fontSize: 9, color: 'var(--text-muted)',
         }}>
           <span>↑↓ navigate</span>
           <span>↵ open</span>

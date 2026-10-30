@@ -66,21 +66,23 @@ export default function StatusBar() {
     <footer style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
       height: 26,
-      background: 'var(--bg-terminal)',
-      borderTop: '1px solid var(--border-color)',
+      background: 'var(--surface)',
+      borderTop: 'var(--bw) solid var(--border)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 12px',
+      fontFamily: 'var(--font-sans)',
     }}>
       {/* API Status Dots */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {statuses.map(s => (
-          <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div key={s.name} title={`${s.name}: ${s.status}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{
               display: 'inline-block', width: 5, height: 5, borderRadius: '50%',
               background: DOT_COLORS[s.status], flexShrink: 0,
             }} />
-            <span style={{
-              fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)',
+            {/* Below 1280px only the dots show (name in the tooltip), so the bar never wraps. */}
+            <span className="gv-hide-narrow" style={{
+              fontSize: 'var(--fs-meta)',
               color: s.status === 'live' ? 'var(--text-muted)' : DOT_COLORS[s.status],
               letterSpacing: '0.05em',
             }}>
@@ -91,7 +93,7 @@ export default function StatusBar() {
       </div>
 
       {/* Center: feed health + time of last check */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-meta)', whiteSpace: 'nowrap' }}>
         <span style={{
           color: liveCount === 6 ? 'var(--text-positive)' : liveCount >= 4 ? 'var(--text-warning)' : 'var(--text-negative)',
           letterSpacing: '0.06em',
@@ -99,47 +101,40 @@ export default function StatusBar() {
           {/* Counts endpoints that answered OK — reachability, not data freshness. */}
           {checkedAt ? `${liveCount}/${statuses.length} FEEDS UP` : 'CHECKING FEEDS…'}
         </span>
-        <span style={{ color: 'var(--border-bright)' }}>│</span>
+        <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
         <span style={{ color: 'var(--text-muted)' }}>
-          CHECKED <span style={{ color: 'var(--text-accent)' }}>{checkedAt ? checkedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}</span>
+          CHECKED <span className="gv-num" style={{ color: 'var(--text-accent)' }}>{checkedAt ? checkedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}</span>
         </span>
       </div>
 
       {/* Right: version + mode + sound */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)' }}>
-        <span style={{ color: 'var(--text-accent)', letterSpacing: '0.06em' }}>GOD'S VISION</span>
-        <span style={{ color: 'var(--border-color)' }}>v1.0</span>
-        <span style={{ color: 'var(--border-bright)' }}>│</span>
-        <span style={{ color: 'var(--text-muted)' }}>:3001</span>
-        <span style={{ color: 'var(--border-bright)' }}>│</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-meta)', whiteSpace: 'nowrap' }}>
+        <span className="gv-hide-narrow" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--text)', fontWeight: 'var(--fw-bold)' }}>GOD&apos;s <span style={{ color: 'var(--accent-text)' }}>Vision</span></span>
+          <span className="gv-num" style={{ color: 'var(--muted)' }}>v1.0</span>
+          <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
+          <span style={{ color: 'var(--text-muted)' }}>:3001</span>
+          <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
+        </span>
         {isIndia ? (
           <>
             <span style={{ color: 'var(--saffron)' }}>🇮🇳 IN MARKETS</span>
-            <span style={{ color: 'var(--border-bright)' }}>│</span>
-            <span suppressHydrationWarning style={{ color: 'var(--text-muted)' }}>
+            <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
+            <span suppressHydrationWarning className="gv-num" style={{ color: 'var(--text-muted)' }}>
               1 USD = ₹{exchangeRate?.toFixed(2) ?? '—'}
             </span>
-            <span style={{ color: 'var(--border-bright)' }}>│</span>
+            <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
           </>
         ) : (
           <>
             <span style={{ color: 'var(--text-secondary)' }}>🇺🇸 US MARKETS</span>
-            <span style={{ color: 'var(--border-bright)' }}>│</span>
+            <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
           </>
         )}
-        <Link href="/glossary" style={{
-          fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-meta)',
-          color: 'var(--text-muted)', textDecoration: 'none',
-          padding: '1px 6px',
-          border: '1px solid var(--border-color)',
-          borderRadius: 2, letterSpacing: '0.05em',
-        }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-accent)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-accent)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-color)' }}
-        >
+        <Link href="/glossary" className="gv-seg-single" style={{ padding: '0 8px' }}>
           📚 LEARN
         </Link>
-        <span style={{ color: 'var(--border-bright)' }}>│</span>
+        <span aria-hidden="true" style={{ color: 'var(--muted)' }}>│</span>
         <SoundControl />
       </div>
     </footer>

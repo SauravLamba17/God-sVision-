@@ -46,14 +46,14 @@ export default function TempToggle({ unit: externalUnit, onChange, standalone = 
           key={u}
           onClick={() => handleChange(u)}
           style={{
-            background: activeUnit === u ? 'var(--text-accent)' : 'transparent',
-            color: activeUnit === u ? '#000' : 'var(--text-muted)',
+            background: activeUnit === u ? 'var(--accent)' : 'transparent',
+            color: activeUnit === u ? 'var(--on-accent)' : 'var(--text-muted)',
             border: 'none',
             borderRadius: 16,
             padding: '3px 10px',
             fontSize: 11,
             fontWeight: 700,
-            fontFamily: 'IBM Plex Mono, monospace',
+            fontFamily: 'inherit',
             cursor: 'pointer',
             transition: 'all 150ms ease',
             letterSpacing: '0.05em',

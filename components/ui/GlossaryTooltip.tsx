@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { GLOSSARY } from '@/lib/glossary'
 import { useBeginnerMode } from '@/lib/hooks/useBeginnerMode'
+import { tint } from '@/lib/context/ThemeContext'
 
 interface GlossaryTooltipProps {
   term: string
@@ -10,12 +11,12 @@ interface GlossaryTooltipProps {
 }
 
 const CATEGORY_COLOR: Record<string, string> = {
-  BASIC: 'var(--text-accent)',
-  TECHNICAL: '#a78bfa',
-  OPTIONS: '#fb923c',
-  MACRO: '#34d399',
-  INDIA: '#FF9933',
-  CRYPTO: 'var(--text-warning)',
+  BASIC: 'var(--text-2)',
+  TECHNICAL: 'var(--info)',
+  OPTIONS: 'var(--warning)',
+  MACRO: 'var(--up)',
+  INDIA: 'var(--accent-text)',
+  CRYPTO: 'var(--down)',
 }
 
 export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryTooltipProps) {
@@ -88,14 +89,14 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
           right: tooltipRight,
           transform: tooltipTransform,
           width: '300px',
-          background: 'var(--tooltip-bg, #0a0f1e)',
-          border: `1px solid var(--tooltip-border, #38bdf8)`,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--accent)',
           borderRadius: '4px',
           padding: '10px 12px',
           zIndex: 9999,
           pointerEvents: 'none',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.8)',
-          fontFamily: 'IBM Plex Mono, monospace',
+          boxShadow: 'var(--shadow)',
+          fontFamily: 'var(--font-sans)',
         }}>
           {/* Category badge */}
           <div style={{ marginBottom: '6px' }}>
@@ -103,9 +104,9 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
               fontSize: '8px',
               fontWeight: 700,
               padding: '1px 6px',
-              background: `${CATEGORY_COLOR[entry.category] || 'var(--text-accent)'}18`,
+              background: tint(CATEGORY_COLOR[entry.category] || 'var(--text-accent)', 9),
               color: CATEGORY_COLOR[entry.category] || 'var(--text-accent)',
-              border: `1px solid ${CATEGORY_COLOR[entry.category] || 'var(--text-accent)'}40`,
+              border: `1px solid ${CATEGORY_COLOR[entry.category] || 'var(--text-accent)'}`,
               borderRadius: '2px',
               letterSpacing: '1px',
             }}>{entry.category}</span>
@@ -115,14 +116,14 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
           <div style={{
             fontSize: '12px',
             fontWeight: 700,
-            color: 'var(--tooltip-border, #38bdf8)',
+            color: 'var(--accent-text)',
             marginBottom: '5px',
           }}>{entry.term}</div>
 
           {/* Simple definition */}
           <div style={{
             fontSize: '11px',
-            color: 'var(--text-primary, #e2e8f0)',
+            color: 'var(--text-primary)',
             lineHeight: 1.5,
             marginBottom: '7px',
           }}>{entry.simpleDefinition}</div>
@@ -130,9 +131,9 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
           {/* Example */}
           <div style={{
             fontSize: '10px',
-            color: 'var(--text-muted, #475569)',
+            color: 'var(--text-muted)',
             lineHeight: 1.4,
-            borderTop: '1px solid var(--border-dim, #1e293b)',
+            borderTop: '1px solid var(--divider)',
             paddingTop: '6px',
           }}>
             <span style={{ color: 'var(--text-warning)' }}>Example: </span>
@@ -151,8 +152,8 @@ export function GlossaryTooltip({ term, children, showIcon = true }: GlossaryToo
             borderLeft: '5px solid transparent',
             borderRight: '5px solid transparent',
             ...(position === 'top'
-              ? { borderTop: '5px solid var(--tooltip-border, #38bdf8)' }
-              : { borderBottom: '5px solid var(--tooltip-border, #38bdf8)' }),
+              ? { borderTop: '5px solid var(--accent)' }
+              : { borderBottom: '5px solid var(--accent)' }),
           }} />
         </div>
       )}

@@ -23,9 +23,9 @@ export function aqiBand(aqi: number): AqiBand {
 export const AQI_COLORS: Record<AqiBand, string> = {
   GOOD:       'var(--text-positive)',
   MODERATE:   'var(--text-warning)',
-  SENSITIVE:  '#ff6d00',
+  SENSITIVE:  'var(--accent-text)',
   UNHEALTHY:  'var(--text-negative)',
-  HAZARDOUS:  '#7f1d1d',
+  HAZARDOUS:  'var(--text-negative)',
 }
 
 export const AQI_LABELS: Record<AqiBand, string> = {

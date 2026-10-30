@@ -62,23 +62,20 @@ export default function TickerTape() {
       <div className="ticker-tape" style={{ display: 'flex', alignItems: 'center' }}>
         {doubled.map((item, idx) => (
           <span key={idx} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            marginRight: 20, whiteSpace: 'nowrap',
-            fontFamily: 'IBM Plex Mono', fontSize: 'var(--fs-body)',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            marginRight: 22, whiteSpace: 'nowrap',
+            fontSize: 'var(--fs-body)',
           }}>
-            <span style={{ color: 'var(--text-accent)', fontWeight: 700, letterSpacing: '0.06em' }}>{LABEL[item.symbol] ?? item.symbol.replace(/\.(NS|BO)$/, '')}</span>
-            <span style={{ color: 'var(--text-primary)' }}>
-              {item.price < 10 ? item.price.toFixed(4) : item.price.toFixed(2)}
+            <span style={{ fontFamily: 'var(--font-sans)', color: 'var(--accent-text)', fontWeight: 'var(--fw-bold)' }}>{LABEL[item.symbol] ?? item.symbol.replace(/\.(NS|BO)$/, '')}</span>
+            <span className="gv-num" style={{ color: 'var(--text)' }}>
+              {/\.(NS|BO)$/.test(item.symbol) ? '₹' : '' /* index levels are points */}{item.price < 10 ? item.price.toFixed(4) : item.price.toFixed(2)}
             </span>
-            <span style={{
-              color: item.changePct >= 0 ? 'var(--text-positive)' : 'var(--text-negative)',
-              fontSize: 'var(--fs-meta)',
-              background: item.changePct >= 0 ? 'var(--bg-live)' : 'var(--bg-sell)',
-              padding: '0 4px', borderRadius: 2,
+            <span className="gv-num" style={{
+              color: item.changePct >= 0 ? 'var(--up)' : 'var(--down)',
+              fontSize: 'var(--fs-meta)', fontWeight: 'var(--fw-semibold)',
             }}>
               {arrow(item.changePct)} {formatPercent(item.changePct)}
             </span>
-            <span style={{ color: 'var(--border-bright)', marginLeft: 8, fontSize: 'var(--fs-body)' }}>│</span>
           </span>
         ))}
       </div>
