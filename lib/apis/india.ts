@@ -213,6 +213,7 @@ export async function fetchIndiaForex(exchangeRate: number | null) {
       price: d?.price ?? (pair.ticker === 'USDINR=X' ? exchangeRate : null),
       change: d?.change ?? null,
       changePct: d?.changePct ?? null,
+      marketTime: d?.marketTime ?? null, // unix seconds of the last trade (null for the exchangerate fallback)
     }
   })
 }
