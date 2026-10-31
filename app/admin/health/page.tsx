@@ -18,7 +18,7 @@ export const metadata = { title: 'Data health', robots: { index: false, follow: 
 const EXPECTED = [
   'Yahoo Finance', 'Yahoo Finance (yahoo-finance2)', 'Alpaca (IEX)', 'CoinGecko', 'NSE India', 'FRED', 'OpenSky',
   'USGS', 'WHO', 'Open-Meteo', 'OpenWeather', 'NewsAPI', 'Nasdaq', 'disease.sh', 'ISS position', 'ISS crew',
-  'Reddit', 'TheSportsDB', 'Windy', 'Gemini', ...MARKET_FEEDS.map(healthName),
+  'Reddit', 'TheSportsDB', 'Gemini', ...MARKET_FEEDS.map(healthName),
 ]
 
 const isAdmin = (email?: string | null) =>

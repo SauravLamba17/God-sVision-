@@ -9,7 +9,7 @@ const CSP_REPORT_ONLY = [
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://server.arcgisonline.com https://i.ytimg.com https://disease.sh https://*.windy.com https://s3-eu-west-1.amazonaws.com",
+  "img-src 'self' data: blob: https://server.arcgisonline.com https://i.ytimg.com https://disease.sh https://s3-eu-west-1.amazonaws.com https://images.data.gov.sg https://weathercam.digitraffic.fi https://tdcctv.data.one.gov.hk https://cwwp2.dot.ca.gov",
   "connect-src 'self' https://api.exchangerate-api.com wss://stream.binance.com:9443",
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
   "media-src 'self'",

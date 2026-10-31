@@ -22,7 +22,7 @@ if (!REDIS_AVAILABLE) {
 }
 
 // How long past its TTL an entry stays readable as a stale fallback. Routes like
-// /api/flights and /api/webcams want this long: they serve expired-but-present
+// /api/flights want this long: they serve expired-but-present
 // data when upstream is rate limited, which is the whole point of this cache.
 // Time-sensitive routes (news) pass a short grace so a fetch failure can never
 // resurrect day-old content. Past ttl + grace an entry reads as a miss.
@@ -146,7 +146,6 @@ export const CACHE_KEYS = {
   MACRO: 'macro',
   COMMODITIES: 'commodities',
   SPORTS: 'sports',
-  WEBCAMS: 'webcams',
   FEAR_GREED: 'fear_greed',
   DEFI_TVL: 'defi_tvl',
   YIELD_CURVE: 'yield_curve',
@@ -163,5 +162,4 @@ export const CACHE_TTL = {
   MACRO: 3600,
   COMMODITIES: 300,
   SPORTS: 60,
-  WEBCAMS: 1800,
 } as const

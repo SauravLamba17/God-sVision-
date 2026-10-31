@@ -79,7 +79,6 @@ const HOSTS: [RegExp, string][] = [
   [/corquaid\.github\.io$/, 'ISS crew'],
   [/(^|\.)reddit\.com$/, 'Reddit'],
   [/(^|\.)thesportsdb\.com$/, 'TheSportsDB'],
-  [/(^|\.)windy\.com$/, 'Windy'],
   [/(^|\.)alternative\.me$/, 'Fear & Greed (alternative.me)'],
   [/(^|\.)llama\.fi$/, 'DefiLlama'],
   [/(^|\.)sec\.gov$/, 'SEC EDGAR'],
