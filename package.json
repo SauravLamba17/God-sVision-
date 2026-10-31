@@ -20,7 +20,8 @@
     "test:scenario": "node --no-warnings scripts/scenario-test.ts",
     "test:research": "node --no-warnings scripts/research-test.ts",
     "test:redirect": "node --no-warnings scripts/redirect-test.ts",
-    "test:ticker": "node --no-warnings scripts/ticker-test.ts"
+    "test:ticker": "node --no-warnings scripts/ticker-test.ts",
+    "cameras:health": "node --no-warnings scripts/camera-health.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

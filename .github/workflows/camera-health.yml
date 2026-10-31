@@ -1,0 +1,48 @@
+name: camera-health
+
+# Daily check of every camera on the Cameras page (lib/cameras/catalog.ts): YouTube
+# streams must be live now and embeddable; image feeds must have a current capture.
+# Dead feeds are written to data/camera-health.json as hidden and committed to main
+# (Vercel redeploys); recovered feeds are un-hidden the same way. Nothing changes →
+# nothing is committed. If most cameras fail at once the script refuses to write and
+# the run fails visibly. YOUTUBE_API_KEY (optional repo secret) switches the YouTube
+# check from the public watch page to the Data API.
+on:
+  schedule:
+    - cron: '41 5 * * *' # 05:41 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: camera-health
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # No npm install: the check uses only Node built-ins and the repo's own .ts files.
+      - name: Check cameras
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: node --no-warnings scripts/camera-health.ts
+
+      - name: Commit health data to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/camera-health.json
+          if git diff --cached --quiet; then echo "Camera health unchanged — nothing to commit."; exit 0; fi
+          git commit -m "chore(data): daily camera health ($(date -u +%F))"
+          git push origin HEAD:main
