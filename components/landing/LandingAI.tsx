@@ -37,7 +37,7 @@ export default function LandingAI() {
             justifyContent: 'space-between', borderBottom: `1px solid rgba(${INK},.12)`,
             padding: '11px 16px', font: "500 10px/1 'Geist Mono', monospace", color: inkText(.44),
           }}>
-            <span translate="no">gv://desk/analysis &#8212; session 0413</span>
+            <span><span translate="no">gv://desk/analysis &#8212; session 0413</span> &#183; example brief</span>
             <span id="gv-ai-status" role="status" aria-live="polite" style={{
               display: 'inline-flex', alignItems: 'center', gap: 7, color: status.color,
             }}>

@@ -28,18 +28,29 @@ export class ChartSeries {
     return this.seed / 2147483648
   }
 
-  constructor() {
-    let px = 232
+  /** Price scale: the reference walk was drawn around 232; `base` re-centres it
+   *  (the landing page passes the real last price so the example axis is plausible). */
+  private k: number
+
+  constructor(base = 232) {
+    this.k = base / 232
+    const k = this.k
+    let px = base
     for (let i = 0; i < 66; i++) {
       const o = px
-      const c = Math.max(200, o + (this.rnd() - 0.46) * 2.6)
+      const c = Math.max(200 * k, o + (this.rnd() - 0.46) * 2.6 * k)
       this.candles.push({
         o, c,
-        hi: Math.max(o, c) + this.rnd() * 1.4,
-        lo: Math.min(o, c) - this.rnd() * 1.4,
+        hi: Math.max(o, c) + this.rnd() * 1.4 * k,
+        lo: Math.min(o, c) - this.rnd() * 1.4 * k,
         v: 0.3 + this.rnd() * 0.7,
       })
       px = c
+    }
+    // With a real base, end the example walk on it so the last candle sits at that price.
+    if (base !== 232) {
+      const shift = base - this.candles[this.candles.length - 1].c
+      for (const cd of this.candles) { cd.o += shift; cd.c += shift; cd.hi += shift; cd.lo += shift }
     }
   }
 
@@ -47,7 +58,7 @@ export class ChartSeries {
   tick(): ChartQuote {
     const s = this.candles
     const last = s[s.length - 1]
-    last.c = Math.max(200, last.c + (this.rnd() - 0.5) * 0.9)
+    last.c = Math.max(200 * this.k, last.c + (this.rnd() - 0.5) * 0.9 * this.k)
     last.hi = Math.max(last.hi, last.c)
     last.lo = Math.min(last.lo, last.c)
     if (this.rnd() > 0.82) {

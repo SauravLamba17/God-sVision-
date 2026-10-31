@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { DOWN_TEXT, INK, UP, inkText, sizeCanvas, type SizedCanvas } from '@/lib/canvas/globe'
 import { ChartSeries, drawChart, type ChartQuote } from '@/lib/canvas/chart'
+import { arrow, pct } from '@/lib/format'
+import { useTickerFeed, statusTag, quoteTitle, fmtPrice } from './useTickerFeed'
 
 const COVERAGE: Array<[string, string]> = [
   ['Coverage', 'Equities · crypto · FX'],
@@ -22,15 +24,26 @@ const statValue: React.CSSProperties = {
 
 export default function LandingMarkets() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // The candles, book, spread and volume are an example simulation (labelled so);
+  // the AAPL price and change in the header are the real quote from the landing feed.
   const [quote, setQuote] = useState<ChartQuote | null>(null)
   const [loading, setLoading] = useState(true)
+  const feed = useTickerFeed()
+  const aapl = feed?.AAPL
+  const btc = feed?.BTC
+  // Centre the example candles on the first real price we get (fixed after that, so a
+  // refresh never rebuilds the chart). Until the feed answers the skeleton stays up.
+  const seed = useRef<number | undefined>(undefined)
+  if (aapl && seed.current === undefined) seed.current = aapl.price
+  const base = seed.current
+  const ready = feed !== null
 
   useEffect(() => {
     const canvas = canvasRef.current as SizedCanvas | null
-    if (!canvas) return
+    if (!canvas || !ready) return
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const series = new ChartSeries()
+    const series = new ChartSeries(base)
 
     sizeCanvas(canvas)
     drawChart(canvas, series.candles)
@@ -57,7 +70,7 @@ export default function LandingMarkets() {
       clearInterval(timer)
       window.removeEventListener('resize', onResize)
     }
-  }, [])
+  }, [ready, base])
 
   return (
     <section id="markets" data-screen-label="Markets" style={{ borderBottom: `1px solid rgba(${INK},.1)` }}>
@@ -132,10 +145,10 @@ export default function LandingMarkets() {
               <div style={{ background: '#0d0e11', padding: '9px 10px', color: inkText(.34) }}>B</div>
               <div style={{ background: '#0d0e11', padding: '10px 8px', color: inkText(.3) }}>1</div>
               <div translate="no" style={{ background: '#101114', padding: 10, color: `rgba(${INK},.72)` }}>AAPL</div>
-              <div style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>241.86</div>
+              <div title={aapl ? quoteTitle(aapl) : undefined} style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>{aapl ? fmtPrice(aapl.price) : '—'}</div>
               <div style={{ background: '#0d0e11', padding: '10px 8px', color: inkText(.3) }}>2</div>
               <div translate="no" style={{ background: '#101114', padding: 10, color: `rgba(${INK},.72)` }}>BTC-USD</div>
-              <div style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>67,412</div>
+              <div title={btc ? quoteTitle(btc) : undefined} style={{ background: '#101114', padding: 10, color: '#d99a5c' }}>{btc ? fmtPrice(btc.price) : '—'}</div>
             </div>
             <p style={{
               margin: 0, borderTop: `1px solid rgba(${INK},.12)`, padding: '12px 14px',
@@ -159,21 +172,22 @@ export default function LandingMarkets() {
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
               <span translate="no" style={{ font: "600 14px/1 'Geist Mono', monospace" }}>AAPL</span>
               <span style={{ font: "500 10px/1 'Geist Mono', monospace", color: inkText(.42) }}>
-                NASDAQ &#183; 5 m
+                NASDAQ &#183; 5 m &#183; example chart
               </span>
             </div>
-            <div aria-live="polite" style={{
+            <div aria-live="polite" title={aapl ? quoteTitle(aapl) : undefined} style={{
               display: 'flex', alignItems: 'baseline', gap: 12,
               font: "500 12px/1 'Geist Mono', monospace", fontVariantNumeric: 'tabular-nums',
             }}>
-              <span id="gv-chart-last">{quote ? quote.last : '—'}</span>
-              <span id="gv-chart-chg" style={{ color: quote ? (quote.changeUp ? UP : DOWN_TEXT) : inkText(.5) }}>
-                {quote ? quote.change : 'awaiting first tick…'}
+              <span id="gv-chart-last">{aapl ? fmtPrice(aapl.price) : '—'}</span>
+              <span id="gv-chart-chg" style={{ color: aapl ? (aapl.changePercent >= 0 ? UP : DOWN_TEXT) : inkText(.5) }}>
+                {aapl ? `${arrow(aapl.changePercent) && arrow(aapl.changePercent) + ' '}${pct(aapl.changePercent, 2, '−')}` : feed ? 'quote unavailable' : 'awaiting quote…'}
               </span>
-              <span data-pulse aria-hidden="true" style={{
+              {aapl && statusTag(aapl) && <span style={{ color: inkText(.45) }}>{statusTag(aapl)}</span>}
+              {aapl?.status === 'live' && <span data-pulse aria-hidden="true" style={{
                 width: 6, height: 6, borderRadius: '50%', background: '#c98a4b',
                 animation: 'gv-live 1.8s ease-in-out infinite',
-              }} />
+              }} />}
             </div>
           </div>
 
@@ -203,24 +217,26 @@ export default function LandingMarkets() {
             background: `rgba(${INK},.12)`, borderTop: `1px solid rgba(${INK},.12)`,
           }}>
             <div style={{ ...statBox, flex: '1.2 1 132px' }}>
-              <div style={statLabel}>bid / ask</div>
+              <div style={statLabel}>bid / ask · example</div>
               <div id="gv-book" style={statValue}>{quote ? quote.book : '—'}</div>
             </div>
             <div style={{ ...statBox, flex: '1 1 112px' }}>
-              <div style={statLabel}>spread</div>
+              <div style={statLabel}>spread · example</div>
               <div id="gv-spread" style={statValue}>{quote ? quote.spread : '—'}</div>
             </div>
             <div style={{ ...statBox, flex: '1 1 112px' }}>
-              <div style={statLabel}>volume</div>
+              <div style={statLabel}>volume · example</div>
               <div id="gv-vol" style={statValue}>{quote ? quote.volume : '—'}</div>
             </div>
             <div style={{ ...statBox, flex: '1.4 1 150px' }}>
               <div style={statLabel}>feed health</div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 7,
-                font: "500 12px/1 'Geist Mono', monospace", marginTop: 7, color: UP,
+                font: "500 12px/1 'Geist Mono', monospace", marginTop: 7,
+                color: aapl?.status === 'live' ? UP : inkText(.7),
               }}>
-                <span aria-hidden="true">&#9679;</span><span>Healthy &#183; real&#8209;time</span>
+                <span aria-hidden="true">{aapl?.status === 'live' ? '●' : '○'}</span>
+                <span>{!aapl ? (feed ? 'Unavailable' : '—') : aapl.status === 'live' ? 'Healthy · real‑time' : aapl.status === 'delayed' ? 'Healthy · delayed' : 'Market closed · last close'}</span>
               </div>
             </div>
           </div>
