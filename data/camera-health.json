@@ -1,16 +1,3 @@
 {
-  "hidden": {
-    "tfl-trafalgar": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-tower-bridge": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-piccadilly": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-parliament": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-hyde-park": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-westminster-bridge": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-westminster-south": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-park-lane": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-st-james": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-tower-bridge-rd": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-waterloo": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)",
-    "tfl-baylis": "no current image (request failed or \"No Service\" placeholder) (since 2026-11-16)"
-  }
+  "hidden": {}
 }
